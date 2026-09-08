@@ -209,11 +209,12 @@ değişiklik listesinde.
 npm run db:up          # Postgres (docker compose)
 npm run db:migrate     # migration uygula
 npm run db:seed        # tek organizasyon + boş draft bölge paketi
+npm run db:fixture     # SENTETİK test paketi (gerçek mevzuat DEĞİL)
 npm run dev
 
 npm run codegen        # hesaplanan alan altyapısını üret
 npm run codegen:check   # üretilenler güncel mi (CI)
-npm test               # 75 test
+npm test               # 182 test
 npm run typecheck
 node scripts/verify-migration.mjs   # migration'ı PGlite'ta çalıştır (Docker gerekmez)
 ```

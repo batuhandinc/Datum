@@ -52,25 +52,29 @@ describe("kural tablolarına erişim", () => {
 });
 
 describe("kiracılık", () => {
-  it("uygulama kodu ham `prisma` istemcisini doğrudan kullanmıyor", () => {
-    // Ham istemci kiracı filtresinden geçmez. İzinli olanlar, kiracılığı
-    // kendi içinde AÇIKÇA doğrulayan altyapı modülleridir.
-    const ALLOWED = [
-      "src/lib/db/client.ts",
-      "src/lib/db/tenant.ts",
-      "src/lib/region-package/version.ts",
-      "src/lib/rules/reader.ts",
-    ];
+  it("ham `prisma` kullanan her modül kiracılığı AÇIKÇA kuruyor", () => {
+    /**
+     * Ham istemci kiracı filtresinden geçmez. Ama bazı modüller onu meşru
+     * biçimde kullanır: transaction açanlar, enjekte edilen istemciyle
+     * çalışanlar. Onlardan istenen, kapsamı KENDİLERİNİN kurmasıdır.
+     *
+     * Kural bir izin listesi DEĞİL — izin listesi sessizce büyür ve anlamını
+     * yitirir. Kural şu: ham `prisma` içeren bir dosya, `scopedPrisma` veya
+     * `currentOrganizationId` de içermelidir. Böylece yeni bir dosya eklendiğinde
+     * ya kapsamı kurar ya da test patlar.
+     */
+    const INFRASTRUCTURE = ["src/lib/db/client.ts", "src/lib/db/tenant.ts"];
 
     const offenders = sourceFiles
-      .filter((f) => !ALLOWED.includes(f.relative))
+      .filter((f) => !INFRASTRUCTURE.includes(f.relative))
       .filter((f) => /from "@\/lib\/db\/client"/.test(f.text))
       .filter((f) => /\bprisma\b/.test(f.text))
+      .filter((f) => !/\b(scopedPrisma|currentOrganizationId)\b/.test(f.text))
       .map((f) => f.relative);
 
     expect(
       offenders,
-      "Uygulama kodu db() kullanmalı; ham prisma kiracı sızdırır.",
+      "Ham prisma kullanan modül kapsamı kendisi kurmalı (scopedPrisma / currentOrganizationId) — aksi halde kiracı sızar.",
     ).toEqual([]);
   });
 });

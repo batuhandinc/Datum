@@ -1,11 +1,12 @@
 import type {
   HeightReferenceCatalog,
+  PrismaClient,
   SpecialConstraintCatalog,
   StakeholderConsentRule,
   ZoningRuleSet,
 } from "@prisma/client";
-import { prisma } from "@/lib/db/client";
-import { db } from "@/lib/db/tenant";
+import { prisma, scopedPrisma } from "@/lib/db/client";
+import { currentOrganizationId } from "@/lib/db/tenant";
 import { WarningCollector, type Warning } from "@/lib/warnings";
 
 /**
@@ -48,7 +49,10 @@ export interface RuleReader {
 class FrozenRuleReader implements RuleReader {
   private readonly collector = new WarningCollector();
 
-  constructor(readonly versionId: string | null) {
+  constructor(
+    readonly versionId: string | null,
+    private readonly client: PrismaClient,
+  ) {
     if (versionId === null) this.collector.addOnce("PACKAGE_NOT_BOUND");
   }
 
@@ -58,7 +62,7 @@ class FrozenRuleReader implements RuleReader {
 
   async zoningRuleSet(): Promise<ZoningRuleSet | null> {
     if (!this.versionId) return null;
-    const rows = await prisma.zoningRuleSet.findMany({
+    const rows = await this.client.zoningRuleSet.findMany({
       where: { regionPackageVersionId: this.versionId },
       orderBy: { ruleKey: "asc" },
     });
@@ -74,7 +78,7 @@ class FrozenRuleReader implements RuleReader {
 
   async specialConstraints(): Promise<SpecialConstraintCatalog[]> {
     if (!this.versionId) return [];
-    const rows = await prisma.specialConstraintCatalog.findMany({
+    const rows = await this.client.specialConstraintCatalog.findMany({
       where: { regionPackageVersionId: this.versionId },
       orderBy: [{ sortOrder: "asc" }, { ruleKey: "asc" }],
     });
@@ -84,7 +88,7 @@ class FrozenRuleReader implements RuleReader {
 
   async heightReferences(): Promise<HeightReferenceCatalog[]> {
     if (!this.versionId) return [];
-    return prisma.heightReferenceCatalog.findMany({
+    return this.client.heightReferenceCatalog.findMany({
       where: { regionPackageVersionId: this.versionId },
       orderBy: [{ sortOrder: "asc" }, { ruleKey: "asc" }],
     });
@@ -92,7 +96,7 @@ class FrozenRuleReader implements RuleReader {
 
   async consentRule(): Promise<StakeholderConsentRule | null> {
     if (!this.versionId) return null;
-    const rows = await prisma.stakeholderConsentRule.findMany({
+    const rows = await this.client.stakeholderConsentRule.findMany({
       where: { regionPackageVersionId: this.versionId },
       orderBy: { ruleKey: "asc" },
     });
@@ -110,8 +114,14 @@ class FrozenRuleReader implements RuleReader {
  * döner ama her okuma null verir ve `PACKAGE_NOT_BOUND` uyarısı taşır —
  * ilke 7: engelleme, uyar.
  */
-export async function createRuleReader(projectId: string): Promise<RuleReader> {
-  const project = await db().project.findUnique({
+export async function createRuleReader(
+  projectId: string,
+  client: PrismaClient = prisma,
+): Promise<RuleReader> {
+  // Kiracı kapsamı ENJEKTE EDİLEN istemcinin üzerine kurulur; testler kendi
+  // veritabanlarını verirken de org filtresi çalışmaya devam eder.
+  const scoped = scopedPrisma(client, currentOrganizationId());
+  const project = await scoped.project.findUnique({
     where: { id: projectId },
     select: { id: true, regionPackageVersionId: true },
   });
@@ -120,7 +130,7 @@ export async function createRuleReader(projectId: string): Promise<RuleReader> {
     throw new Error(`DATUM_NOT_FOUND: proje bulunamadı: ${projectId}`);
   }
 
-  return new FrozenRuleReader(project.regionPackageVersionId);
+  return new FrozenRuleReader(project.regionPackageVersionId, client);
 }
 
 /**
@@ -128,6 +138,9 @@ export async function createRuleReader(projectId: string): Promise<RuleReader> {
  * Uygulama akışı `createRuleReader(projectId)` kullanır; sürümü elle vermek
  * dondurma güvencesini atlar.
  */
-export function ruleReaderForVersion(versionId: string | null): RuleReader {
-  return new FrozenRuleReader(versionId);
+export function ruleReaderForVersion(
+  versionId: string | null,
+  client: PrismaClient = prisma,
+): RuleReader {
+  return new FrozenRuleReader(versionId, client);
 }
