@@ -1,6 +1,6 @@
 // =============================================================================
 // Datum — Etüt ve fizibilite otomasyonu
-// Şema kaynağı: etut-veri-modeli.md (sürüm 1.1) — OTORİTER
+// Şema kaynağı: etut-veri-modeli.md (sürüm 1.2) — OTORİTER
 //
 // KURAL: Alan adları ve enum değerleri dokümandaki isimlerle BİREBİR AYNIDIR.
 //        Bir alanı "iyileştirme", yeniden adlandırma, çoğullaştırma yok.
@@ -118,13 +118,45 @@ enum FarCalculationBasis {
   net
 }
 
-/// :146 — "(paketten)", değer kümesi verilmemiş.
-/// SAPMA: değerler önerilmiştir; nihai küme ZoningRuleSet'ten gelmeli.
-enum HeightReferenceMethod {
-  tabiiZemin
-  tesviyeEdilmisZemin
-  yolKotu
-  binaGirisKotu
+// NOT: `HeightReferenceMethod` enum'u sürüm 1.2'de KALDIRILDI.
+// Değerleri İP-1'de uydurulmuştu ve ZoningRuleSet — yani PAKET VERİSİ — onu
+// kullanıyordu; farklı ölçüm referanslı bir bölge eklemek kod + migration
+// gerektiriyordu. İlke 1 ihlaliydi. Yerine `HeightReferenceCatalog` tablosu geldi;
+// hem ZoningRuleSet hem ZoningData artık `heightReferenceRuleKey` taşıyor.
+// Ayrım kuralı için bkz. etut-veri-modeli.md bölüm 15.1.
+
+/// Çekme mesafesi ötelemesinde içbükey köşe davranışı (veri modeli bölüm 15.2).
+/// PAKETTEN gelir, varsayılanı YOKTUR — köşe yorumu mevzuat okumasıdır.
+/// Ölçüm: L parselinde 3 m çekmede miter 222,00 m², round 223,93 m²; 5 m'de fark %8,1.
+///
+/// ENUM MEŞRU: kod her üyeyi ayrı ayrı UYGULUYOR (iki farklı öteleme algoritması).
+/// Yeni bir değer zaten yeni kod gerektirir. Bkz. etut-veri-modeli.md 15.1.
+enum OffsetJoinType {
+  /// Kenar doğrularını ötele, ardışık kesiştir. Haritacının çizimi. Miter limit zorunlu.
+  miter
+  /// Sınıra dik uzaklık ≥ d kümesi. İçbükey köşedeki noktayı korur, daha büyük alan.
+  round
+}
+
+/// Özel kısıtın hangi hesaplanan değeri etkilediği (veri modeli bölüm 12.4).
+/// ENUM MEŞRU: kod her hedefi ayrı ele alıyor.
+enum ConstraintEffectTarget {
+  maxHeight
+  maxFootprint
+  floorAreaRatio
+  none
+}
+
+/// Özel kısıtın nasıl etkilediği (veri modeli bölüm 12.4).
+/// ENUM MEŞRU: kod her aritmetiği ayrı uyguluyor.
+enum ConstraintEffectKind {
+  /// Üst sınır koyar — ör. mania kotu maxHeight'ı capler
+  cap
+  /// Oranla çarpar — ör. yeşil alan terki maxFootprint'i düşürür
+  multiply
+  /// Sabit değer çıkarır
+  subtract
+  none
 }
 
 /// :150 — resmiKroki · demServisi · manuel

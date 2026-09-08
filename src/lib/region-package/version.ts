@@ -40,6 +40,8 @@ export const VERSION_SCOPED_MODELS = [
   "facadeMaterialCatalog",
   "spaceTypeCategoryMap",
   "parametricLumpSumRule",
+  "heightReferenceCatalog",
+  "stakeholderConsentRule",
 ] as const;
 
 export type VersionScopedModel = (typeof VERSION_SCOPED_MODELS)[number];

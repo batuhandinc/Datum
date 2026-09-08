@@ -95,11 +95,29 @@ model Parcel {
   /// @tier K1 @own M @src etut-veri-modeli.md:121 — pafta
   sheetNo   String?
 
-  /// @tier K1 @own M/B @src etut-veri-modeli.md:122
+  /// @tier K1 @own M/B @src etut-veri-modeli.md:154
   area     Decimal? @db.Decimal(12, 2)
-  /// @tier K2 @own B @src etut-veri-modeli.md:123 — sınır poligonu, GeoJSON.
-  /// PostGIS kullanılmıyor; poligon işlemleri Node tarafında.
+
+  /// @tier K2 @own B @src etut-veri-modeli.md:155 — sınır poligonu.
+  ///
+  /// GeoJSON ŞEKLİNDE ama içeriği YEREL METRİK koordinattır: origin parselin
+  /// ağırlık merkezi, birim metre, eksen kaynak projeksiyonun grid ekseni.
+  /// RFC 7946'nın WGS84 enlem/boylam varsayımı GEÇERLİ DEĞİLDİR — ayrım nesne
+  /// içinde `"crs": "local-metric"` ile açık edilir (veri modeli bölüm 3).
+  /// Şekil `src/lib/geometry` içinde zod ile doğrulanır.
+  /// PostGIS kullanılmıyor; poligon işlemleri Node/tarayıcı tarafında.
   geometry Json?
+
+  /// @tier K2 @own B/E @src etut-veri-modeli.md — bölüm 3 (1.2'de eklendi).
+  /// Yerel metrik çerçeveyi dünyaya bağlar. Alan ve öteleme hesabı enlem/boylamda
+  /// YAPILAMAZ; bu üçlü yalnızca geri dönüşüm ve harita gösterimi içindir.
+  centerLatitude  Decimal? @db.Decimal(10, 7)
+  centerLongitude Decimal? @db.Decimal(10, 7)
+  /// Kaynak verinin projeksiyonu, ör. "EPSG:5254" (TUREF / TM30).
+  epsgCode        String?
+  /// Yerel eksen ile grid kuzeyi arası açı (derece). İP-2'de DAİMA 0 —
+  /// yerel eksen kaynak grid'e hizalıdır. Döndürme İP-4'te anlam kazanır.
+  rotation        Decimal? @db.Decimal(8, 5)
 
   /// @tier K1 @own M @src etut-veri-modeli.md:124
   ownershipType OwnershipType?
@@ -166,10 +184,15 @@ model ZoningData {
   maxFloorCount Int?
   /// @tier K1 @own M @src etut-veri-modeli.md:145
   maxHeight     Decimal? @db.Decimal(6, 2)
-  /// @tier K2 @own P @src etut-veri-modeli.md:146 — paketten (ZoningRuleSet)
-  heightReferenceMethod HeightReferenceMethod?
+  /// @tier K2 @own P @src etut-veri-modeli.md:178 — paketten (ZoningRuleSet).
+  /// 1.2: kod enum'undan HeightReferenceCatalog anahtarına döndü (ilke 1).
+  heightReferenceRuleKey String?
 
-  /// @tier K2 @own M @src etut-veri-modeli.md:147 — cephe no, yol adı, genişlik
+  /// @tier K2 @own M @src etut-veri-modeli.md:179 — kenar indeksi, rol, yol adı, genişlik.
+  /// L0 ötelemesinin DOĞRUDAN girdisi: setbackFront/Side/Rear üç ayrı değerdir ve
+  /// hangi poligon kenarının hangi rolü taşıdığını söyleyen tek yer burasıdır.
+  /// Şekil: [{ edgeIndex, role: "front"|"side"|"rear", roadName?, width? }]
+  /// Rol verilmemiş kenarlar "side" sayılır ve bu bir UYARI üretir (ilke 7).
   roadFrontages Json?
   /// @tier K2 @own M @src etut-veri-modeli.md:148 — referans kot
   referenceLevel Decimal? @db.Decimal(8, 3)

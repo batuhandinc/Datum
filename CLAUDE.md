@@ -110,7 +110,7 @@ unutulursa o tablo kiracı filtresinden kaçar.
 
 ```
 RegionPackage (soy)  →  RegionPackageVersion (draft → published → deprecated)
-                            └── 20 kural tablosu (regionPackageVersionId zorunlu)
+                            └── 22 kural tablosu (regionPackageVersionId zorunlu)
 Project.regionPackageVersionId  →  SET-ONCE
 ```
 
@@ -120,10 +120,23 @@ Project.regionPackageVersionId  →  SET-ONCE
   `$executeRaw` da aynı duvara çarpar.
 - Proje yalnızca `published` sürüme bağlanabilir. `null→değer` serbest; `değer→değer`
   yalnızca `applied` bir `ProjectPackageMigration` varsa.
-- **Yeni kural tablosu eklerken üç yeri birden güncelle:** şema ·
+- **Yeni kural tablosu eklerken DÖRT yeri birden güncelle:** şema ·
   `VERSION_SCOPED_MODELS` (`src/lib/region-package/version.ts`) ·
-  `frozen_tables` (`prisma/sql/immutability.sql`). Bir test üçünün aynı kümeyi
-  gösterdiğini doğrular — biri unutulursa o tablo dondurulmamış olur ve **ilke 2 sessizce delinir**.
+  `frozen_tables` (`prisma/sql/immutability.sql`) · **yeni migration'a trigger kurma
+  bloğunu kopyala** (migration geçmişi temsil eder; en sonuncusu güncel listeyi taşımalı).
+  İki test dördünün de aynı kümeyi gösterdiğini doğrular — biri unutulursa o tablo
+  dondurulmamış olur ve **ilke 2 sessizce delinir**.
+
+**Enum mü, katalog tablosu mu** (veri modeli 15.1):
+
+> **Enum meşrudur** kod her üyeyi ayrı ayrı **uygulamak** zorundaysa — yeni bir değer
+> zaten yeni kod gerektirir. *Örnek:* `OffsetJoinType`, `ConstraintEffectKind`.
+>
+> **Katalog tablosu zorunludur** değerler kodun yalnızca **sakladığı ve gösterdiği**
+> açık uçlu yerel bir sözlükse. *Örnek:* `HeightReferenceCatalog`, `SpecialConstraintCatalog`.
+
+İP-1'de `heightReferenceMethod` yanlış tarafa düşmüştü: uydurulmuş değerlere sahip bir kod
+enum'uydu ve paket verisi onu kullanıyordu. v1.2'de kataloğa taşındı.
 
 ---
 

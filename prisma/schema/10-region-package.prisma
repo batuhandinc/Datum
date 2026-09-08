@@ -109,6 +109,8 @@ model RegionPackageVersion {
   facadeMaterialCatalogs   FacadeMaterialCatalog[]
   spaceTypeCategoryMaps    SpaceTypeCategoryMap[]
   parametricLumpSumRules   ParametricLumpSumRule[]
+  heightReferenceCatalogs  HeightReferenceCatalog[]
+  stakeholderConsentRules  StakeholderConsentRule[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -156,13 +158,18 @@ model ZoningRuleSet {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:583 — emsal hesap yöntemi
-  farCalculationBasis   FarCalculationBasis
-  /// @own P @src etut-veri-modeli.md:583 — yükseklik ölçüm referansı
-  heightReferenceMethod HeightReferenceMethod
-  /// @own P @src etut-veri-modeli.md:583 — emsal harici alan kuralları.
-  /// Doküman alan adı vermiyor, yalnızca tarif ediyor.
-  farExemptionRules     Json?
+  /// @own P @src etut-veri-modeli.md:634 — emsal hesap yöntemi
+  farCalculationBasis     FarCalculationBasis
+  /// @own P @src etut-veri-modeli.md:634 — yükseklik ölçüm referansı.
+  /// 1.2: kod enum'undan HeightReferenceCatalog anahtarına döndü (ilke 1).
+  heightReferenceRuleKey  String?
+  /// @own P @src etut-veri-modeli.md:634 — emsal harici alan kuralları.
+  /// Doküman alan adı vermiyor, yalnızca tarif ediyor. İP-2 bunları HESABA KATMAZ
+  /// (emsal harici alanlar ancak program girildikten sonra, A5/İP-3'te bilinir) — uyarı üretir.
+  farExemptionRules       Json?
+  /// @own P @src etut-veri-modeli.md:634 — çekme ötelemesinde içbükey köşe davranışı.
+  /// VARSAYILAN YOK: paket vermezse zarf hesaplanmaz, uyarı üretilir (ilke 1).
+  offsetJoinType          OffsetJoinType?
 
   @@unique([regionPackageVersionId, ruleKey])
   @@map("zoning_rule_set")
@@ -538,11 +545,19 @@ model SpecialConstraintCatalog {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:153-154 — i18n anahtarı (Türkçe metin KODA GÖMÜLMEZ)
-  labelKey    String
-  /// @own P @src etut-veri-modeli.md:154 — projeyi bitiren bir kısıt mı
-  isBlocking  Boolean @default(false)
-  sortOrder   Int     @default(0)
+  /// @own P @src etut-veri-modeli.md:191-192 — i18n anahtarı (Türkçe metin KODA GÖMÜLMEZ)
+  labelKey   String
+  /// @own P @src etut-veri-modeli.md:192 — projeyi bitiren bir kısıt mı
+  isBlocking Boolean @default(false)
+  sortOrder  Int     @default(0)
+
+  /// @own P @src etut-veri-modeli.md — bölüm 12.4 (1.2'de eklendi).
+  /// Katalog etkinin ŞEKLİNİ bildirir; DEĞER parsele özeldir ve
+  /// ZoningData.specialConstraints[].value içinde durur.
+  /// Örnek: maniaKotu → (maxHeight, cap); kullanıcı 47,5 girer → maxHeight 47,5 ile sınırlanır.
+  /// 1.1'de bu alanlar yoktu: kullanıcı işaretliyor ama L0'a hiçbir etkisi olmuyordu.
+  effectTarget ConstraintEffectTarget @default(none)
+  effectKind   ConstraintEffectKind   @default(none)
 
   @@unique([regionPackageVersionId, ruleKey])
   @@map("special_constraint_catalog")
@@ -615,4 +630,55 @@ model ParametricLumpSumRule {
 
   @@unique([regionPackageVersionId, ruleKey])
   @@map("parametric_lump_sum_rule")
+}
+
+// ============================================================================
+// Bölüm 12.4 — Sürüm 1.2'de eklenen tablolar
+// ============================================================================
+
+/// Yükseklik ölçüm referansı kataloğu (bölüm 12.4).
+///
+/// 1.1'de bu bir KOD ENUM'uydu (`HeightReferenceMethod`) ve değerleri uydurulmuştu;
+/// üstelik ZoningRuleSet — yani paket verisi — onu kullanıyordu. Farklı ölçüm
+/// referanslı bir bölge eklemek kod + migration gerektiriyordu: ilke 1 ihlali.
+///
+/// Ayrım kuralı (veri modeli 15.1): kod her üyeyi UYGULAMAK zorunda değil, yalnızca
+/// SAKLIYOR ve GÖSTERİYOR → katalog tablosu.
+model HeightReferenceCatalog {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P — i18n anahtarı (Türkçe metin KODA GÖMÜLMEZ)
+  labelKey  String
+  sortOrder Int    @default(0)
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@map("height_reference_catalog")
+}
+
+/// Paydaş anlaşma kuralları (bölüm 12.4).
+///
+/// `proje-dokumani`:49 paket içeriği listesinde zaten var: "Paydaş anlaşma kuralları |
+/// Karar çoğunluğu eşiği, itiraz süreleri". A4'ün "karar çoğunluğu eşiği" `P` işaretli
+/// ve `mvp`:53 çoğunluk göstergesini İP-2 kapsamına koyuyor — ama 1.1'de 20 tablonun
+/// hiçbirinde evi yoktu. Veri modeli "RequiredSpaceRule BENZERİ bir tabloda durur"
+/// diyordu; öyle bir tablo yoktu ve RequiredSpaceRule servis mekanına özeldir
+/// (serviceSpaceType zorunlu).
+model StakeholderConsentRule {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-surec-modeli.md:147 — karar çoğunluğu eşiği (oran, ör. 0,6667)
+  majorityThreshold   Decimal @db.Decimal(6, 4)
+  /// @own P — itiraz süresi (gün). Doküman "itiraz süreleri" diyor, birim vermiyor.
+  objectionPeriodDays Int?
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@map("stakeholder_consent_rule")
 }

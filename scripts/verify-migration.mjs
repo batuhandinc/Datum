@@ -81,7 +81,7 @@ check("OverrideLedger view var", view.n === 1);
 const trg = await one(
   `select count(distinct event_object_table)::int n from information_schema.triggers where trigger_schema='public'`,
 );
-check(`trigger'lı tablo sayısı (${trg.n}, 22 bekleniyor)`, trg.n === 22);
+check(`trigger'lı tablo sayısı (${trg.n}, 24 bekleniyor)`, trg.n === 24);
 
 // ------------------------------------------------------------------ veri
 console.log("\nSeed ve proje CRUD…");

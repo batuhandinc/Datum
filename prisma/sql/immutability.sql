@@ -78,7 +78,9 @@ DECLARE
     'special_constraint_catalog',
     'facade_material_catalog',
     'space_type_category_map',
-    'parametric_lump_sum_rule'
+    'parametric_lump_sum_rule',
+    'height_reference_catalog',
+    'stakeholder_consent_rule'
   ];
 BEGIN
   FOREACH t IN ARRAY frozen_tables LOOP

@@ -121,20 +121,38 @@ describe("bölge paketi sürüm kapsamı", () => {
     }
   });
 
-  it("trigger listesi ile kod listesi birebir aynı", () => {
-    // prisma/sql/immutability.sql'deki frozen_tables dizisi ile
-    // VERSION_SCOPED_MODELS aynı kümeyi göstermeli. Biri unutulursa
-    // o tablo dondurulmamış olur — ilke 2 sessizce delinir.
-    const sql = readFileSync(path.join(ROOT, "prisma", "sql", "immutability.sql"), "utf8");
+  /** Bir dosyadaki `frozen_tables ARRAY[...]` bloğundan tablo adlarını çıkarır. */
+  function frozenTablesIn(file: string): string[] {
+    const sql = readFileSync(file, "utf8");
     const block = /frozen_tables text\[\] := ARRAY\[([\s\S]*?)\];/.exec(sql);
-    expect(block).not.toBeNull();
-    const tables = [...block![1]!.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]!);
+    if (!block?.[1]) throw new Error(`frozen_tables bloğu bulunamadı: ${file}`);
+    return [...block[1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]!).sort();
+  }
 
-    const expected = VERSION_SCOPED_MODELS.map((m) =>
-      m.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`),
+  const expectedTables = VERSION_SCOPED_MODELS.map((m) =>
+    m.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`),
+  ).sort();
+
+  it("kaynak SQL ile kod listesi birebir aynı", () => {
+    // Biri unutulursa o tablo dondurulmamış olur — ilke 2 SESSİZCE delinir.
+    expect(frozenTablesIn(path.join(ROOT, "prisma", "sql", "immutability.sql"))).toEqual(
+      expectedTables,
     );
+  });
 
-    expect(tables.sort()).toEqual([...expected].sort());
+  it("trigger kuran HER migration aynı listeyi taşıyor", () => {
+    // Liste artık üç yerde: kaynak SQL, TS sabiti ve trigger kuran migration'lar.
+    // Migration'lar geçmişi temsil ettiği için EN SONUNCUSU güncel listeyi
+    // taşımalıdır — veritabanının son hâli odur.
+    const migrationsDir = path.join(ROOT, "prisma", "migrations");
+    const withTriggers = readdirSync(migrationsDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => path.join(migrationsDir, d.name, "migration.sql"))
+      .filter((f) => readFileSync(f, "utf8").includes("frozen_tables text[] :="))
+      .sort();
+
+    expect(withTriggers.length).toBeGreaterThan(0);
+    expect(frozenTablesIn(withTriggers[withTriggers.length - 1]!)).toEqual(expectedTables);
   });
 });
 
