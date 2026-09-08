@@ -200,10 +200,19 @@ npm run dev
 
 npm run codegen        # hesaplanan alan altyapısını üret
 npm run codegen:check   # üretilenler güncel mi (CI)
-npm test               # 63 test
+npm test               # 75 test
 npm run typecheck
 node scripts/verify-migration.mjs   # migration'ı PGlite'ta çalıştır (Docker gerekmez)
 ```
+
+**Veri katmanı testleri Docker gerektirmez.** `tests/helpers/db.ts` süreç içi PGlite üzerine
+migration'ları uygular ve Prisma'yı `pglite-prisma-adapter` ile ona bağlar; GENERATED kolonlar,
+`OverrideLedger` view'ı ve plpgsql trigger'ları gerçekten çalışır. Kiracı izolasyonu ve
+değişmezlik böyle test edilir.
+
+- **Sınır:** adapter `prisma migrate dev/deploy` desteklemiyor. Migration **üretimi** hâlâ
+  gerçek Postgres ister; PGlite yalnızca **uygular**.
+- Gerçek Postgres'in yerini tutmaz — uzantı, eşzamanlılık ve rol davranışı farklıdır.
 
 **Migration yazarken:** generated kolonlar ve trigger'lar Prisma şemasından türetilemez.
 `prisma migrate dev --create-only` ile oluştur, sonra `prisma/sql/` altındaki üç dosyayı
