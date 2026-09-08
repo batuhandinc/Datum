@@ -1,0 +1,389 @@
+// =============================================================================
+// Yapı hiyerarşisi — etut-veri-modeli.md bölüm 4 ve 5
+// IFC hizası (ilke 8): Block=IfcBuilding · Floor=IfcBuildingStorey
+//                      Unit=IfcSpatialZone · Space=IfcSpace
+//                      Opening=IfcOpeningElement · SurfaceFinish=IfcCovering
+// =============================================================================
+
+/// Blok (:319). IFC: IfcBuilding.
+/// Doküman yalnızca bir cümle veriyor: "Çok bloklu projeler için. Tek bloklu
+/// projede otomatik tek blok oluşur, arayüzde görünmez." Alan tablosu YOK → minimal stub.
+/// Sürüm 1.1: Core, Facade[] ve Roof bu varlığa bağlandı (bkz. bölüm 2 düzeltmesi).
+model Block {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /// Dokümanda tanımlı değil. Tek bloklu projede gizli varsayılan blok.
+  name      String?
+  sortOrder Int     @default(0)
+  /// true = projeyle birlikte otomatik oluşan, arayüzde görünmeyen blok (:319)
+  isDefault Boolean @default(false)
+
+  floors  Floor[]
+  core    Core?
+  facades Facade[]
+  roof    Roof?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@map("block")
+}
+
+/// Kat (:307-315). IFC: IfcBuildingStorey.
+model Floor {
+  id      String @id @default(cuid())
+  blockId String
+  block   Block  @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  /// @tier K1 @own M @src etut-veri-modeli.md:309 — bodrum negatif
+  floorNo   Int
+  /// @tier K1 @own M @src etut-veri-modeli.md:310
+  floorType FloorType
+
+  /// @tier K2 @own M @src etut-veri-modeli.md:311 — tipik kat kilidi
+  isLocked        Boolean @default(false)
+  /// @tier K2 @own M @src etut-veri-modeli.md:312 — kilitliyse referans kat.
+  /// BELİRSİZLİK: bölüm 2 (:80) ayrıca bir FloorTemplate VARLIĞI gösteriyor.
+  /// Alan tablosu yalnızca bu öz-ilişkiyi tanımlıyor; ikisi aynı fikir mi,
+  /// iki ayrı fikir mi doküman söylemiyor. Alan tablosu esas alındı.
+  templateFloorId String?
+  templateFloor   Floor?  @relation("TypicalFloor", fields: [templateFloorId], references: [id])
+  derivedFloors   Floor[] @relation("TypicalFloor")
+
+  /// @tier K1 @own M @src etut-veri-modeli.md:313
+  grossHeight Decimal? @db.Decimal(6, 2)
+  clearHeight Decimal? @db.Decimal(6, 2)
+
+  /// @own H @src etut-veri-modeli.md:314 — kat brüt alanı.
+  /// Türetme formülü dokümanda VERİLMEMİŞ (boşluk).
+  grossAreaComputedValue  Decimal? @db.Decimal(14, 3)
+  grossAreaOverrideValue  Decimal? @db.Decimal(14, 3)
+  grossAreaOverrideReason String?
+  /// GENERATED
+  grossArea               Decimal? @db.Decimal(14, 3)
+
+  /// @tier K1 @own M @src etut-veri-modeli.md:315
+  hasCommercial Boolean @default(false)
+
+  units         Unit[]
+  commonSpaces  CommonSpace[]
+  serviceSpaces ServiceSpace[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([blockId, floorNo])
+  @@index([blockId])
+  @@map("floor")
+}
+
+/// Tipik kat referansı (:80). Bölüm 2'de adı geçiyor, alan tablosu YOK → minimal stub.
+/// Floor.templateFloorId ile ilişkisi dokümanda netleştirilmemiş (açık karar).
+model FloorTemplate {
+  id String @id @default(cuid())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("floor_template")
+}
+
+/// Tipoloji şablonu (:303). Yalnızca DÜZ METİN olarak tanımlı, alan tablosu YOK.
+/// Metnin sabitlediği: bir kod taşır ("3+1 A"), mekan listesi taşır, örneklenince kopyalanır.
+/// AÇIK KARAR: proje kapsamlı mı, organizasyon tipoloji kütüphanesi mi (bölüm 13, madde 3).
+/// İP-1'de proje kapsamlı varsayıldı.
+model UnitType {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /// @src etut-veri-modeli.md:303 — "3+1 A" gibi tipoloji kodu
+  unitTypeCode String
+  /// Şablonun taşıdığı mekan listesi. Örneklenince Space[] olarak kopyalanır.
+  spaceList    Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, unitTypeCode])
+  @@map("unit_type")
+}
+
+/// Bağımsız bölüm (:287-301). IFC: IfcSpatialZone.
+model Unit {
+  id      String @id @default(cuid())
+  floorId String
+  floor   Floor  @relation(fields: [floorId], references: [id], onDelete: Cascade)
+
+  /// @tier K2 @own M @src etut-veri-modeli.md:289
+  unitNo       String?
+  /// @tier K2 @own M @src etut-veri-modeli.md:290 — tipoloji kodu.
+  /// NOT: doküman bunu `text` diyor, `fk` demiyor — UnitType'a referans
+  /// bilinçli olarak GEVŞEK bırakılmış. Birebir korundu.
+  unitTypeCode String?
+  /// @tier K1 @own M @src etut-veri-modeli.md:292
+  usageType    UsageType?
+  /// @tier K2 @own M @src etut-veri-modeli.md:293
+  isDuplex     Boolean    @default(false)
+
+  /// @own H @src etut-veri-modeli.md:294 — türetme formülü dokümanda VERİLMEMİŞ
+  grossAreaComputedValue  Decimal? @db.Decimal(12, 3)
+  grossAreaOverrideValue  Decimal? @db.Decimal(12, 3)
+  grossAreaOverrideReason String?
+  /// GENERATED
+  grossArea               Decimal? @db.Decimal(12, 3)
+
+  /// @own H @src etut-veri-modeli.md:295 — "mekan alanları toplamı"
+  netAreaComputedValue  Decimal? @db.Decimal(12, 3)
+  netAreaOverrideValue  Decimal? @db.Decimal(12, 3)
+  netAreaOverrideReason String?
+  /// GENERATED
+  netArea               Decimal? @db.Decimal(12, 3)
+
+  /// @own H @src etut-veri-modeli.md:296 — türetme formülü dokümanda VERİLMEMİŞ
+  balconyAreaComputedValue  Decimal? @db.Decimal(12, 3)
+  balconyAreaOverrideValue  Decimal? @db.Decimal(12, 3)
+  balconyAreaOverrideReason String?
+  /// GENERATED
+  balconyArea               Decimal? @db.Decimal(12, 3)
+
+  /// @own H @src etut-veri-modeli.md:297 — türetme formülü dokümanda VERİLMEMİŞ
+  commonAreaShareComputedValue  Decimal? @db.Decimal(12, 3)
+  commonAreaShareOverrideValue  Decimal? @db.Decimal(12, 3)
+  commonAreaShareOverrideReason String?
+  /// GENERATED
+  commonAreaShare               Decimal? @db.Decimal(12, 3)
+
+  /// @own H @src etut-veri-modeli.md:298 — "ıslak mekan alanları toplamı"
+  wetAreaTotalComputedValue  Decimal? @db.Decimal(12, 3)
+  wetAreaTotalOverrideValue  Decimal? @db.Decimal(12, 3)
+  wetAreaTotalOverrideReason String?
+  /// GENERATED
+  wetAreaTotal               Decimal? @db.Decimal(12, 3)
+
+  /// @tier K3 @own M @src etut-veri-modeli.md:299 — arsa payı
+  landShareRatio        Decimal?     @db.Decimal(9, 6)
+  /// @tier K3 @own M @src etut-veri-modeli.md:300
+  assignedStakeholderId String?
+  assignedStakeholder   Stakeholder? @relation(fields: [assignedStakeholderId], references: [id], onDelete: SetNull)
+  /// @tier K3 @own M @src etut-veri-modeli.md:301
+  salePrice             Decimal?     @db.Decimal(16, 2)
+
+  spaces        Space[]
+  parkingSpaces ParkingSpace[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([floorId])
+  @@index([assignedStakeholderId])
+  @@map("unit")
+}
+
+/// Mekan (:195-217). SİSTEMİN KALBİ — metrajın kalitesi buradan çıkar. IFC: IfcSpace.
+model Space {
+  id     String @id @default(cuid())
+  unitId String
+  unit   Unit   @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  /// @tier K2 @own M @src etut-veri-modeli.md:197 — "Salon", "Ebeveyn Banyo"
+  name      String?
+  /// @tier K2 @own M @src etut-veri-modeli.md:198
+  spaceType SpaceType
+
+  /// @own H @src etut-veri-modeli.md:199 — "tipten türer".
+  /// Eşleme SpaceTypeCategoryMap paket tablosunda (ilke 1) — kodda değil.
+  categoryComputedValue  SpaceCategory?
+  categoryOverrideValue  SpaceCategory?
+  categoryOverrideReason String?
+  /// GENERATED
+  category               SpaceCategory?
+
+  /// @tier K2 @own M @src etut-veri-modeli.md:200 — G1 seviyesi
+  area     Decimal? @db.Decimal(12, 3)
+  /// @tier K2 @own M @src etut-veri-modeli.md:201 — G2 seviyesi, OPSİYONEL (bölüm 1.5)
+  width    Decimal? @db.Decimal(8, 3)
+  length   Decimal? @db.Decimal(8, 3)
+  /// @tier K3 @own H @src etut-veri-modeli.md:202 — G3 seviyesi, GeoJSON poligon
+  geometry Json?
+
+  /// @own H @src etut-veri-modeli.md:203 — G1/G2/G3'e göre.
+  /// G1: k × √area (k = SpaceShapeFactorRule'dan, KODDA DEĞİL) · G2: 2×(width+length) · G3: gerçek çevre
+  perimeterComputedValue  Decimal? @db.Decimal(12, 3)
+  perimeterOverrideValue  Decimal? @db.Decimal(12, 3)
+  perimeterOverrideReason String?
+  /// GENERATED
+  perimeter               Decimal? @db.Decimal(12, 3)
+
+  /// @tier K2 @own M @src etut-veri-modeli.md:204 — net tavan yüksekliği
+  clearHeight Decimal? @db.Decimal(6, 3)
+
+  /// @own H @src etut-veri-modeli.md:205 — "tipten türer, ezilebilir"
+  isWetAreaComputedValue  Boolean?
+  isWetAreaOverrideValue  Boolean?
+  isWetAreaOverrideReason String?
+  /// GENERATED
+  isWetArea               Boolean?
+
+  /// @tier K2 @own P @src etut-veri-modeli.md:206 — kalite paketinden ön-dolar
+  floorFinishId String?
+  floorFinish   SurfaceFinish? @relation("FloorFinish", fields: [floorFinishId], references: [id], onDelete: SetNull)
+  /// @tier K3 @own M @src etut-veri-modeli.md:207
+  skirtingType   SkirtingType?
+  skirtingHeight Decimal?      @db.Decimal(6, 3)
+  /// @tier K2 @own P @src etut-veri-modeli.md:208
+  wallFinishId  String?
+  wallFinish    SurfaceFinish? @relation("WallFinish", fields: [wallFinishId], references: [id], onDelete: SetNull)
+  /// @tier K2 @own M @src etut-veri-modeli.md:209 — ıslak hacimde seramik yüksekliği
+  wallCladdingHeight Decimal? @db.Decimal(6, 3)
+
+  /// @tier K2 @own M @src etut-veri-modeli.md:210
+  ceilingType CeilingType?
+
+  /// @own H @src etut-veri-modeli.md:211 — "= çevre (kartonpiyer varsa)"
+  ceilingCorniceLengthComputedValue  Decimal? @db.Decimal(12, 3)
+  ceilingCorniceLengthOverrideValue  Decimal? @db.Decimal(12, 3)
+  ceilingCorniceLengthOverrideReason String?
+  /// GENERATED
+  ceilingCorniceLength               Decimal? @db.Decimal(12, 3)
+
+  /// @tier K2 @own M @src etut-veri-modeli.md:212
+  waterproofing  Boolean @default(false)
+  /// @tier K2 @own M @src etut-veri-modeli.md:213
+  heatingElement HeatingElement?
+
+  /// @own H @src etut-veri-modeli.md:214 — radyatör mtül veya döşeme m²
+  heatingElementSizeComputedValue  Decimal? @db.Decimal(12, 3)
+  heatingElementSizeOverrideValue  Decimal? @db.Decimal(12, 3)
+  heatingElementSizeOverrideReason String?
+  /// GENERATED
+  heatingElementSize               Decimal? @db.Decimal(12, 3)
+
+  /// @tier K2 @own M @src etut-veri-modeli.md:215
+  hasAirConditioner Boolean @default(false)
+  /// @tier K3 @own M @src etut-veri-modeli.md:216
+  ventilationType   VentilationType?
+
+  /// @tier K2 @own P @src etut-veri-modeli.md:217 — priz/anahtar/aydınlatma adetleri paketten.
+  /// Doküman "fk" diyor ama HEDEF VARLIĞI TANIMLAMIYOR. Paket verisi olduğu için
+  /// bir kural anahtarı olarak tutuldu; uydurma bir model açılmadı.
+  electricalPresetId String?
+
+  openings Opening[]         @relation("SpaceOpenings")
+  adjacentOpenings Opening[] @relation("AdjacentSpaceOpenings")
+  fixtures Fixture[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([unitId])
+  @@index([spaceType])
+  @@map("space")
+}
+
+/// Açıklık (:250-264). IFC: IfcOpeningElement.
+/// Açıklık alanları duvar metrajından düşülür — kural KALEM BAZINDA
+/// CostItemCatalog.openingDeductionRule'da (ilke 6), burada değil.
+model Opening {
+  id      String @id @default(cuid())
+  /// @src etut-veri-modeli.md:253 — hangi mekanda
+  spaceId String
+  space   Space  @relation("SpaceOpenings", fields: [spaceId], references: [id], onDelete: Cascade)
+
+  /// @src etut-veri-modeli.md:252
+  openingType OpeningType
+
+  /// @src etut-veri-modeli.md:254 — iç kapılarda karşı mekan
+  adjacentSpaceId String?
+  adjacentSpace   Space?  @relation("AdjacentSpaceOpenings", fields: [adjacentSpaceId], references: [id], onDelete: SetNull)
+
+  /// @src etut-veri-modeli.md:255 — cepheye mi bakıyor
+  isExterior Boolean @default(false)
+  /// @src etut-veri-modeli.md:256
+  width      Decimal? @db.Decimal(8, 3)
+  height     Decimal? @db.Decimal(8, 3)
+  /// @src etut-veri-modeli.md:257 — aynı tipten kaç adet
+  count      Int      @default(1)
+
+  /// @src etut-veri-modeli.md:258
+  frameMaterial  FrameMaterial?
+  /// @src etut-veri-modeli.md:259
+  frameType      FrameType?
+  /// @src etut-veri-modeli.md:260
+  glazingType    GlazingType?
+  /// @src etut-veri-modeli.md:261 — denizlik
+  hasSill        Boolean  @default(false)
+  /// @src etut-veri-modeli.md:262 — pervaz
+  hasArchitrave  Boolean  @default(false)
+  /// @src etut-veri-modeli.md:263
+  shutterType    ShutterType?
+  /// @src etut-veri-modeli.md:264
+  doorType       DoorType?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([spaceId])
+  @@index([adjacentSpaceId])
+  @@map("opening")
+}
+
+/// Donanım (:272-279). IFC: IfcFurnishingElement / IfcSanitaryTerminal.
+model Fixture {
+  id      String @id @default(cuid())
+  /// @src etut-veri-modeli.md:275
+  spaceId String
+  space   Space  @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  /// @src etut-veri-modeli.md:274
+  fixtureType FixtureType
+  /// @src etut-veri-modeli.md:276
+  count       Int      @default(1)
+  /// @src etut-veri-modeli.md:277 — mutfak dolabı/tezgah için
+  lengthMeters Decimal? @db.Decimal(8, 3)
+  /// @src etut-veri-modeli.md:278 — kalite paketinden
+  specLevel   SpecificationLevel?
+  /// @src etut-veri-modeli.md:279 — marka/model (opsiyonel).
+  /// HEDEF VARLIK DOKÜMANDA TANIMLI DEĞİL; uydurma model açılmadı.
+  productRef  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([spaceId])
+  @@map("fixture")
+}
+
+/// Yüzey bitişi (:84). Bölüm 2'de adı geçiyor, alan tablosu YOK → minimal stub.
+/// BELİRSİZLİK: bölüm 2 bunu Space'in ÇOCUĞU gösteriyor, ama Space.floorFinishId /
+/// wallFinishId (:206, :208) tersine, Space'ten ona doğru fk kuruyor ve
+/// "kalite paketinden ön-dolar" diyor — yani bir KATALOG gibi davranıyor.
+/// Alan tabloları esas alındı: katalog olarak modellendi.
+model SurfaceFinish {
+  id String @id @default(cuid())
+
+  floorFinishSpaces Space[] @relation("FloorFinish")
+  wallFinishSpaces  Space[] @relation("WallFinish")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("surface_finish")
+}
+
+/// Ortak alan mekanı (:86). Bölüm 2'de adı geçiyor, alan tablosu YOK → minimal stub.
+/// Space'in ortak alan tipleriyle (katHolu, merdivenHolu, binaGirisi) ilişkisi belirsiz.
+model CommonSpace {
+  id      String @id @default(cuid())
+  floorId String
+  floor   Floor  @relation(fields: [floorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([floorId])
+  @@map("common_space")
+}

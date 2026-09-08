@@ -1,0 +1,617 @@
+// =============================================================================
+// Kiracılık ve Bölge Paketi
+// Kaynak: etut-veri-modeli.md bölüm 1.1, 1.2, 12 (sürüm 1.1)
+//
+// İLKE 1 — Yerel hiçbir şey koda gömülmez. Mevzuat, eşik, katsayı, kalem kodu:
+//          hepsi bu tablolarda VERİDİR.
+// İLKE 2 — Proje bağlandığı SÜRÜMÜ dondurur. Yayımlanmış bir sürümün satırları
+//          değişmezdir; değişiklik yeni sürüm doğurur.
+//
+// Kural tablolarının ortak altyapı alanları (dokümanda yok, mekanizma gereği):
+//   regionPackageVersionId — hangi sürüme ait
+//   ruleKey                — sürümler arası KARARLI doğal anahtar. Bu olmadan
+//                            iki sürüm farkı "hepsi silindi, hepsi eklendi"
+//                            olarak okunur ve "farkları göster" (:30) işe yaramaz.
+//   rowHash                — anlamsal içeriğin hash'i; fark hesabı tek tamsayı
+//                            karşılaştırmasına iner, kozmetik değişiklik fark üretmez.
+//
+// SAPMA NOTU: Doküman bölüm 12 çoğu kural tablosunun İÇERİĞİNİ Türkçe tarif
+// ediyor ama ALAN ADI vermiyor. Adı verilen yerlerde birebir alındı; yalnızca
+// tarif edilen yerlerde `payload Json` kullanıldı — uydurma alan adı üretmemek için.
+// Pilot bölge içeriği çıkarıldığında (Faz 0) bu payload'lar tiplenecek.
+// =============================================================================
+
+/// Kiracı. Tek kayıt seed edilir, arayüzde hiç görünmez (bölüm 1.1, :18).
+model Organization {
+  id   String @id @default(cuid())
+  /// Kiracı adı — arayüzde görünmez, yalnızca yönetim içindir.
+  name String
+
+  regionPackages RegionPackage[]
+  projects       Project[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("organization")
+}
+
+/// Bölge paketi SOYU (bölüm 12.1). Sürüm taşımaz — sürümler ayrı varlıktır.
+model RegionPackage {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  /// @tier unspecified @own P @src etut-veri-modeli.md:582
+  name      String
+  /// @tier unspecified @own P @src etut-veri-modeli.md:582
+  country   String
+  /// @tier unspecified @own P @src etut-veri-modeli.md:582 — idari birim
+  adminUnit String
+
+  versions RegionPackageVersion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, country, adminUnit, name])
+  @@index([organizationId])
+  @@map("region_package")
+}
+
+/// Bölge paketi SÜRÜMÜ (bölüm 12.1). Projenin dondurduğu birim budur.
+/// `published` olduktan sonra bu sürüme bağlı HİÇBİR kural satırı değişemez —
+/// koruma migration'daki PL/pgSQL trigger'ıdır, uygulama katmanı değil.
+model RegionPackageVersion {
+  id              String        @id @default(cuid())
+  regionPackageId String
+  regionPackage   RegionPackage @relation(fields: [regionPackageId], references: [id], onDelete: Cascade)
+
+  /// @tier unspecified @own P @src etut-veri-modeli.md:582 — sürüm no, ör. "2026.1"
+  version       String
+  /// @tier unspecified @own P @src etut-veri-modeli.md:582 — geçerlilik tarihi
+  effectiveFrom DateTime                   @db.Date
+  status        RegionPackageVersionStatus @default(draft)
+
+  /// Yayım anı. null ise sürüm hâlâ draft.
+  publishedAt DateTime?
+  /// Bu sürümün klonlandığı kaynak sürüm (yeni sürüm daima klonla açılır).
+  clonedFromId String?
+  clonedFrom   RegionPackageVersion?  @relation("VersionLineage", fields: [clonedFromId], references: [id])
+  clones       RegionPackageVersion[] @relation("VersionLineage")
+
+  /// Tablo bazlı içerik hash'leri. Fark hesabında kısa devre sağlar:
+  /// tipik bir fark 20 tablodan 1-2'sine dokunur, gerisi sorgu bile açmaz.
+  tableHashes Json?
+
+  projects           Project[]
+  migrationsFrom     ProjectPackageMigration[] @relation("MigrationFrom")
+  migrationsTo       ProjectPackageMigration[] @relation("MigrationTo")
+
+  zoningRuleSets           ZoningRuleSet[]
+  requiredSpaceRules       RequiredSpaceRule[]
+  parkingRules             ParkingRule[]
+  coreRules                CoreRule[]
+  fireSafetyRules          FireSafetyRule[]
+  costItemCatalogs         CostItemCatalog[]
+  costCategoryTrees        CostCategoryTree[]
+  projectExpenseTemplates  ProjectExpenseTemplate[]
+  specificationPackages    SpecificationPackage[]
+  processTemplates         ProcessTemplate[]
+  incentivePrograms        IncentiveProgram[]
+  structuralCoefficientSets StructuralCoefficientSet[]
+  taxAndIndexRules         TaxAndIndexRule[]
+  objectCostMappings       ObjectCostMapping[]
+  spaceShapeFactorRules    SpaceShapeFactorRule[]
+  utilityCoefficientSets   UtilityCoefficientSet[]
+  specialConstraintCatalogs SpecialConstraintCatalog[]
+  facadeMaterialCatalogs   FacadeMaterialCatalog[]
+  spaceTypeCategoryMaps    SpaceTypeCategoryMap[]
+  parametricLumpSumRules   ParametricLumpSumRule[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([regionPackageId, version])
+  @@index([regionPackageId, status])
+  @@map("region_package_version")
+}
+
+/// Bir projenin bir sürümden diğerine geçişi (:30 "yeni sürüme geçir").
+/// Project.regionPackageVersionId set-once'tır; değer→değer değişimi YALNIZCA
+/// aynı transaction'da `applied` bir bu kayıt varsa mümkündür.
+model ProjectPackageMigration {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  fromVersionId String
+  fromVersion   RegionPackageVersion @relation("MigrationFrom", fields: [fromVersionId], references: [id])
+  toVersionId   String
+  toVersion     RegionPackageVersion @relation("MigrationTo", fields: [toVersionId], references: [id])
+
+  status PackageMigrationStatus @default(pending)
+  /// Kullanıcıya gösterilen fark özeti (hangi kural değişti, hangisi bu projeye dokunuyor).
+  diff   Json?
+  /// Ezilmiş değerlerden hangilerinin yeniden onay beklediği.
+  staleOverrides Json?
+
+  appliedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([projectId, status])
+  @@map("project_package_migration")
+}
+
+// ============================================================================
+// Bölüm 12.2 — Kural tabloları (dokümandaki 13 tablo)
+// ============================================================================
+
+/// :583 — emsal hesap yöntemi, yükseklik ölçüm referansı, emsal harici kurallar
+model ZoningRuleSet {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:583 — emsal hesap yöntemi
+  farCalculationBasis   FarCalculationBasis
+  /// @own P @src etut-veri-modeli.md:583 — yükseklik ölçüm referansı
+  heightReferenceMethod HeightReferenceMethod
+  /// @own P @src etut-veri-modeli.md:583 — emsal harici alan kuralları.
+  /// Doküman alan adı vermiyor, yalnızca tarif ediyor.
+  farExemptionRules     Json?
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@map("zoning_rule_set")
+}
+
+/// :584 — mekan tipi, tetikleyici (bağımsız bölüm sayısı / alan / güç / yükseklik), eşik, alan formülü
+model RequiredSpaceRule {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:584 — hangi servis mekanı
+  serviceSpaceType ServiceSpaceType
+  /// @own P @src etut-veri-modeli.md:584 — tetikleyici: unitCount · area · power · height
+  triggerType      String
+  /// @own P @src etut-veri-modeli.md:584 — eşik değeri
+  threshold        Decimal              @db.Decimal(18, 4)
+  /// @own P @src etut-veri-modeli.md:584 — alan formülü (sürücü değişkene bağlı)
+  areaFormula      String?
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@map("required_space_rule")
+}
+
+/// :585 — ihtiyaç formülü, park yeri boyutları, rampa eğim sınırı, engelli oranı
+model ParkingRule {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:585 — ihtiyaç formülü
+  requirementFormula   String
+  /// @own P @src etut-veri-modeli.md:585 — park yeri boyutları
+  spaceWidth           Decimal  @db.Decimal(6, 2)
+  spaceLength          Decimal  @db.Decimal(6, 2)
+  /// @own P @src etut-veri-modeli.md:585 — rampa eğim sınırı (:454 maksimumu)
+  maxRampSlope         Decimal  @db.Decimal(5, 4)
+  /// @own P @src etut-veri-modeli.md:585 — engelli park oranı (:444)
+  accessibleRatio      Decimal  @db.Decimal(5, 4)
+  /// @own P @src etut-veri-modeli.md:447 — manevra koridoru genişliği
+  maneuveringAisleWidth Decimal @db.Decimal(6, 2)
+  /// @own P @src etut-veri-modeli.md:446 — bisiklet park oranı
+  bicycleRatio         Decimal? @db.Decimal(5, 4)
+  /// @own P @src etut-veri-modeli.md:445 — elektrikli şarj noktası oranı/zorunlu adet
+  electricChargingRatio Decimal? @db.Decimal(5, 4)
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@map("parking_rule")
+}
+
+/// :586 — asansör eşikleri, minimum kabin ölçüleri, merdiven genişlikleri, kaçış mesafeleri
+model CoreRule {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:348 — asansör zorunluluk eşiği (kat/yükseklik)
+  elevatorRequiredFloorThreshold  Int?
+  elevatorRequiredHeightThreshold Decimal? @db.Decimal(6, 2)
+  /// @own P @src etut-veri-modeli.md:348 — minimum asansör adedi
+  minElevatorCount                Int?
+  /// @own P @src etut-veri-modeli.md:348 — sedye asansörü zorunluluğu ve minimum kabin ölçüsü
+  stretcherElevatorRequired       Boolean?
+  minStretcherCabinWidth          Decimal? @db.Decimal(6, 2)
+  minStretcherCabinDepth          Decimal? @db.Decimal(6, 2)
+  /// @own P @src etut-veri-modeli.md:348 — yangın asansörü eşiği
+  fireElevatorHeightThreshold     Decimal? @db.Decimal(6, 2)
+  /// @own P @src etut-veri-modeli.md:586 — merdiven genişlikleri
+  minStairWidth                   Decimal? @db.Decimal(6, 2)
+  /// @own P @src etut-veri-modeli.md:586 — kaçış mesafeleri
+  maxEscapeDistance               Decimal? @db.Decimal(6, 2)
+  /// @own P @src etut-veri-modeli.md:332 — asansör kapasitesi kg/kişi katsayısı
+  /// (doküman ":332 ≈ kişi × 75" diyor; 75 KODA GÖMÜLEMEZ — ilke 1)
+  elevatorKgPerPerson             Decimal? @db.Decimal(6, 2)
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@map("core_rule")
+}
+
+/// :587 — pompa/sprinkler/basınçlandırma eşikleri, yangın merdiveni şartları
+model FireSafetyRule {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:416 — yangın pompası bina yüksekliği eşiği
+  firePumpHeightThreshold   Decimal? @db.Decimal(6, 2)
+  /// @own P @src etut-veri-modeli.md:416 — sprinkler zorunluluk eşiği
+  sprinklerAreaThreshold    Decimal? @db.Decimal(12, 2)
+  /// @own P @src etut-veri-modeli.md:416 — dedektör kapsama alanı (m²/dedektör)
+  detectorCoverageArea      Decimal? @db.Decimal(8, 2)
+  /// @own P @src etut-veri-modeli.md:587 — basınçlandırma eşiği
+  pressurizationThreshold   Decimal? @db.Decimal(6, 2)
+  /// @own P @src etut-veri-modeli.md:412 — yangın rezerv hacmi
+  fireReserveVolume         Decimal? @db.Decimal(10, 2)
+  /// @own P @src etut-veri-modeli.md:587 — yangın merdiveni şartları (tarif, alan adı yok)
+  fireStairRequirements     Json?
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@map("fire_safety_rule")
+}
+
+/// :588 — kalem kodu, ad, birim, kategori, açıklık düşüm kuralı
+/// İLKE 6: açıklık düşümü kuralı KALEM BAZINDA merkezî tanımlıdır, burada yaşar.
+model CostItemCatalog {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:588
+  costItemCode            String
+  /// @own P @src etut-veri-modeli.md:588
+  name                    String
+  /// @own P @src etut-veri-modeli.md:588
+  unit                    String
+  /// @own P @src etut-veri-modeli.md:588 — CostCategoryTree.ruleKey'e mantıksal referans
+  category                String
+  /// @own P @src etut-veri-modeli.md:588, kural tanımı :517-522
+  openingDeductionRule    OpeningDeductionRule @default(none)
+  /// @own P @src etut-veri-modeli.md:521 — above_threshold kuralının eşiği (ör. 0,5 m²).
+  /// Doküman eşiğe alan adı vermiyor; KODA GÖMÜLEMEZ olduğu için burada.
+  openingDeductionThreshold Decimal?           @db.Decimal(8, 3)
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@unique([regionPackageVersionId, costItemCode])
+  @@map("cost_item_catalog")
+}
+
+/// :589 — kaba/ince/diğer kırılımı (bölgeye göre değişir)
+model CostCategoryTree {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:589
+  name           String
+  /// @own P @src etut-veri-modeli.md:589 — ağaç yapısı için üst kategori ruleKey'i
+  parentRuleKey  String?
+  sortOrder      Int     @default(0)
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@map("cost_category_tree")
+}
+
+/// :590 — denetim bedeli, sigorta primi, abonelik, teminat komisyonu formülleri
+model ProjectExpenseTemplate {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:590 — gider kalemi adı
+  name    String
+  /// @own P @src etut-veri-modeli.md:590 — hesaplama formülü (sabit tutar değil)
+  formula String
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@map("project_expense_template")
+}
+
+/// :591 + bölüm 11 — kalite seviyeleri ve varsayılanları
+model SpecificationPackage {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:544
+  level    SpecificationLevel
+  /// @own P @src etut-veri-modeli.md:548-560 — kapsam (zemin kaplamaları, doğrama, kapılar…)
+  scope    String
+  /// @own P @src etut-veri-modeli.md:550-560 — mekan tipine göre varsayılanlar.
+  /// Doküman 11 kapsamı tablo olarak veriyor ama alan adı vermiyor.
+  defaults Json
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@map("specification_package")
+}
+
+/// :592 — aşama/adım/süre/bağımlılık şablonu
+model ProcessTemplate {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:592
+  name         String
+  /// @own P @src etut-veri-modeli.md:592 — aşama/adım ağacı, süreler, bağımlılıklar
+  stages       Json
+  /// @own P @src etut-veri-modeli.md — süre bağlı gider tanımları (ilke 9)
+  timeDependentCosts Json?
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@map("process_template")
+}
+
+/// :593 — uygunluk koşulu, hesaplama kuralı, başvuru adımları, ödeme takvimi
+model IncentiveProgram {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:593
+  name                String
+  eligibilityCondition Json
+  calculationRule      String
+  applicationSteps     Json?
+  paymentSchedule      Json?
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@map("incentive_program")
+}
+
+/// :594 + bölüm 10.3 — ampirik katsayılar.
+/// Doküman 10.3 alan adlarını AÇIKÇA veriyor; birebir alındı.
+/// Katsayılar kat adedine ve temel tipine göre ayrışır → anahtarlı koleksiyon.
+model StructuralCoefficientSet {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:528 — ayrışma anahtarı: kat adedi aralığı
+  floorCountMin          Int?
+  floorCountMax          Int?
+  /// @own P @src etut-veri-modeli.md:528 — ayrışma anahtarı: temel tipi
+  foundationType         FoundationType?
+
+  /// @own P @src etut-veri-modeli.md:528 — m³/m² (kalibrasyon referansı ~0,46)
+  concreteVolumePerArea  Decimal @db.Decimal(10, 4)
+  /// @own P @src etut-veri-modeli.md:528 — kg/m³ (kalibrasyon referansı ~85)
+  rebarWeightPerVolume   Decimal @db.Decimal(10, 4)
+  /// @own P @src etut-veri-modeli.md:528 — m²/m³ (kalibrasyon referansı ~3,1)
+  formworkAreaPerVolume  Decimal @db.Decimal(10, 4)
+  /// @own P @src etut-veri-modeli.md:528 — kalıp işçiliği oranı (referans ~%41)
+  formworkLaborRate      Decimal @db.Decimal(10, 4)
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@map("structural_coefficient_set")
+}
+
+/// :595 — vergi oranları, endeksleme serisi
+model TaxAndIndexRule {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:595
+  name      String
+  /// @own P @src etut-veri-modeli.md:595 — oran (ör. KDV)
+  rate      Decimal? @db.Decimal(9, 6)
+  /// @own P @src etut-veri-modeli.md:595 — endeksleme serisi
+  indexSeries Json?
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@map("tax_and_index_rule")
+}
+
+// ============================================================================
+// Bölüm 12.3 — Sürüm 1.1'de eklenen tablolar
+// Gerekçe: dokümanın kendi formüllerindeki katsayıların evi yoktu; ev
+// verilmeseydi koda gömüleceklerdi (ilke 1 ihlali).
+// ============================================================================
+
+/// Bölüm 10.1 — nesne → imalat kalemi eşlemesi.
+/// Alan adları dokümandan birebir (:495).
+/// Bölüm 12'de listelenmemişti; kalem kodu ve formül taşıdığı için sürüme bağlandı.
+model ObjectCostMapping {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:495
+  objectType      String
+  /// @own P @src etut-veri-modeli.md:495
+  objectVariant   String?
+  /// @own P @src etut-veri-modeli.md:495 — CostItemCatalog.costItemCode'a mantıksal referans
+  costItemCode    String
+  /// @own P @src etut-veri-modeli.md:495 — miktar formülü.
+  /// Formüldeki tüm katsayılar (0,2 dönüş payı, 0,2 torba…) BURADA yaşar, kodda değil.
+  quantityFormula String
+  /// @own P @src etut-veri-modeli.md:495
+  conditions      Json?
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@index([regionPackageVersionId, objectType])
+  @@map("object_cost_mapping")
+}
+
+/// Bölüm 1.5 (:54) — G1 çevre tahmini şekil faktörü: `çevre ≈ k × √alan`, "k tipe göre".
+/// Paket satırı yoksa resolver UYARI üretir ve perimeter'ı null bırakır —
+/// koda düşen bir varsayılan ilke 1'i ihlal ederdi.
+model SpaceShapeFactorRule {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:54 — hangi mekan tipi
+  spaceType   SpaceType
+  /// @own P @src etut-veri-modeli.md:54 — k katsayısı (dikdörtgen ≈ 4,2)
+  shapeFactor Decimal   @db.Decimal(8, 4)
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@unique([regionPackageVersionId, spaceType])
+  @@map("space_shape_factor_rule")
+}
+
+/// Bölüm 7 servis mekanı formüllerinin "paket katsayısı" dediği ama tanımlamadığı değerler.
+model UtilityCoefficientSet {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:408 — bağımsız bölüm başına talep gücü (kW)
+  demandPowerPerUnit        Decimal? @db.Decimal(10, 4)
+  /// @own P @src etut-veri-modeli.md:408 — ortak alan güç yoğunluğu (kW/m²)
+  demandPowerPerCommonArea  Decimal? @db.Decimal(10, 6)
+  /// @own P @src etut-veri-modeli.md:408 — trafo gereklilik eşiği (kW)
+  transformerPowerThreshold Decimal? @db.Decimal(10, 2)
+  /// @own P @src etut-veri-modeli.md:412 — bağımsız bölüm başına kişi
+  personsPerUnit            Decimal? @db.Decimal(8, 3)
+  /// @own P @src etut-veri-modeli.md:412 — kişi başına günlük litre
+  litresPerPerson           Decimal? @db.Decimal(8, 2)
+  /// @own P @src etut-veri-modeli.md:420 — jeneratör boyutlandırma katsayısı
+  generatorSizingFactor     Decimal? @db.Decimal(8, 4)
+  /// @own P @src etut-veri-modeli.md:424 — ısı kaybı katsayısı (kcal/m²)
+  heatLossPerArea           Decimal? @db.Decimal(10, 3)
+  /// @own P @src etut-veri-modeli.md:396 — sığınak: m² başına gaz sızdırmaz kapı
+  shelterAreaPerGasProofDoor Decimal? @db.Decimal(10, 3)
+  /// @own P @src etut-veri-modeli.md:391 — sığınak: kişi başına m²
+  shelterAreaPerPerson      Decimal? @db.Decimal(8, 3)
+  /// @own P @src etut-veri-modeli.md:390 — sığınak: bağımsız bölüm başına kapasite katsayısı
+  shelterPersonsPerUnit     Decimal? @db.Decimal(8, 3)
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@map("utility_coefficient_set")
+}
+
+/// Bölüm 3 (:153-154) — 11 maddelik özel kısıt kontrol listesinin TANIMI.
+/// Doküman "paket tanımlı, kullanıcı işaretler" diyor ama listenin evini söylemiyor.
+/// ZoningData.specialConstraints kullanıcının işaretlediği SONUÇTUR, tanım burasıdır.
+model SpecialConstraintCatalog {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:153-154 — i18n anahtarı (Türkçe metin KODA GÖMÜLMEZ)
+  labelKey    String
+  /// @own P @src etut-veri-modeli.md:154 — projeyi bitiren bir kısıt mı
+  isBlocking  Boolean @default(false)
+  sortOrder   Int     @default(0)
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@map("special_constraint_catalog")
+}
+
+/// Bölüm 9 (:479) — cephe malzeme tipleri. Bölgeye göre değişir, kod enum'u değildir.
+model FacadeMaterialCatalog {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:479 — i18n anahtarı
+  labelKey     String
+  /// @own P @src etut-veri-modeli.md:479 — CostItemCatalog.costItemCode'a mantıksal referans
+  costItemCode String?
+
+  facadeMaterials FacadeMaterial[]
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@map("facade_material_catalog")
+}
+
+/// Bölüm 4 (:199, :221-229) — spaceType → category eşlemesi.
+/// Space.category hesaplanan bir alandır ve tipten türer; eşleme veridir.
+/// VARSAYILAN EVRENSELDİR: isRegionOverride=false satırları evrensel varsayılandır,
+/// bölge paketi yalnızca isRegionOverride=true satırıyla EZER.
+model SpaceTypeCategoryMap {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:221-229
+  spaceType        SpaceType
+  /// @own P @src etut-veri-modeli.md:221-229
+  category         SpaceCategory
+  /// @own H @src etut-veri-modeli.md:205 — isWetArea de tipten türer
+  isWetArea        Boolean       @default(false)
+  /// false = evrensel varsayılan · true = bölgenin ezmesi
+  isRegionOverride Boolean       @default(false)
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@unique([regionPackageVersionId, spaceType])
+  @@map("space_type_category_map")
+}
+
+/// Bölüm 13 madde 4 (KAPALI KARAR) — elektrik ve mekanik metraj parametrik götürü:
+/// "sürücü değişkenlere bağlı formül, SABİT TUTAR DEĞİL". Katsayılarının evi yoktu.
+/// İP-10 bunları kalibre edecek.
+model ParametricLumpSumRule {
+  id                     String               @id @default(cuid())
+  regionPackageVersionId String
+  regionPackageVersion   RegionPackageVersion @relation(fields: [regionPackageVersionId], references: [id], onDelete: Cascade)
+  ruleKey                String
+  rowHash                String?
+
+  /// @own P @src etut-veri-modeli.md:604 — disiplin: elektrik · sihhiTesisat · isitmaSogutma · havalandirma
+  discipline     String
+  /// @own P @src etut-veri-modeli.md:604 — sürücü değişken (ör. brüt alan, bağımsız bölüm sayısı)
+  driverVariable String
+  /// @own P @src etut-veri-modeli.md:604 — formül; sabit tutar YASAK
+  formula        String
+  /// @own P @src etut-veri-modeli.md:604 — kalibre edilebilir katsayı
+  coefficient    Decimal @db.Decimal(14, 6)
+  /// @own P @src etut-veri-modeli.md:588 — CostItemCatalog.costItemCode'a mantıksal referans
+  costItemCode   String?
+
+  @@unique([regionPackageVersionId, ruleKey])
+  @@map("parametric_lump_sum_rule")
+}

@@ -1,0 +1,206 @@
+# Datum — Çalışma Kuralları
+
+İnşaat projelerinin **etüt ve fizibilite** aşamasını otomatikleştiren web uygulaması.
+Parselin imar verisi girilir → yapılaşabilir zarf hesaplanır → kat planı üretilir →
+plandan **gerçek metraj** çıkar → kalem bazlı maliyet ve paylaşım senaryosu hesaplanır.
+
+**Teknoloji:** Next.js (App Router) · PostgreSQL · Prisma · TypeScript
+
+---
+
+## 0. En önemli kural: şemayı uydurma
+
+`etut-veri-modeli.md` **otoriter** şema dokümanıdır. Varlıklar, alanlar ve tipler orada tanımlı.
+
+- Alan adları dokümandaki isimlerle **birebir aynı** olmalı. `floorAreaRatio` `floorAreaRatio`
+  kalır. Bir alanı "iyileştirme", yeniden adlandırma, kısaltma açma, çoğullaştırma **yok**.
+- Enum değerleri de birebir — Türkçe tanımlayıcılar dahil (`yeniYapi`, `ayrik`, `radye`,
+  `ebeveynBanyo`). Bunlar **kimliktir**, arayüz metni değil; çevrilmez.
+- Dokümanda olmayan alan **uydurulmaz**. Eksik veya çelişkili bir yer bulursan **sor**,
+  doldurma. Tahmin edilen bir alan adı, sessizce yanlış bir şemadır.
+
+Bir sapma zorunluysa (aşağıdaki ASCII kısıtı gibi) kod içinde `/// SAPMA:` ile işaretle
+ve bu dosyadaki açık kararlar listesine ekle.
+
+---
+
+## 1. Değişmez ilkeler
+
+`mvp-spesifikasyonu.md` §6. İhlal etme.
+
+1. **Yerel hiçbir şey koda gömülmez.** Mevzuat, eşik, katsayı, kalem kodu — hepsi bölge
+   paketinde **veri**. Koda yazılan bir sayı, ikinci bir bölge eklenemez demektir.
+2. **Proje bölge paketi sürümünü dondurur.** Yönetmelik değişimi eski projeyi geriye dönük
+   değiştirmez.
+3. **Metrekare × birim fiyat hesabı yapılmaz.** Her miktar geometriden veya tanımlı formülden çıkar.
+4. **Her nesne semantik kalır.** Serbest çizim yok; geometri serbest, nesne anlamlı.
+5. **Her hesaplanan değer ezilebilir ve ezme işaretlenir.**
+6. **Açıklık düşümü kuralı kalem bazında merkezî tanımlıdır**, her yerde aynı uygulanır.
+7. **Kısıt ihlali engellemez, uyarır.**
+8. **Adlandırma IFC hiyerarşisiyle hizalı** kalır (Block=IfcBuilding, Floor=IfcBuildingStorey,
+   Unit=IfcSpatialZone, Space=IfcSpace…). Dışa aktarım Faz 3'te olsa da isimlendirme baştan doğru.
+9. **Süre bağlı maliyetler süreç adımlarına bağlıdır**, elle girilmez.
+10. **Rapor denetlenebilirdir** — girdi, birim fiyat, miktar, formül görünür.
+
+---
+
+## 2. Konvansiyonlar
+
+- **Kod ve şema tanımlayıcıları İngilizce** (`grossArea`, `floorAreaRatio`, `setbackFront`).
+- **Arayüz metinleri Türkçe, i18n katmanında** (`src/lib/i18n/tr.ts`).
+  **Koda gömülü Türkçe metin yok.** Hata mesajları `DATUM_*` kodu döndürür, `errorMessage()` çevirir.
+- Şema dosyalarındaki `///` açıklamaları yapısal: `@tier`, `@own`, `@src`.
+  `@src` daima dokümandaki satıra işaret eder.
+- Yorumlar ve doküman metni Türkçe.
+
+**ASCII kısıtı:** Prisma enum değerleri `[A-Za-z][A-Za-z0-9_]*` olmak zorunda. Türkçe
+aksanlı değerler normalize edildi ve şemada işaretlendi:
+`brüt→brut` · `sürekli→surekli` · `sürme→surme`. `SpaceCategory` değerleri dokümanda
+yalnızca Türkçe tablo başlığıydı, tanımlayıcı olarak önerildi.
+
+---
+
+## 3. Hesaplanan alan sözleşmesi
+
+Her ezilebilir değer **dört** kolon taşır. Adlandırma **mekanik**:
+
+```
+<alan>ComputedValue    sistemin hesapladığı
+<alan>OverrideValue    kullanıcının yazdığı (varsa)
+<alan>OverrideReason   neden ezildiği
+<alan>                 GENERATED ALWAYS AS (COALESCE(override, computed)) STORED
+```
+
+- Dördüncü kolon **yazılamaz**. Postgres reddeder; `WritablePayload<>` tipi de derleme
+  zamanında engeller. **Asla** doğrudan yazmayı deneme — `ComputedValue` veya
+  `OverrideValue` yaz.
+- Tek doğruluk kaynağı **`prisma/computed-fields.ts`**. Yeni hesaplanan alan eklerken:
+  1. şemaya dört kolonu ekle, 2. registry'ye kaydet, 3. `npm run codegen`, 4. yeni migration.
+- Para ve alan alanları `@db.Decimal` — **float yok**. Üçlünün üç kolonu **aynı** precision/scale.
+- **Provenance bu üçlüde tutulmaz.** Kaynak izlenebilirliği `QuantityLine` seviyesindedir
+  (`sourceObjectType` · `sourceObjectId` · `formula`). Rapor şeffaflığı orada yaşar.
+- `OverrideLedger` view'ı registry'den **üretilir** — elle yazılmadığı için bayatlayamaz.
+  "Bu projedeki tüm ezmeler" tek sorgudur.
+
+Şu an **52 hesaplanan alan, 18 model, 208 kolon**. Bir test dördünün de varlığını doğrular.
+
+---
+
+## 4. Kiracılık
+
+`organizationId` **yalnızca kök varlıklarda**: `Project` ve `RegionPackage`.
+Başka hiçbir tabloda yok; alt varlıklar kiracılığı `Project` üzerinden miras alır.
+
+- Uygulama kodu **daima** `db()` kullanır (`src/lib/db/tenant.ts`) — ham `prisma` değil.
+  Extension kök varlık sorgularını otomatik filtreler.
+- Alt varlık sorguları **kökten** yazılır: `db().project.findFirst({ include: … })`.
+  Extension traversal ile filtreleyemez; alt tablodan doğrudan sorgu **kiracı sızdırır**.
+- Kural "her tabloda organizationId" diye değişirse **tek migration'da, tüm tablolarda
+  birden** değişmeli — asla tablo tablo. Bir test taşıyıcı listesini kilitler.
+- Kimlik katmanı yok. Geldiğinde değişecek **tek yer** `currentOrganizationId()`.
+
+---
+
+## 5. Bölge paketi ve dondurma
+
+```
+RegionPackage (soy)  →  RegionPackageVersion (draft → published → deprecated)
+                            └── 20 kural tablosu (regionPackageVersionId zorunlu)
+Project.regionPackageVersionId  →  SET-ONCE
+```
+
+- Yeni sürüm **klonla** açılır, `draft` iken düzenlenir, `publishVersion()` ile yayımlanır.
+- Yayımdan sonra kural satırları **fiziksel olarak değişmez** — koruma
+  `prisma/sql/immutability.sql` içindeki PL/pgSQL trigger'larıdır, uygulama katmanı değil.
+  `$executeRaw` da aynı duvara çarpar.
+- Proje yalnızca `published` sürüme bağlanabilir. `null→değer` serbest; `değer→değer`
+  yalnızca `applied` bir `ProjectPackageMigration` varsa.
+- **Yeni kural tablosu eklerken üç yeri birden güncelle:** şema ·
+  `VERSION_SCOPED_MODELS` (`src/lib/region-package/version.ts`) ·
+  `frozen_tables` (`prisma/sql/immutability.sql`). Bir test üçünün aynı kümeyi
+  gösterdiğini doğrular — biri unutulursa o tablo dondurulmamış olur ve **ilke 2 sessizce delinir**.
+
+---
+
+## 6. Kademe (K1/K2/K3)
+
+İki ayrı mekanizma:
+
+1. **`Project.tier`** — sıradan enum. **`@default` yok**: süreç modeli :351 sihirbazın ilk
+   ekranında kademeyi açıkça sordurur. Varsayılan koymak dokümanın vermediği kararı uydurmaktır.
+2. **Alan bazlı kademe** — şemada `/// @tier K2 …` açıklaması.
+
+Kademe yalnızca **görünürlüğü** kapatır, asla `NOT NULL` üretmez — "kademe yükseltince
+önceki veriler korunur" ancak böyle veritabanı seviyesinde doğru olur.
+
+**Alan kademesi bölge paketine KONULMAZ.** Paketten gelseydi sürüm yükseltmesi eski bir
+projenin K1 formundaki soruları geriye dönük değiştirirdi — doğrudan ilke 2 ihlali.
+
+---
+
+## 7. Kapsam kilidi
+
+İş paketleri sıralıdır (`mvp-spesifikasyonu.md` §3). **Kapsamı genişletme.**
+
+| | Paket | Durum |
+|---|---|---|
+| İP-1 | Temel altyapı | ✅ tamam |
+| İP-2 | Sihirbaz ve kural motoru, L0 zarf | sırada |
+| İP-3 | Program, çekirdek, servis mekanları, otopark | |
+| İP-4 | Plan motoru (**manuel mod otomatikten önce**) | |
+| İP-5 | Metraj motoru | |
+| İP-6 | Maliyet ve nakit akışı | |
+| İP-7 | Gelir, paylaşım, fizibilite | |
+| İP-8 | Düzenleme ve canlı panel | |
+| İP-9 | Rapor | |
+| İP-10 | Geriye dönük doğrulama (**atlanmamalı**) | |
+
+Şema tüm varlıkları kapsar (ilke 8 gereği adlandırma baştan doğru olsun diye), ama
+**davranış** kendi paketinde yazılır. Alan tablosu olmayan varlıklar minimal stub'tır:
+`id`, ebeveyn FK, zaman damgaları — **hiçbir spekülatif alan yok**.
+
+---
+
+## 8. Açık kararlar
+
+Kod yazarken bunlardan birine dokunuyorsan **önce sor**.
+
+| Konu | Durum |
+|---|---|
+| **Fiyat kütüphanesi ikinci dondurma ekseni** — `priceReferenceDate` bir tarih, tarih dondurmaz. Geri tarihli bir fiyat satırı eklemek altı aylık projeyi yeniden fiyatlar; `etut-veri-modeli.md:28`'in tam olarak yasakladığı şey. `Project.priceListVersionId` gerekebilir. | **İP-6'da çözülmeli** |
+| `QuantityLine` `isOverridden`+`overrideReason` kullanıyor (:534); §1.3 ise üçlüyü tanımlıyor. Dokümanda **iki farklı ezme şekli** var. Birebir korundu, uzlaştırılmadı. | İP-5 |
+| `openingDeductionRule` değerleri snake_case, diğer tüm enum'lar camelCase (:519-522). | İP-5 |
+| `ObjectCostMapping` "çoklu" satırları ifade edemiyor (bir nesne → çok kalem, :508). | İP-5 |
+| `Wall` :508'de `objectType` olarak kullanılıyor ama **hiçbir yerde tanımlı değil**. | İP-5 |
+| Kalite seviyesi 4 mü 3 mü — veri modeli :544 vs süreç modeli :194. | İP-6 |
+| `UnitType` proje kapsamlı mı, organizasyon tipoloji kütüphanesi mi (§13.3). İP-1'de proje kapsamlı varsayıldı. | İP-4 |
+| `FloorTemplate` varlığı (:80) ile `Floor.templateFloorId` (:312) aynı fikir mi? Alan tablosu esas alındı. | İP-4 |
+| §7'nin 6 Türkçe başlıklı varlığı için İngilizce ad **önerildi**. `Elektrik Odası / Trafo` ve `Su Deposu ve Hidrofor` **ikişer nesne** adlandırıyor; tek varlıkta birleştirildi. | adlandırma |
+| `Space.electricalPresetId` ve `Fixture.productRef` — doküman "fk" diyor ama **hedef varlığı tanımlamıyor**. Uydurma model açılmadı. | İP-3/İP-5 |
+| `SurfaceFinish` katalog mu, Space'in çocuğu mu — §2 ile alan tabloları çelişiyor. Katalog varsayıldı. | İP-4 |
+| `SoilData.shoringArea` süreç modeli :126'da (H), veri modelinde K2 (manuel). Veri modeli otoriter alındı. | İP-3 |
+
+`etut-veri-modeli.md` **sürüm 1.1**'e güncellendi; kapatılan çelişkiler dosyanın başındaki
+değişiklik listesinde.
+
+---
+
+## 9. Komutlar
+
+```bash
+npm run db:up          # Postgres (docker compose)
+npm run db:migrate     # migration uygula
+npm run db:seed        # tek organizasyon + boş draft bölge paketi
+npm run dev
+
+npm run codegen        # hesaplanan alan altyapısını üret
+npm run codegen:check   # üretilenler güncel mi (CI)
+npm test               # 63 test
+npm run typecheck
+node scripts/verify-migration.mjs   # migration'ı PGlite'ta çalıştır (Docker gerekmez)
+```
+
+**Migration yazarken:** generated kolonlar ve trigger'lar Prisma şemasından türetilemez.
+`prisma migrate dev --create-only` ile oluştur, sonra `prisma/sql/` altındaki üç dosyayı
+migration'a ekle. `prisma db push` **kullanma** — generated kolonları sıradan kolona
+çevirir ve ezme mekanizmasını sessizce bozar.

@@ -1,0 +1,481 @@
+// =============================================================================
+// Çekirdek ve Servis Mekanları — etut-veri-modeli.md bölüm 6 ve 7
+// Sürüm 1.1: Core artık Block altında (bkz. bölüm 2 düzeltmesi).
+// =============================================================================
+
+/// Çekirdek (:88). Bölüm 2'de adı geçiyor, alan tablosu YOK → minimal stub.
+/// IFC: IfcZone (çekirdek mekânsal bir gruplamadır, fiziksel eleman değil).
+model Core {
+  id      String @id @default(cuid())
+  blockId String @unique
+  block   Block  @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  elevators Elevator[]
+  stairs    Stair[]
+  shafts    Shaft[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("core")
+}
+
+/// Asansör (:327-346). IFC: IfcTransportElement.
+/// Paketten gelen kurallar (:348) CoreRule'da — burada DEĞİL:
+/// zorunluluk eşiği · minimum adet · sedye asansörü ve minimum kabin · yangın asansörü eşiği.
+model Elevator {
+  id     String @id @default(cuid())
+  coreId String
+  core   Core   @relation(fields: [coreId], references: [id], onDelete: Cascade)
+
+  /// @tier K1 @own M @src etut-veri-modeli.md:329
+  count           Int           @default(1)
+  /// @tier K2 @own M @src etut-veri-modeli.md:330
+  elevatorType    ElevatorType?
+  /// @tier K2 @own M @src etut-veri-modeli.md:331
+  capacityPersons Int?
+
+  /// @own H @src etut-veri-modeli.md:332 — "≈ kişi × 75".
+  /// 75 kg/kişi katsayısı CoreRule.elevatorKgPerPerson'dan gelir — KODDA DEĞİL (ilke 1).
+  capacityKgComputedValue  Int?
+  capacityKgOverrideValue  Int?
+  capacityKgOverrideReason String?
+  /// GENERATED
+  capacityKg               Int?
+
+  /// @tier K3 @own M @src etut-veri-modeli.md:333
+  speed Decimal? @db.Decimal(6, 3)
+
+  /// @own H @src etut-veri-modeli.md:334 — kat sayısından
+  stopCountComputedValue  Int?
+  stopCountOverrideValue  Int?
+  stopCountOverrideReason String?
+  /// GENERATED
+  stopCount               Int?
+
+  /// @own H @src etut-veri-modeli.md:335 — seyir yüksekliği
+  travelHeightComputedValue  Decimal? @db.Decimal(8, 3)
+  travelHeightOverrideValue  Decimal? @db.Decimal(8, 3)
+  travelHeightOverrideReason String?
+  /// GENERATED
+  travelHeight               Decimal? @db.Decimal(8, 3)
+
+  /// @tier K2 @own M @src etut-veri-modeli.md:336 — sedye asansöründe paket minimumu
+  cabinWidth  Decimal? @db.Decimal(6, 3)
+  cabinDepth  Decimal? @db.Decimal(6, 3)
+  cabinHeight Decimal? @db.Decimal(6, 3)
+  /// @tier K2 @own M @src etut-veri-modeli.md:337
+  shaftWidth  Decimal? @db.Decimal(6, 3)
+  shaftDepth  Decimal? @db.Decimal(6, 3)
+  /// @tier K3 @own M @src etut-veri-modeli.md:338
+  pitDepth        Decimal? @db.Decimal(6, 3)
+  overheadHeight  Decimal? @db.Decimal(6, 3)
+  /// @tier K3 @own M @src etut-veri-modeli.md:339
+  doorType        ElevatorDoorType?
+  /// @tier K3 @own M @src etut-veri-modeli.md:340
+  doorWidth       Decimal? @db.Decimal(6, 3)
+  /// @tier K2 @own M @src etut-veri-modeli.md:341
+  machineRoomType MachineRoomType?
+  /// @tier K3 @own M @src etut-veri-modeli.md:342
+  driveType       DriveType?
+  /// @tier K2 @own P @src etut-veri-modeli.md:343 — kalite paketinden
+  cabinFinishLevel SpecificationLevel?
+  /// @tier K3 @own M @src etut-veri-modeli.md:344 — kurtarma sistemi
+  hasEmergencyRescue Boolean @default(false)
+  /// @tier K3 @own M @src etut-veri-modeli.md:345 — jeneratör bağlantısı
+  hasBackupPower     Boolean @default(false)
+  /// @tier K3 @own M @src etut-veri-modeli.md:346
+  certificationCost  Decimal? @db.Decimal(14, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([coreId])
+  @@map("elevator")
+}
+
+/// Merdiven (:354-363). IFC: IfcStair.
+model Stair {
+  id     String @id @default(cuid())
+  coreId String
+  core   Core   @relation(fields: [coreId], references: [id], onDelete: Cascade)
+
+  /// @src etut-veri-modeli.md:356
+  stairType  StairType?
+  /// @src etut-veri-modeli.md:357
+  flightType FlightType?
+
+  /// @src etut-veri-modeli.md:358
+  stepWidth   Decimal? @db.Decimal(6, 3)
+  riserHeight Decimal? @db.Decimal(6, 3)
+  treadDepth  Decimal? @db.Decimal(6, 3)
+
+  /// @own H @src etut-veri-modeli.md:359
+  totalStepCountComputedValue  Int?
+  totalStepCountOverrideValue  Int?
+  totalStepCountOverrideReason String?
+  /// GENERATED
+  totalStepCount               Int?
+
+  /// @src etut-veri-modeli.md:360 — sahanlık alanı
+  landingArea Decimal? @db.Decimal(10, 3)
+
+  /// @src etut-veri-modeli.md:361 — doküman "railingType | enum + length (H)" yazıyor,
+  /// yani TEK SATIRDA İKİ ALAN. (H) uzunluğa ait okundu; doküman ikinci alana AD VERMİYOR.
+  /// SAPMA: `railingLength` adı önerilmiştir.
+  railingType RailingType?
+  railingLengthComputedValue  Decimal? @db.Decimal(10, 3)
+  railingLengthOverrideValue  Decimal? @db.Decimal(10, 3)
+  railingLengthOverrideReason String?
+  /// GENERATED
+  railingLength               Decimal? @db.Decimal(10, 3)
+
+  /// @src etut-veri-modeli.md:362
+  treadMaterial TreadMaterial?
+  /// @src etut-veri-modeli.md:363 — yangın merdiveni basınçlandırma
+  isPressurized Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([coreId])
+  @@map("stair")
+}
+
+/// Şaft (:369-373).
+model Shaft {
+  id     String @id @default(cuid())
+  coreId String
+  core   Core   @relation(fields: [coreId], references: [id], onDelete: Cascade)
+
+  /// @src etut-veri-modeli.md:371
+  shaftType ShaftType?
+  /// @src etut-veri-modeli.md:372
+  width     Decimal? @db.Decimal(6, 3)
+  depth     Decimal? @db.Decimal(6, 3)
+  /// @src etut-veri-modeli.md:373 — hangi katlardan geçiyor
+  runsThroughFloors Int[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([coreId])
+  @@map("shaft")
+}
+
+// ============================================================================
+// Servis mekanları (bölüm 7)
+// Zorunluluk bölge paketindeki eşiklerden TÜRER (RequiredSpaceRule); sistem
+// checklist sunar, kullanıcı onaylar. Her biri bodrum planına sabit blok girer.
+//
+// YAPI KARARI: taban tablo + tipe özgü 1-1 uzantı tabloları.
+// Doküman bu seçimi yapmıyor. Tek tablo + Json yükü tip güvenliğini kaybettirirdi
+// (yalnızca Sığınak'ın 18 özel alanı var); tamamen ayrı tablolar ortak alanları
+// altı kez tekrarlardı. Uzantı yaklaşımı ikisinin ortasıdır.
+// ============================================================================
+
+/// Servis mekanı taban tablosu (:383). Temel alanlar dokümandan birebir.
+model ServiceSpace {
+  id      String @id @default(cuid())
+  floorId String
+  floor   Floor  @relation(fields: [floorId], references: [id], onDelete: Cascade)
+
+  /// @src etut-veri-modeli.md:383 — hangi servis mekanı
+  serviceType ServiceSpaceType
+
+  /// @own H @src etut-veri-modeli.md:383 — paket eşiğinden türer
+  isMandatoryComputedValue  Boolean?
+  isMandatoryOverrideValue  Boolean?
+  isMandatoryOverrideReason String?
+  /// GENERATED
+  isMandatory               Boolean?
+
+  /// @src etut-veri-modeli.md:383
+  area        Decimal? @db.Decimal(12, 3)
+  width       Decimal? @db.Decimal(8, 3)
+  length      Decimal? @db.Decimal(8, 3)
+  clearHeight Decimal? @db.Decimal(6, 3)
+  /// @src etut-veri-modeli.md:383 — hangi kat
+  location    String?
+  floorFinish String?
+  wallFinish  String?
+  hasVentilation Boolean @default(false)
+  hasDrainage    Boolean @default(false)
+  hasFireRating  Boolean @default(false)
+  doorType       DoorType?
+
+  shelter        Shelter?
+  electricalRoom ElectricalRoom?
+  waterTank      WaterTank?
+  fireSystem     FireSystem?
+  generator      Generator?
+  heatingCenter  HeatingCenter?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([floorId, serviceType])
+  @@map("service_space")
+}
+
+/// Sığınak (:387-404). Doküman başlığı Türkçe; SAPMA: `Shelter` önerilmiştir.
+model Shelter {
+  id             String       @id @default(cuid())
+  serviceSpaceId String       @unique
+  serviceSpace   ServiceSpace @relation(fields: [serviceSpaceId], references: [id], onDelete: Cascade)
+
+  /// @own H @src etut-veri-modeli.md:389 — paket eşiğinden
+  isRequiredComputedValue  Boolean?
+  isRequiredOverrideValue  Boolean?
+  isRequiredOverrideReason String?
+  /// GENERATED
+  isRequired               Boolean?
+
+  /// @own H @src etut-veri-modeli.md:390 — bağımsız bölüm sayısı × paket katsayısı
+  requiredCapacityPersonsComputedValue  Int?
+  requiredCapacityPersonsOverrideValue  Int?
+  requiredCapacityPersonsOverrideReason String?
+  /// GENERATED
+  requiredCapacityPersons               Int?
+
+  /// @own P @src etut-veri-modeli.md:391 — paketten (UtilityCoefficientSet)
+  areaPerPerson Decimal? @db.Decimal(8, 3)
+
+  /// @own H @src etut-veri-modeli.md:392 — kişi × m²/kişi
+  totalAreaComputedValue  Decimal? @db.Decimal(12, 3)
+  totalAreaOverrideValue  Decimal? @db.Decimal(12, 3)
+  totalAreaOverrideReason String?
+  /// GENERATED
+  totalArea               Decimal? @db.Decimal(12, 3)
+
+  /// @src etut-veri-modeli.md:393
+  shelterType   ShelterType?
+  /// @src etut-veri-modeli.md:394
+  wcCount       Int?
+  showerCount   Int?
+  /// @src etut-veri-modeli.md:395
+  hasKitchenette Boolean @default(false)
+
+  /// @own H @src etut-veri-modeli.md:396 — alandan türer
+  gasProofDoorCountComputedValue  Int?
+  gasProofDoorCountOverrideValue  Int?
+  gasProofDoorCountOverrideReason String?
+  /// GENERATED
+  gasProofDoorCount               Int?
+
+  /// @src etut-veri-modeli.md:397
+  gasProofDoorType        String?
+  /// @src etut-veri-modeli.md:398
+  ventilationSystemType   ShelterVentilationSystemType?
+  /// @src etut-veri-modeli.md:399
+  ventilationUnitCount    Int?
+  /// @src etut-veri-modeli.md:400
+  emergencyExitCount      Int?
+  /// @src etut-veri-modeli.md:401
+  floorFinishType         String?
+  /// @src etut-veri-modeli.md:402 — özel donatı gerektirir
+  wallStructureThickness  Decimal? @db.Decimal(6, 3)
+  /// @src etut-veri-modeli.md:403
+  hasBackupPower          Boolean @default(false)
+  /// @src etut-veri-modeli.md:404
+  alternativeUseWhenIdle  AlternativeUseWhenIdle?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("shelter")
+}
+
+/// Elektrik Odası / Trafo (:408).
+/// NOT: doküman başlığı İKİ NESNE adlandırıyor. Alan kümesi iç içe geçtiği için
+/// tek varlıkta birleştirildi; ayrılması gerekirse açık karar.
+model ElectricalRoom {
+  id             String       @id @default(cuid())
+  serviceSpaceId String       @unique
+  serviceSpace   ServiceSpace @relation(fields: [serviceSpaceId], references: [id], onDelete: Cascade)
+
+  /// @own H @src etut-veri-modeli.md:408 — "talep gücünden".
+  /// Dokümanda H işareti YOK ama açıkça türeyen bir alan (kayda geçen boşluk).
+  isTransformerRequiredComputedValue  Boolean?
+  isTransformerRequiredOverrideValue  Boolean?
+  isTransformerRequiredOverrideReason String?
+  /// GENERATED
+  isTransformerRequired               Boolean?
+
+  /// @own H @src etut-veri-modeli.md:408 — bağımsız bölüm × paket katsayısı + ortak alan.
+  /// Katsayılar UtilityCoefficientSet'ten — KODDA DEĞİL.
+  demandPowerKWComputedValue  Decimal? @db.Decimal(12, 3)
+  demandPowerKWOverrideValue  Decimal? @db.Decimal(12, 3)
+  demandPowerKWOverrideReason String?
+  /// GENERATED
+  demandPowerKW               Decimal? @db.Decimal(12, 3)
+
+  /// @src etut-veri-modeli.md:408
+  transformerCapacityKVA Decimal? @db.Decimal(12, 2)
+  transformerCount       Int?
+  hasSeparateEntrance    Boolean  @default(false)
+  hasVentilation         Boolean  @default(false)
+  roomArea               Decimal? @db.Decimal(10, 3)
+  distributionPanelCount Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("electrical_room")
+}
+
+/// Su Deposu ve Hidrofor (:412).
+/// NOT: doküman başlığı İKİ NESNE adlandırıyor; tek varlıkta birleştirildi.
+model WaterTank {
+  id             String       @id @default(cuid())
+  serviceSpaceId String       @unique
+  serviceSpace   ServiceSpace @relation(fields: [serviceSpaceId], references: [id], onDelete: Cascade)
+
+  /// @own H @src etut-veri-modeli.md:412 — bağımsız bölüm × kişi × litre.
+  /// Katsayılar UtilityCoefficientSet'ten.
+  domesticWaterVolumeComputedValue  Decimal? @db.Decimal(12, 3)
+  domesticWaterVolumeOverrideValue  Decimal? @db.Decimal(12, 3)
+  domesticWaterVolumeOverrideReason String?
+  /// GENERATED
+  domesticWaterVolume               Decimal? @db.Decimal(12, 3)
+
+  /// @own P @src etut-veri-modeli.md:412 — paketten (FireSafetyRule)
+  fireReserveVolume Decimal? @db.Decimal(12, 3)
+  /// @src etut-veri-modeli.md:412
+  totalVolume       Decimal? @db.Decimal(12, 3)
+  tankMaterial      String?
+  hydrophoreCount   Int?
+  hydrophorePower   Decimal? @db.Decimal(10, 3)
+  submersiblePumpCount Int?
+
+  /// @own H @src etut-veri-modeli.md:412
+  waterproofingAreaComputedValue  Decimal? @db.Decimal(12, 3)
+  waterproofingAreaOverrideValue  Decimal? @db.Decimal(12, 3)
+  waterproofingAreaOverrideReason String?
+  /// GENERATED
+  waterproofingArea               Decimal? @db.Decimal(12, 3)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("water_tank")
+}
+
+/// Yangın Sistemi (:416).
+model FireSystem {
+  id             String       @id @default(cuid())
+  serviceSpaceId String       @unique
+  serviceSpace   ServiceSpace @relation(fields: [serviceSpaceId], references: [id], onDelete: Cascade)
+
+  /// @own H @src etut-veri-modeli.md:416 — "bina yüksekliği eşiği" (FireSafetyRule).
+  /// Dokümanda H işareti YOK ama açıkça türüyor (kayda geçen boşluk).
+  isFirePumpRequiredComputedValue  Boolean?
+  isFirePumpRequiredOverrideValue  Boolean?
+  isFirePumpRequiredOverrideReason String?
+  /// GENERATED
+  isFirePumpRequired               Boolean?
+
+  /// @src etut-veri-modeli.md:416
+  pumpRoomArea Decimal? @db.Decimal(10, 3)
+  pumpCount    Int?
+  pumpPower    Decimal? @db.Decimal(10, 3)
+
+  /// @own H @src etut-veri-modeli.md:416 — eşikten türer (kayda geçen boşluk: H işareti yok)
+  sprinklerRequiredComputedValue  Boolean?
+  sprinklerRequiredOverrideValue  Boolean?
+  sprinklerRequiredOverrideReason String?
+  /// GENERATED
+  sprinklerRequired               Boolean?
+
+  /// @src etut-veri-modeli.md:416
+  sprinklerCoverageArea Decimal? @db.Decimal(12, 3)
+  hydrantCount          Int?
+  fireCabinetCount      Int?
+
+  /// @own H @src etut-veri-modeli.md:416 — "alandan".
+  /// m²/dedektör katsayısı FireSafetyRule.detectorCoverageArea'dan.
+  detectorCountComputedValue  Int?
+  detectorCountOverrideValue  Int?
+  detectorCountOverrideReason String?
+  /// GENERATED
+  detectorCount               Int?
+
+  /// @src etut-veri-modeli.md:416
+  alarmPanelCount        Int?
+  pressurizationFanCount Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("fire_system")
+}
+
+/// Jeneratör (:420).
+model Generator {
+  id             String       @id @default(cuid())
+  serviceSpaceId String       @unique
+  serviceSpace   ServiceSpace @relation(fields: [serviceSpaceId], references: [id], onDelete: Cascade)
+
+  /// @src etut-veri-modeli.md:420
+  scope GeneratorScope?
+
+  /// @own H @src etut-veri-modeli.md:420 — türetme formülü dokümanda VERİLMEMİŞ.
+  /// Boyutlandırma katsayısı UtilityCoefficientSet.generatorSizingFactor'dan.
+  capacityKVAComputedValue  Decimal? @db.Decimal(12, 2)
+  capacityKVAOverrideValue  Decimal? @db.Decimal(12, 2)
+  capacityKVAOverrideReason String?
+  /// GENERATED
+  capacityKVA               Decimal? @db.Decimal(12, 2)
+
+  /// @src etut-veri-modeli.md:420
+  fuelTankVolume         Decimal? @db.Decimal(10, 3)
+  roomArea               Decimal? @db.Decimal(10, 3)
+  exhaustSystemLength    Decimal? @db.Decimal(10, 3)
+  soundproofingArea      Decimal? @db.Decimal(10, 3)
+  ventilationOpeningArea Decimal? @db.Decimal(10, 3)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("generator")
+}
+
+/// Isı Merkezi (:424).
+model HeatingCenter {
+  id             String       @id @default(cuid())
+  serviceSpaceId String       @unique
+  serviceSpace   ServiceSpace @relation(fields: [serviceSpaceId], references: [id], onDelete: Cascade)
+
+  /// @src etut-veri-modeli.md:424
+  heatingSystemType HeatingSystemType?
+  boilerType        String?
+
+  /// @own H @src etut-veri-modeli.md:424 — "ısı kaybı hesabından yaklaşık".
+  /// Isı kaybı katsayısı UtilityCoefficientSet.heatLossPerArea'dan.
+  boilerCapacityKcalComputedValue  Decimal? @db.Decimal(14, 2)
+  boilerCapacityKcalOverrideValue  Decimal? @db.Decimal(14, 2)
+  boilerCapacityKcalOverrideReason String?
+  /// GENERATED
+  boilerCapacityKcal               Decimal? @db.Decimal(14, 2)
+
+  /// @src etut-veri-modeli.md:424
+  boilerCount     Int?
+  roomArea        Decimal? @db.Decimal(10, 3)
+  chimneyHeight   Decimal? @db.Decimal(8, 3)
+  chimneyDiameter Decimal? @db.Decimal(8, 3)
+
+  /// @own H @src etut-veri-modeli.md:424 — bağımsız bölüm sayısı
+  heatMeterCountComputedValue  Int?
+  heatMeterCountOverrideValue  Int?
+  heatMeterCountOverrideReason String?
+  /// GENERATED
+  heatMeterCount               Int?
+
+  /// @src etut-veri-modeli.md:424
+  hotWaterMethod String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("heating_center")
+}

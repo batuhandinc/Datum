@@ -1,0 +1,505 @@
+// =============================================================================
+// Datum — Etüt ve fizibilite otomasyonu
+// Şema kaynağı: etut-veri-modeli.md (sürüm 1.1) — OTORİTER
+//
+// KURAL: Alan adları ve enum değerleri dokümandaki isimlerle BİREBİR AYNIDIR.
+//        Bir alanı "iyileştirme", yeniden adlandırma, çoğullaştırma yok.
+//        Dokümanda olmayan alan uydurulmaz.
+//
+// AÇIKLAMA SÖZDİZİMİ:  /// @tier <K1|K2|K3|unspecified> @own <M|B|H|P|E> @src <dosya:satır>
+//        @tier  — sihirbaz kademesi (bölüm 1.4). Yalnızca GÖRÜNÜRLÜK kapatır,
+//                 asla NOT NULL üretmez: kademe yükseltince veri korunur.
+//        @own   — veri sahipliği (etut-surec-modeli.md:42)
+//                 M=manuel · B=belge · H=sistem hesaplar · P=paketten · E=dış servis
+//        @src   — dokümandaki kaynak satır
+//
+// HESAPLANAN ALANLAR: <alan>ComputedValue / <alan>OverrideValue /
+//        <alan>OverrideReason / <alan>  — sonuncusu Postgres GENERATED ALWAYS AS
+//        (COALESCE(override, computed)) STORED kolonudur ve YAZILAMAZ.
+//        Generated kolonlar migration SQL'inde tanımlanır (Prisma bunları
+//        bildiremez), bu yüzden burada sıradan nullable kolon olarak görünürler.
+//        prisma/computed-fields.ts tek doğruluk kaynağıdır; bir test dört
+//        kolonun da var olduğunu doğrular.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================== Kademe ve sahiplik ==============================
+
+/// Etüt kademesi (bölüm 1.4, :46). Sıralı: K1 < K2 < K3, görünürlük kümülatif.
+enum Tier {
+  K1
+  K2
+  K3
+}
+
+/// Bölge paketi sürüm durumu. published olan satırlar DEĞİŞMEZDİR (ilke 2).
+enum RegionPackageVersionStatus {
+  draft
+  published
+  deprecated
+}
+
+/// Sürüm geçişi kaydı durumu — set-once FK'nın tek meşru istisnası.
+enum PackageMigrationStatus {
+  pending
+  applied
+  rejected
+}
+
+// ============================== Proje ==============================
+
+/// :108 — yeniYapi · kentselDonusum · ilaveKat · guclendirme
+enum ProjectType {
+  yeniYapi
+  kentselDonusum
+  ilaveKat
+  guclendirme
+}
+
+/// :109 — taslak · onEleme · onEtut · detayliEtut · teklifVerildi · sozlesme · iptal
+enum ProjectStatus {
+  taslak
+  onEleme
+  onEtut
+  detayliEtut
+  teklifVerildi
+  sozlesme
+  iptal
+}
+
+// ============================== Parsel ve imar ==============================
+
+/// :124 — tekMalik · hisseli · katMulkiyeti · katIrtifaki
+enum OwnershipType {
+  tekMalik
+  hisseli
+  katMulkiyeti
+  katIrtifaki
+}
+
+/// :131 — doküman değer kümesi vermiyor; yapı durum tespiti kategorileri
+/// dönüşüm mevzuatından gelir. SAPMA: değerler önerilmiştir, dokümanda yok.
+enum StructuralAssessmentStatus {
+  yapilmadi
+  riskliYapi
+  riskliDegil
+  itirazSurecinde
+}
+
+/// :139 — ayrik · bitisik · blok · ikizNizam
+enum BuildingOrder {
+  ayrik
+  bitisik
+  blok
+  ikizNizam
+}
+
+/// :142 — "(paketten: brüt · net)". ASCII SAPMA: "brüt" → brut
+/// (Prisma tanımlayıcıları ASCII olmak zorunda).
+enum FarCalculationBasis {
+  brut
+  net
+}
+
+/// :146 — "(paketten)", değer kümesi verilmemiş.
+/// SAPMA: değerler önerilmiştir; nihai küme ZoningRuleSet'ten gelmeli.
+enum HeightReferenceMethod {
+  tabiiZemin
+  tesviyeEdilmisZemin
+  yolKotu
+  binaGirisKotu
+}
+
+/// :150 — resmiKroki · demServisi · manuel
+enum LevelDataSource {
+  resmiKroki
+  demServisi
+  manuel
+}
+
+// ============================== Zemin ==============================
+
+/// :168 — doküman değer kümesi vermiyor. SAPMA: değerler önerilmiştir.
+enum LiquefactionRisk {
+  yok
+  dusuk
+  orta
+  yuksek
+}
+
+/// :169 — radye · tekil · sürekli · kazikli
+/// ASCII SAPMA: "sürekli" → surekli
+enum FoundationType {
+  radye
+  tekil
+  surekli
+  kazikli
+}
+
+// ============================== Mekan ==============================
+
+/// :221-229 mekan tipolojisi. Değerler dokümandan birebir.
+/// NOT: "sigmanakKoridor" (:228) dokümanda böyle yazılmış; büyük olasılıkla
+/// "siginakKoridor" dizgi hatası. Birebir korundu — doküman düzeltilirse buraya da yansır.
+enum SpaceType {
+  // Yaşam
+  salon
+  oturmaOdasi
+  yatakOdasi
+  ebeveynYatak
+  calismaOdasi
+  cocukOdasi
+  // Islak
+  mutfak
+  banyo
+  ebeveynBanyo
+  wc
+  lavaboNis
+  camasirOdasi
+  // Sirkülasyon
+  hol
+  antre
+  koridor
+  icMerdiven
+  // Depolama
+  giyinmeOdasi
+  kiler
+  depo
+  ankastreDolapNis
+  // Dış
+  balkon
+  fransizBalkon
+  teras
+  bahce
+  camBalkon
+  // Ortak
+  katHolu
+  merdivenHolu
+  binaGirisi
+  sigmanakKoridor
+}
+
+/// :221-229 kategori sütunu. Doküman bunları yalnızca Türkçe TABLO BAŞLIĞI olarak
+/// veriyor ("Yaşam · Islak · Sirkülasyon · Depolama · Dış · Ortak · Servis"),
+/// tanımlayıcı olarak değil. SAPMA: ASCII tanımlayıcılar önerilmiştir.
+/// Eşleme SpaceTypeCategoryMap paket tablosundadır (bölüm 12.3) — varsayılan
+/// evrensel, bölge yalnızca ezer.
+enum SpaceCategory {
+  yasam
+  islak
+  sirkulasyon
+  depolama
+  dis
+  ortak
+  servis
+}
+
+/// :210 — duzAlci · alcipan · kartonpiyer · havuzTavan · yok
+enum CeilingType {
+  duzAlci
+  alcipan
+  kartonpiyer
+  havuzTavan
+  yok
+}
+
+/// :213 — radyator · yerdenIsitma · yok
+enum HeatingElement {
+  radyator
+  yerdenIsitma
+  yok
+}
+
+/// :216 — dogal · saft · mekanik
+enum VentilationType {
+  dogal
+  saft
+  mekanik
+}
+
+/// :207 — doküman değer kümesi vermiyor. SAPMA: değerler önerilmiştir.
+enum SkirtingType {
+  seramik
+  ahsap
+  mdf
+  aluminyum
+  yok
+}
+
+// ============================== Açıklık ==============================
+
+/// :252 — pencere · kapi · balkonKapisi · vitrin · garajKapisi
+enum OpeningType {
+  pencere
+  kapi
+  balkonKapisi
+  vitrin
+  garajKapisi
+}
+
+/// :258 — pvc · aluminyum · ahsap · celik
+enum FrameMaterial {
+  pvc
+  aluminyum
+  ahsap
+  celik
+}
+
+/// :259 — tekKanat · ciftKanat · sürme · vasistas
+/// ASCII SAPMA: "sürme" → surme
+enum FrameType {
+  tekKanat
+  ciftKanat
+  surme
+  vasistas
+}
+
+/// :260 — tekCam · isicam · tripleCam · lamine
+enum GlazingType {
+  tekCam
+  isicam
+  tripleCam
+  lamine
+}
+
+/// :263 — panjur · stor · yok
+enum ShutterType {
+  panjur
+  stor
+  yok
+}
+
+/// :264 — celikKapi · ahsapKapi · camKapi · yanginKapisi
+enum DoorType {
+  celikKapi
+  ahsapKapi
+  camKapi
+  yanginKapisi
+}
+
+// ============================== Donanım ==============================
+
+/// :274 — tam liste dokümandan birebir
+enum FixtureType {
+  klozet
+  gommeRezervuar
+  lavabo
+  lavaboDolabi
+  dusTeknesi
+  dusakabin
+  kuvet
+  evye
+  ocak
+  firin
+  davlumbaz
+  batarya
+  havlupan
+  aynaDolap
+  mutfakDolabi
+  tezgah
+  portmanto
+  dresuar
+}
+
+// ============================== Bağımsız bölüm ve kat ==============================
+
+/// :292 — konut · ticari · ofis · depo
+enum UsageType {
+  konut
+  ticari
+  ofis
+  depo
+}
+
+/// :310 — bodrum · zemin · normal · cekmeKat · catiArasi
+enum FloorType {
+  bodrum
+  zemin
+  normal
+  cekmeKat
+  catiArasi
+}
+
+// ============================== Çekirdek ==============================
+
+/// :330 — insan · yuk · sedye · yangin
+enum ElevatorType {
+  insan
+  yuk
+  sedye
+  yangin
+}
+
+/// :339 — otomatikTeleskopik · merkeziAcilim
+enum ElevatorDoorType {
+  otomatikTeleskopik
+  merkeziAcilim
+}
+
+/// :341 — makineDairesiz · ustMakineDairesi · altMakineDairesi
+enum MachineRoomType {
+  makineDairesiz
+  ustMakineDairesi
+  altMakineDairesi
+}
+
+/// :342 — halatli · hidrolik
+enum DriveType {
+  halatli
+  hidrolik
+}
+
+/// :356 — ana · yangin · servis · icDuplex
+enum StairType {
+  ana
+  yangin
+  servis
+  icDuplex
+}
+
+/// :357 — duzKollu · araSahanlikli · U · daire
+enum FlightType {
+  duzKollu
+  araSahanlikli
+  U
+  daire
+}
+
+/// :362 — mermer · granit · seramik
+enum TreadMaterial {
+  mermer
+  granit
+  seramik
+}
+
+/// :371 — tesisat · havalandirma · cop · asansor · duman
+enum ShaftType {
+  tesisat
+  havalandirma
+  cop
+  asansor
+  duman
+}
+
+/// :361 — doküman değer kümesi vermiyor. SAPMA: değerler önerilmiştir.
+enum RailingType {
+  metal
+  cam
+  ahsap
+  betonarme
+}
+
+// ============================== Servis mekanları ==============================
+
+/// Servis mekanı tipi. Bölüm 7 başlıkları Türkçe ve tanımlayıcı verilmemiş.
+/// SAPMA: İngilizce tanımlayıcılar önerilmiştir. İKİ BAŞLIK İKİ NESNE ADLANDIRIYOR:
+///   "Elektrik Odası / Trafo" (:408)  → electricalRoom + transformer
+///   "Su Deposu ve Hidrofor" (:412)   → waterTank + hydrophore
+/// Bunlar tek varlıkta birleştirildi çünkü alan kümeleri iç içe geçmiş durumda.
+enum ServiceSpaceType {
+  shelter
+  electricalRoom
+  waterTank
+  fireSystem
+  generator
+  heatingCenter
+  janitorApartment
+  wasteRoom
+  bicycleParking
+  cleaningRoom
+  managementOffice
+  socialArea
+}
+
+/// :393 — serpinti · siginak
+enum ShelterType {
+  serpinti
+  siginak
+}
+
+/// :398 — filtreli · dogal
+enum ShelterVentilationSystemType {
+  filtreli
+  dogal
+}
+
+/// :404 — otopark · depo · sosyalAlan
+enum AlternativeUseWhenIdle {
+  otopark
+  depo
+  sosyalAlan
+}
+
+/// :420 — yok · ortakAlan · tamYedekleme
+enum GeneratorScope {
+  yok
+  ortakAlan
+  tamYedekleme
+}
+
+/// :424 — merkezi · bireysel · bolgesel
+enum HeatingSystemType {
+  merkezi
+  bireysel
+  bolgesel
+}
+
+// ============================== Otopark ==============================
+
+/// :442 — acik · kapali · yariAcik · mekanik
+enum ParkingType {
+  acik
+  kapali
+  yariAcik
+  mekanik
+}
+
+// ============================== Çatı ==============================
+
+/// :483 — kirma · duz · teras · celikKarkas
+enum RoofType {
+  kirma
+  duz
+  teras
+  celikKarkas
+}
+
+// ============================== Metraj ve spesifikasyon ==============================
+
+/// :517-522 — açıklık düşümü merkezî kuralı.
+/// NOT: doküman bu dört değeri snake_case yazmış; dokümandaki diğer TÜM enum
+/// değerleri camelCase. Birebir korundu, açık karar olarak kaydedildi.
+enum OpeningDeductionRule {
+  none
+  full
+  above_threshold
+  half_above_threshold
+}
+
+/// :544 — ekonomik · standart · ustSegment · luks
+/// NOT: süreç modeli :194 üç seviye sayıyor (ekonomik/standart/üst).
+/// Veri modeli otoriter kabul edildi; çelişki açık karar olarak kaydedildi.
+enum SpecificationLevel {
+  ekonomik
+  standart
+  ustSegment
+  luks
+}
+
+// ============================== Hak sahibi ==============================
+
+/// Bölüm 3 Stakeholder (sürüm 1.1'de eklendi) — A4'ten türetildi.
+/// SAPMA: tanımlayıcılar önerilmiştir; veri modelinde önceden tanımlı değildi.
+enum AgreementStance {
+  olumlu
+  kararsiz
+  itirazci
+}

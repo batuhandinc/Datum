@@ -1,0 +1,309 @@
+// =============================================================================
+// Otopark, Cephe, Çatı, Peyzaj — etut-veri-modeli.md bölüm 8 ve 9
+// Sürüm 1.1: Facade[] ve Roof artık Block altında; Ramp çoğullaştırıldı.
+// ParkingLayout proje seviyesinde kalır — otopark bloklar arası paylaşılır.
+// =============================================================================
+
+/// Otopark yerleşimi (:436-448).
+model ParkingLayout {
+  id        String  @id @default(cuid())
+  projectId String  @unique
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /// @own H @src etut-veri-modeli.md:438 — paket kuralından (ParkingRule.requirementFormula):
+  /// bağımsız bölüm sayısı veya alan bazlı.
+  requiredCountComputedValue  Int?
+  requiredCountOverrideValue  Int?
+  requiredCountOverrideReason String?
+  /// GENERATED
+  requiredCount               Int?
+
+  /// @own M @src etut-veri-modeli.md:439 — kullanıcı hedefi. Hesaplanan DEĞİL.
+  targetCount Int?
+
+  /// @own H @src etut-veri-modeli.md:440 — yerleşimden
+  plannedCountComputedValue  Int?
+  plannedCountOverrideValue  Int?
+  plannedCountOverrideReason String?
+  /// GENERATED
+  plannedCount               Int?
+
+  /// @own H @src etut-veri-modeli.md:441 — fark; risk göstergesi
+  deficitCountComputedValue  Int?
+  deficitCountOverrideValue  Int?
+  deficitCountOverrideReason String?
+  /// GENERATED
+  deficitCount               Int?
+
+  /// @own M @src etut-veri-modeli.md:442
+  parkingType ParkingType?
+
+  /// @own H/M @src etut-veri-modeli.md:443 — "çözücüden veya elle".
+  /// Doküman bunu H/M işaretliyor: hesaplanan AMA kullanıcının doğrudan
+  /// yazabildiği bir değer. Üçlü mekanizması bunu zaten karşılıyor —
+  /// elle giriş overrideValue'ya düşer ve raporda işaretlenir.
+  basementFloorCountComputedValue  Int?
+  basementFloorCountOverrideValue  Int?
+  basementFloorCountOverrideReason String?
+  /// GENERATED
+  basementFloorCount               Int?
+
+  /// @own H @src etut-veri-modeli.md:444 — engelli park, paket oranından
+  accessibleSpaceCountComputedValue  Int?
+  accessibleSpaceCountOverrideValue  Int?
+  accessibleSpaceCountOverrideReason String?
+  /// GENERATED
+  accessibleSpaceCount               Int?
+
+  /// @own M @src etut-veri-modeli.md:445
+  electricChargingCount Int?
+
+  /// @own H @src etut-veri-modeli.md:446 — paketten (ParkingRule.bicycleRatio)
+  bicycleSpaceCountComputedValue  Int?
+  bicycleSpaceCountOverrideValue  Int?
+  bicycleSpaceCountOverrideReason String?
+  /// GENERATED
+  bicycleSpaceCount               Int?
+
+  /// @own P @src etut-veri-modeli.md:447 — paketten (ParkingRule.maneuveringAisleWidth)
+  maneuveringAisleWidth Decimal? @db.Decimal(6, 2)
+
+  /// @own H @src etut-veri-modeli.md:448 — yer çizgileri
+  markingLengthComputedValue  Decimal? @db.Decimal(12, 3)
+  markingLengthOverrideValue  Decimal? @db.Decimal(12, 3)
+  markingLengthOverrideReason String?
+  /// GENERATED
+  markingLength               Decimal? @db.Decimal(12, 3)
+
+  parkingSpaces ParkingSpace[]
+  ramps         Ramp[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("parking_layout")
+}
+
+/// Park yeri (:452). Boyutlar paket minimumundan (ParkingRule).
+model ParkingSpace {
+  id              String        @id @default(cuid())
+  parkingLayoutId String
+  parkingLayout   ParkingLayout @relation(fields: [parkingLayoutId], references: [id], onDelete: Cascade)
+
+  /// @src etut-veri-modeli.md:452 — paket minimumu
+  width  Decimal? @db.Decimal(6, 2)
+  length Decimal? @db.Decimal(6, 2)
+  /// @src etut-veri-modeli.md:452
+  isAccessible Boolean @default(false)
+  isMechanical Boolean @default(false)
+  /// @src etut-veri-modeli.md:452
+  assignedUnitId String?
+  assignedUnit   Unit?   @relation(fields: [assignedUnitId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([parkingLayoutId])
+  @@index([assignedUnitId])
+  @@map("parking_space")
+}
+
+/// Rampa (:454). IFC: IfcRamp.
+/// "Rampa uzunluğu kot farkından türer ve bodrum alanının ciddi kısmını yer.
+///  En çok unutulan kalemdir." (:456)
+model Ramp {
+  id              String        @id @default(cuid())
+  parkingLayoutId String
+  parkingLayout   ParkingLayout @relation(fields: [parkingLayoutId], references: [id], onDelete: Cascade)
+
+  /// @own P @src etut-veri-modeli.md:454 — paket maksimumu (ParkingRule.maxRampSlope)
+  slope Decimal? @db.Decimal(6, 4)
+  /// @src etut-veri-modeli.md:454
+  width Decimal? @db.Decimal(6, 2)
+
+  /// @own H @src etut-veri-modeli.md:454 — kot farkı ÷ eğim.
+  /// Dokümanda H işareti satır içinde veriliyor.
+  lengthComputedValue  Decimal? @db.Decimal(10, 3)
+  lengthOverrideValue  Decimal? @db.Decimal(10, 3)
+  lengthOverrideReason String?
+  /// GENERATED
+  length               Decimal? @db.Decimal(10, 3)
+
+  /// @src etut-veri-modeli.md:454
+  isCovered     Boolean @default(false)
+  hasHeating    Boolean @default(false)
+  shutterType   ShutterType?
+  turningRadius Decimal? @db.Decimal(6, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([parkingLayoutId])
+  @@map("ramp")
+}
+
+/// Cephe (:466-477). HER CEPHE AYRI KAYIT — kare bina varsayımı YAPILMAZ (:464).
+model Facade {
+  id      String @id @default(cuid())
+  blockId String
+  block   Block  @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  /// @src etut-veri-modeli.md:468
+  facadeNo    Int
+  /// @src etut-veri-modeli.md:468 — yön
+  orientation String?
+
+  /// @own H @src etut-veri-modeli.md:470 — geometriden
+  widthComputedValue  Decimal? @db.Decimal(10, 3)
+  widthOverrideValue  Decimal? @db.Decimal(10, 3)
+  widthOverrideReason String?
+  /// GENERATED
+  width               Decimal? @db.Decimal(10, 3)
+
+  /// @own H @src etut-veri-modeli.md:471
+  heightComputedValue  Decimal? @db.Decimal(10, 3)
+  heightOverrideValue  Decimal? @db.Decimal(10, 3)
+  heightOverrideReason String?
+  /// GENERATED
+  height               Decimal? @db.Decimal(10, 3)
+
+  /// @own H @src etut-veri-modeli.md:472
+  grossAreaComputedValue  Decimal? @db.Decimal(12, 3)
+  grossAreaOverrideValue  Decimal? @db.Decimal(12, 3)
+  grossAreaOverrideReason String?
+  /// GENERATED
+  grossArea               Decimal? @db.Decimal(12, 3)
+
+  /// @own H @src etut-veri-modeli.md:473 — açıklıklardan
+  openingAreaComputedValue  Decimal? @db.Decimal(12, 3)
+  openingAreaOverrideValue  Decimal? @db.Decimal(12, 3)
+  openingAreaOverrideReason String?
+  /// GENERATED
+  openingArea               Decimal? @db.Decimal(12, 3)
+
+  /// @own H @src etut-veri-modeli.md:474
+  netAreaComputedValue  Decimal? @db.Decimal(12, 3)
+  netAreaOverrideValue  Decimal? @db.Decimal(12, 3)
+  netAreaOverrideReason String?
+  /// GENERATED
+  netArea               Decimal? @db.Decimal(12, 3)
+
+  /// @src etut-veri-modeli.md:476
+  insulationType      String?
+  insulationThickness Decimal? @db.Decimal(6, 3)
+
+  /// @own H @src etut-veri-modeli.md:476 — KALEME GÖRE açıklık düşümü.
+  /// Kural CostItemCatalog.openingDeductionRule'dan (ilke 6) — bu alanda değil.
+  insulationAreaComputedValue  Decimal? @db.Decimal(12, 3)
+  insulationAreaOverrideValue  Decimal? @db.Decimal(12, 3)
+  insulationAreaOverrideReason String?
+  /// GENERATED
+  insulationArea               Decimal? @db.Decimal(12, 3)
+
+  /// @src etut-veri-modeli.md:477
+  scaffoldingArea   Decimal? @db.Decimal(12, 3)
+  scaffoldingMonths Int?
+
+  materials FacadeMaterial[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([blockId, facadeNo])
+  @@index([blockId])
+  @@map("facade")
+}
+
+/// Cephe malzemesi (:90, :474).
+/// SAPMA: doküman Facade.materials'ı `json[] — malzeme + oran (%)` olarak veriyor,
+/// AMA bölüm 2 ayrıca bir FacadeMaterial VARLIĞI gösteriyor. Normalize biçim seçildi,
+/// çünkü ancak böyle bölge paketi malzeme kataloğuna FK verilebiliyor (ilke 1).
+/// Aynı veri iki yerde tutulmasın diye Facade'de `materials` Json alanı AÇILMADI.
+model FacadeMaterial {
+  id       String @id @default(cuid())
+  facadeId String
+  facade   Facade @relation(fields: [facadeId], references: [id], onDelete: Cascade)
+
+  /// Bölge paketi malzeme kataloğuna referans (:479 listesi kod enum'u DEĞİL)
+  catalogId String?
+  catalog   FacadeMaterialCatalog? @relation(fields: [catalogId], references: [id], onDelete: SetNull)
+
+  /// @src etut-veri-modeli.md:474 — oran (%)
+  ratioPercent Decimal? @db.Decimal(6, 3)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([facadeId])
+  @@map("facade_material")
+}
+
+/// Çatı (:483). IFC: IfcRoof.
+model Roof {
+  id      String @id @default(cuid())
+  blockId String @unique
+  block   Block  @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  /// @src etut-veri-modeli.md:483
+  roofType          RoofType?
+  structureMaterial String?
+
+  /// @own H @src etut-veri-modeli.md:483 — türetme formülü dokümanda VERİLMEMİŞ
+  structureWeightComputedValue  Decimal? @db.Decimal(14, 3)
+  structureWeightOverrideValue  Decimal? @db.Decimal(14, 3)
+  structureWeightOverrideReason String?
+  /// GENERATED
+  structureWeight               Decimal? @db.Decimal(14, 3)
+
+  /// @src etut-veri-modeli.md:483
+  coveringType String?
+
+  /// @own H @src etut-veri-modeli.md:483
+  coveringAreaComputedValue  Decimal? @db.Decimal(12, 3)
+  coveringAreaOverrideValue  Decimal? @db.Decimal(12, 3)
+  coveringAreaOverrideReason String?
+  /// GENERATED
+  coveringArea               Decimal? @db.Decimal(12, 3)
+
+  /// @src etut-veri-modeli.md:483 — H işareti YOK, birebir korundu
+  insulationType      String?
+  insulationThickness Decimal? @db.Decimal(6, 3)
+  insulationArea      Decimal? @db.Decimal(12, 3)
+  waterproofingType   String?
+  waterproofingArea   Decimal? @db.Decimal(12, 3)
+  gutterType          String?
+  gutterLength        Decimal? @db.Decimal(10, 3)
+  downspoutCount      Int?
+  hasConcreteSlab     Boolean  @default(false)
+  parapetHeight       Decimal? @db.Decimal(6, 3)
+  parapetLength       Decimal? @db.Decimal(10, 3)
+  hasSkylight         Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("roof")
+}
+
+/// Peyzaj (:487). Proje seviyesinde — bloklara bölünmez.
+model Landscape {
+  id        String  @id @default(cuid())
+  projectId String  @unique
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /// @src etut-veri-modeli.md:487
+  gardenWallLength    Decimal? @db.Decimal(10, 3)
+  gardenWallHeight    Decimal? @db.Decimal(6, 3)
+  lawnArea            Decimal? @db.Decimal(12, 3)
+  plantingBudget      Decimal? @db.Decimal(14, 2)
+  irrigationSystem    String?
+  hardscapeArea       Decimal? @db.Decimal(12, 3)
+  outdoorLightingCount Int?
+  playgroundArea      Decimal? @db.Decimal(12, 3)
+  fenceLength         Decimal? @db.Decimal(10, 3)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("landscape")
+}
