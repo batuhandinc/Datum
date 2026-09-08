@@ -54,6 +54,15 @@ enum PackageMigrationStatus {
   rejected
 }
 
+/// Fiyat kütüphanesi sürüm durumu. Bölge paketi sürümüyle AYNI yaşam döngüsü
+/// ama AYRI eksen — fiyat yerel mevzuat değil, piyasa verisidir
+/// (etut-portali-proje-dokumani.md §10.5: "fiyat elle girilir, piyasa fiyatı").
+enum PriceListVersionStatus {
+  draft
+  published
+  deprecated
+}
+
 // ============================== Proje ==============================
 
 /// :108 — yeniYapi · kentselDonusum · ilaveKat · guclendirme

@@ -231,6 +231,23 @@ check(
     ledger.rows[0].fieldKey === "netArea",
 );
 
+// ------------------------------------------------- fiyat kütüphanesi stub'ı
+console.log("\nFiyat kütüphanesi sürümü (İP-6 stub'ı)…");
+await db.exec(`
+  INSERT INTO "price_list_version"(id,"organizationId","status","createdAt","updatedAt")
+    VALUES ('pl1','org1','draft',now(),now());
+  UPDATE "project" SET "priceListVersionId"='pl1' WHERE id='p1';
+`);
+const priced = await one(`select "priceListVersionId" v from "project" where id='p1'`);
+check("proje fiyat kütüphanesi sürümüne bağlanabiliyor", priced.v === "pl1");
+
+await expectError(
+  db,
+  `DELETE FROM "price_list_version" WHERE id='pl1'`,
+  "violates RESTRICT setting",
+  "bağlı fiyat sürümü SİLİNEMİYOR (onDelete: Restrict)",
+);
+
 // ---------------------------------------------------------------- özet
 console.log(`\n${pass} geçti, ${fail} başarısız.`);
 process.exit(fail === 0 ? 0 : 1);

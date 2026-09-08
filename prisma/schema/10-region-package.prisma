@@ -27,8 +27,9 @@ model Organization {
   /// Kiracı adı — arayüzde görünmez, yalnızca yönetim içindir.
   name String
 
-  regionPackages RegionPackage[]
-  projects       Project[]
+  regionPackages    RegionPackage[]
+  projects          Project[]
+  priceListVersions PriceListVersion[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

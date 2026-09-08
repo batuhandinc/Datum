@@ -20,7 +20,7 @@ import { PrismaClient } from "@prisma/client";
  * Kural "her tabloda organizationId" diye değişirse TEK MIGRATION'DA, TÜM
  * TABLOLARDA BİRDEN değişmeli — asla tablo tablo.
  */
-export const ORG_SCOPED_MODELS = ["Project", "RegionPackage"] as const;
+export const ORG_SCOPED_MODELS = ["Project", "RegionPackage", "PriceListVersion"] as const;
 
 const SCOPED = new Set<string>(ORG_SCOPED_MODELS);
 

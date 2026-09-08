@@ -38,10 +38,16 @@ model Project {
   currency               String?
 
   /// @tier K1 @own M @src etut-veri-modeli.md:113 — fiyatların referans tarihi.
-  /// AÇIK KARAR: bir TARİH sürüm dondurmaz. Geri tarihli bir fiyat satırı
-  /// eklenirse bu projenin fiyatı değişir — :28'in yasakladığı şey.
-  /// Fiyat kütüphanesi İP-6; o zaman priceListVersionId gerekebilir.
+  /// İP-6'da priceListVersionId ile DEĞİŞTİRİLECEK. Bir tarih sürüm dondurmaz:
+  /// geri tarihli bir fiyat satırı eklenirse bu projenin fiyatı değişir —
+  /// :28'in yasakladığı şey. Alan şimdilik korunuyor (doküman tanımlıyor).
   priceReferenceDate DateTime? @db.Date
+
+  /// Dondurulmuş fiyat kütüphanesi sürümü — bölge paketinden AYRI eksen.
+  /// İP-6'da doldurulacak; şimdi ekleniyor ki maliyet hesabı baştan
+  /// sürüm-bazlı yazılsın. Nullable: mevcut projeler bağlı değil.
+  priceListVersionId String?
+  priceListVersion   PriceListVersion? @relation(fields: [priceListVersionId], references: [id], onDelete: Restrict)
 
   /// @tier — @own M @src etut-veri-modeli.md:114 (Kademe hücresi literal "—")
   notes String?
@@ -65,6 +71,7 @@ model Project {
   @@index([organizationId, status])
   @@index([organizationId, tier])
   @@index([regionPackageVersionId])
+  @@index([priceListVersionId])
   @@map("project")
 }
 

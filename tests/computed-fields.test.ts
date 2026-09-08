@@ -145,6 +145,24 @@ describe("kiracılık", () => {
       .filter(([, , body]) => hasField(body!, "organizationId"))
       .map(([, name]) => name!);
 
-    expect(carriers.sort()).toEqual(["Project", "RegionPackage"]);
+    // Kök = bağımsız adreslenebilen ve kiracıya ait; Project üzerinden
+    // erişilen hiçbir varlık bu alanı taşımaz.
+    // PriceListVersion köktür: projeler ona işaret eder, o projeye değil.
+    expect(carriers.sort()).toEqual(["PriceListVersion", "Project", "RegionPackage"]);
+  });
+
+  it("kod ile şema aynı kök listesini gösteriyor", () => {
+    const client = readFileSync(path.join(ROOT, "src", "lib", "db", "client.ts"), "utf8");
+    const block = /ORG_SCOPED_MODELS = \[([\s\S]*?)\] as const/.exec(client);
+    expect(block).not.toBeNull();
+    const listed = [...block![1]!.matchAll(/"(\w+)"/g)].map((m) => m[1]!);
+
+    const models = [...schema.matchAll(/\bmodel\s+(\w+)\s*\{([\s\S]*?)\n\}/g)];
+    const carriers = models
+      .filter(([, , body]) => hasField(body!, "organizationId"))
+      .map(([, name]) => name!);
+
+    // Biri unutulursa o tablo kiracı filtresinden KAÇAR.
+    expect(listed.sort()).toEqual(carriers.sort());
   });
 });

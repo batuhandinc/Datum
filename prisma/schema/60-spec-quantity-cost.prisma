@@ -161,6 +161,37 @@ model Step {
   @@map("step")
 }
 
+/// Fiyat kütüphanesi sürümü — İP-6'da dolacak STUB.
+///
+/// NEDEN ŞİMDİ EKLENDİ: maliyet hesabı baştan SÜRÜM-BAZLI yazılsın diye.
+/// Fiyatı bir tarihe bağlamak dondurmaz — geri tarihli bir fiyat satırı
+/// eklenirse altı aylık bir projenin fiyatı değişir; etut-veri-modeli.md:28'in
+/// ("Teklif verdiğin bir proje altı ay sonra farklı rakam göstermemeli")
+/// tam olarak yasakladığı şey. Dondurulan şey bir SÜRÜM olmalı, bir tarih değil.
+///
+/// KÖK VARLIK: organizationId taşır. Fiyat kütüphanesi bölge paketinde DEĞİLDİR —
+/// bölge paketi yerel MEVZUATTIR, fiyat ise piyasa verisidir ve elle girilir
+/// (etut-portali-proje-dokumani.md §10.5). Bu yüzden ayrı bir dondurma eksenidir.
+///
+/// İP-6'da eklenecekler: PriceListEntry (kalem kodu, tarih, birim fiyat),
+/// eskime uyarısı (§10.5: "45 gün önce girilmiş, teyit edin"), toplu güncelleme.
+model PriceListVersion {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  publishedAt DateTime?
+  status      PriceListVersionStatus @default(draft)
+
+  projects Project[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, status])
+  @@map("price_list_version")
+}
+
 /// Fizibilite sonucu (:96). Alan tablosu YOK → minimal stub. İP-7.
 model FeasibilityResult {
   id        String  @id @default(cuid())

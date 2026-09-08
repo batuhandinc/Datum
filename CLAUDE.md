@@ -88,8 +88,13 @@ Her ezilebilir değer **dört** kolon taşır. Adlandırma **mekanik**:
 
 ## 4. Kiracılık
 
-`organizationId` **yalnızca kök varlıklarda**: `Project` ve `RegionPackage`.
+`organizationId` **yalnızca kök varlıklarda**: `Project`, `RegionPackage`, `PriceListVersion`.
 Başka hiçbir tabloda yok; alt varlıklar kiracılığı `Project` üzerinden miras alır.
+
+Kök = bağımsız adreslenebilen ve kiracıya ait olan. `PriceListVersion` köktür çünkü
+projeler ona işaret eder, o projeye değil. Liste `ORG_SCOPED_MODELS`
+(`src/lib/db/client.ts`) ile **aynı** olmalı — bir test bunu doğrular; biri
+unutulursa o tablo kiracı filtresinden kaçar.
 
 - Uygulama kodu **daima** `db()` kullanır (`src/lib/db/tenant.ts`) — ham `prisma` değil.
   Extension kök varlık sorgularını otomatik filtreler.
@@ -167,7 +172,7 @@ Kod yazarken bunlardan birine dokunuyorsan **önce sor**.
 
 | Konu | Durum |
 |---|---|
-| **Fiyat kütüphanesi ikinci dondurma ekseni** — `priceReferenceDate` bir tarih, tarih dondurmaz. Geri tarihli bir fiyat satırı eklemek altı aylık projeyi yeniden fiyatlar; `etut-veri-modeli.md:28`'in tam olarak yasakladığı şey. `Project.priceListVersionId` gerekebilir. | **İP-6'da çözülmeli** |
+| **`Project.priceReferenceDate` İP-6'da `priceListVersionId` ile değiştirilecek.** Bir tarih sürüm dondurmaz: geri tarihli bir fiyat satırı eklemek altı aylık projeyi yeniden fiyatlar — `etut-veri-modeli.md:28`'in tam olarak yasakladığı şey. `PriceListVersion` stub'ı ve nullable FK **eklendi** (maliyet baştan sürüm-bazlı yazılsın diye); içi İP-6'da dolacak. `priceReferenceDate` şimdilik duruyor. | **İP-6** |
 | `QuantityLine` `isOverridden`+`overrideReason` kullanıyor (:534); §1.3 ise üçlüyü tanımlıyor. Dokümanda **iki farklı ezme şekli** var. Birebir korundu, uzlaştırılmadı. | İP-5 |
 | `openingDeductionRule` değerleri snake_case, diğer tüm enum'lar camelCase (:519-522). | İP-5 |
 | `ObjectCostMapping` "çoklu" satırları ifade edemiyor (bir nesne → çok kalem, :508). | İP-5 |
