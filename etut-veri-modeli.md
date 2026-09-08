@@ -1,8 +1,21 @@
 # Etüt Veri Modeli ve Detay Spesifikasyonu
 
-**Sürüm:** 1.1
-**Tarih:** 8 Eylül 2026 (1.0: 7 Eylül 2026)
+**Sürüm:** 1.2
+**Tarih:** 9 Eylül 2026 (1.1: 8 Eylül · 1.0: 7 Eylül 2026)
 **Amaç:** Kat planı üretimi ve gerçek metraj için gereken veri derinliğini tanımlamak. Claude Code devir paketinin şema tarafıdır.
+
+**Sürüm 1.2 değişiklikleri** — İP-2 (sihirbaz, kural motoru, L0 zarf) yazılmadan önce:
+
+1. Bölüm 3 — `Parcel`'e coğrafi referans alanları eklendi (yerel metrik çerçeveyi dünyaya bağlar)
+2. Bölüm 3 — `roadFrontages` şeması tanımlandı; kenar indeksi ve rol taşıyor (L0 ötelemesinin girdisi)
+3. Bölüm 3 — `specialConstraints` şeması tanımlandı; işaretin yanında **değer** de taşıyor
+4. Bölüm 3 — `buildableEnvelope` sözleşmesi düzeltildi: `MultiPolygon | null` (öteleme bölebilir/yok edebilir)
+5. Bölüm 3 — mevcut bağımsız bölüm alanlarının kademe çelişkisi kapatıldı (K1)
+6. Bölüm 3 — `pile*` alanlarının "K2–K3" aralığı ayrıştırıldı
+7. Bölüm 12 — `ZoningRuleSet`'e `offsetJoinType` eklendi; yükseklik referansı katalog anahtarına döndü
+8. Bölüm 12.3 — `HeightReferenceCatalog` ve `StakeholderConsentRule` eklendi
+9. Bölüm 12.3 — `SpecialConstraintCatalog`'a etki alanları eklendi (`effectTarget`, `effectKind`)
+10. Bölüm 15 — enum/katalog ayrımı kuralı yazıldı
 
 **Sürüm 1.1 değişiklikleri** — İP-1 şeması yazılmadan önce tespit edilen çelişki ve eksikler:
 
@@ -139,7 +152,10 @@ Organization
 | province / district / neighborhood | text | K1 |
 | block / parcelNo / sheetNo | text | K1 |
 | area | decimal (m²) | K1 |
-| geometry | geojson | K2 |
+| geometry | geojson | K2 (**yerel metrik** — aşağıya bakınız) |
+| centerLatitude / centerLongitude | decimal | K2 (yerel çerçevenin origin'i) |
+| epsgCode | text | K2 (kaynak verinin projeksiyonu, ör. EPSG:5254) |
+| rotation | decimal (derece) | K2 (yerel eksen ile grid kuzeyi arası açı) |
 | ownershipType | enum | K1 (tekMalik · hisseli · katMulkiyeti · katIrtifaki) |
 | ownerCount | int | K1 |
 | encumbrances | json[] | K2 (şerh, ipotek, haciz, irtifak — tip + açıklama + engel mi) |
@@ -148,6 +164,32 @@ Organization
 | existingTotalArea | decimal | K2 |
 | demolitionRequired | bool | K1 |
 | structuralAssessmentStatus | enum | K2 |
+
+> **Kademe düzeltmesi (1.2).** Süreç modeli A1 "mevcut bağımsız bölüm sayısı ve alanları"nı
+> **K2** sayıyordu, bu tablo **K1**. Veri modeli otoriterdir → **K1** geçerli.
+> `existingTotalArea` K2 olarak kalır (alan toplamı ön etütte netleşir).
+
+#### Koordinat sistemi (1.2)
+
+`geometry` GeoJSON **şeklindedir** ama içeriği **yerel metrik** koordinattır:
+origin parselin ağırlık merkezi, birim metre, eksen kaynak projeksiyonun grid ekseni.
+RFC 7946'nın WGS84 enlem/boylam varsayımı **geçerli değildir**.
+
+Ayrım nesne içinde `"crs": "local-metric"` alanıyla açık edilir — bir haritalama
+kütüphanesine besleyip sessizce yanlış sonuç almak mümkün olmasın.
+
+```jsonc
+{ "crs": "local-metric", "type": "Polygon",
+  "coordinates": [[[0,0],[30,0],[30,12],[12,12],[12,25],[0,25],[0,0]]] }
+```
+
+**Neden yerel metrik:** alan ve öteleme hesabı enlem/boylamda yapılamaz. Türk kadastro
+verisi zaten ulusal projeksiyonda (TUREF/TM, EPSG:5253-5259) metrik gelir; resmî parsel
+alanı da o grid koordinatlarından hesaplanır. Grid'i olduğu gibi kullanmak **hukuken
+tutarlı olan**dır — WGS84'e çevirip "gerçek" alan hesaplamak resmî alanla uyuşmaz.
+
+`centerLatitude`/`centerLongitude`/`epsgCode` yerel çerçeveyi dünyaya geri bağlar;
+`rotation` İP-2'de daima **0**'dır (yerel eksen kaynak grid'e hizalıdır).
 
 ### ZoningData
 
@@ -162,8 +204,8 @@ Organization
 | setbackFront / Side / Rear | decimal (m) | K1 |
 | maxFloorCount | int | K1 |
 | maxHeight | decimal (m) | K1 |
-| heightReferenceMethod | enum | K2 (paketten) |
-| roadFrontages | json[] | K2 (cephe no, yol adı, genişlik) |
+| heightReferenceRuleKey | text | K2 (paketten — `HeightReferenceCatalog` anahtarı) |
+| roadFrontages | json[] | K2 (kenar indeksi, rol, yol adı, genişlik) |
 | referenceLevel | decimal | K2 (kot) |
 | cornerLevels | json[] | K3 (köşe kotları) |
 | levelDataSource | enum | K2 (resmiKroki · demServisi · manuel) |
@@ -174,7 +216,35 @@ koruma/sit alanı · mania kotu · askeri yasak bölge · orman sınırı · kı
 
 > Sürprizler imar belgesinde değil plan notlarındadır. Bu liste bir kez kurulunca hiçbiri atlanmaz.
 
+#### Json şekilleri (1.2)
+
+Üç `json[]` alanının şekli tanımlandı; L0 ötelemesi ve kısıt etkileri bunlara dayanıyor.
+
+```jsonc
+// roadFrontages — hangi POLİGON KENARI hangi çekme mesafesini kullanacak.
+// setbackFront/Side/Rear üç skaler; kenarı role bağlayan tek yer burasıdır.
+// Rol verilmemiş kenarlar "side" sayılır ve bu bir UYARI üretir.
+roadFrontages: [{ edgeIndex: 0, role: "front", roadName: "Atatürk Cad.", width: 12.0 }]
+//               role ∈ front | side | rear
+
+// specialConstraints — kullanıcının işareti VE değeri.
+// Katalog etkinin ŞEKLİNİ bildirir (effectTarget/effectKind), değer parsele özeldir:
+// "mania kotu" bu parselde 47,50 m'dir ve maxHeight'ı capler.
+specialConstraints: [{ ruleKey: "maniaKotu", isChecked: true, value: 47.5, note: "…" }]
+```
+
 **Hesaplananlar:** maxFootprint · maxTotalFloorArea · buildableEnvelope · basementGainFromLevelDifference
+
+> **`buildableEnvelope` sözleşmesi (1.2 düzeltmesi).** Tipi `Polygon` değil,
+> **`MultiPolygon | null`**'dır. İçe öteleme içbükey ve L şeklindeki parsellerde poligonu
+> **ikiye bölebilir** (ölçüldü: U parseli, 3,5 m çekme → 2 parça) veya **tamamen yok
+> edebilir** (küçük parsel + büyük çekme → 0 parça). Tekil `Polygon` varsayımı bu iki
+> durumda veri kaybına yol açardı. Yok olma bir **hata değil**, geçerli bir sonuçtur:
+> boş `MultiPolygon` + uyarı döner.
+>
+> `buildableEnvelope` **ötelenmiş poligonun kendisidir**, taban alanı katsayısına
+> indirgenmiş hâli değil. `maxFootprint` ayrı bir sayısal limittir; aşım sessiz bir
+> kırpma değil, kullanıcıya sunulan bir senaryodur (bkz. bölüm 15).
 
 ### SoilData
 
@@ -186,7 +256,8 @@ koruma/sit alanı · mania kotu · askeri yasak bölge · orman sınırı · kı
 | groundwaterLevel | decimal (m) | K2 |
 | liquefactionRisk | enum | K3 |
 | foundationType | enum | K2 (radye · tekil · sürekli · kazikli) |
-| pileRequired / pileCount / pileDepth / pileDiameter | — | K2–K3 |
+| pileRequired | bool | K2 |
+| pileCount / pileDepth / pileDiameter | int / decimal / decimal | K3 |
 | shoringRequired / shoringMethod / shoringArea | — | K2 |
 | adjacentBuildingDistances | json[] | K2 |
 
@@ -631,7 +702,7 @@ sürümü dondurur (bkz. bölüm 1.2).
 
 | Tablo | İçerik |
 |---|---|
-| `ZoningRuleSet` | emsal hesap yöntemi, yükseklik ölçüm referansı, emsal harici kurallar |
+| `ZoningRuleSet` | emsal hesap yöntemi, yükseklik ölçüm referansı (**katalog anahtarı**), emsal harici kurallar, **çekme ötelemesi köşe davranışı** (`offsetJoinType`) |
 | `RequiredSpaceRule` | mekan tipi, tetikleyici (bağımsız bölüm sayısı / alan / güç / yükseklik), eşik, alan formülü |
 | `ParkingRule` | ihtiyaç formülü, park yeri boyutları, rampa eğim sınırı, engelli oranı |
 | `CoreRule` | asansör eşikleri, minimum kabin ölçüleri, merdiven genişlikleri, kaçış mesafeleri |
@@ -656,10 +727,38 @@ sürümü dondurur (bkz. bölüm 1.2).
 | `ObjectCostMapping` | `objectType` · `objectVariant` · `costItemCode` · `quantityFormula` · `conditions` | Bölüm 10.1'de tanımlı ama bölüm 12'de listelenmemişti; kalem kodu ve formül taşıdığı için paket verisidir ve sürüme bağlanmalıdır |
 | `SpaceShapeFactorRule` | `spaceType` → `k` şekil faktörü | Bölüm 1.5'teki `çevre ≈ k × √alan` katsayısı ("k tipe göre, dikdörtgen ~4,2") |
 | `UtilityCoefficientSet` | trafo talep gücü, kişi/daire ve litre/kişi, dedektör kapsama alanı, jeneratör boyutlandırma, kazan ısı kaybı katsayıları | Bölüm 7'deki servis mekanı formüllerinin "paket katsayısı" dediği ama tanımlamadığı değerler |
-| `SpecialConstraintCatalog` | 11 maddelik özel kısıt kontrol listesinin tanımı | Bölüm 3 "paket tanımlı, kullanıcı işaretler" diyor ama listenin nerede durduğunu söylemiyor |
+| `SpecialConstraintCatalog` | 11 maddelik kontrol listesinin tanımı + **etki şekli** (`effectTarget`, `effectKind`) | Bölüm 3 "paket tanımlı, kullanıcı işaretler" diyor ama listenin nerede durduğunu söylemiyor. Etki alanları 1.2'de eklendi — aşağıya bakınız |
 | `FacadeMaterialCatalog` | cephe malzeme tipleri ve varsayılan oranları | Bölüm 9'daki malzeme listesi bölgeye göre değişir |
 | `SpaceTypeCategoryMap` | `spaceType` → `category` eşlemesi | `Space.category` hesaplanan alan ve tipten türer. **Varsayılan eşleme evrenseldir; bölge paketi yalnızca ezebilir.** |
 | `ParametricLumpSumRule` | disiplin · sürücü değişken · formül · katsayı | Bölüm 13 madde 4 kapalı bir karar: elektrik ve mekanik metraj **parametrik götürü**, sabit tutar değil. Katsayılarının evi yoktu; İP-10 bunları kalibre edecek |
+
+### 12.4 Sürüm 1.2'de eklenen tablolar
+
+| Tablo | İçerik | Neden gerekli |
+|---|---|---|
+| `HeightReferenceCatalog` | `ruleKey` · `labelKey` · `sortOrder` | Yükseklik ölçüm referansı **açık uçlu yerel bir sözlüktür**; 1.1'de kod enum'uydu ve değerleri uydurulmuştu — ilke 1 ihlali. Farklı ölçüm referanslı bir bölge eklemek kod + migration gerektiriyordu |
+| `StakeholderConsentRule` | `majorityThreshold` · `objectionPeriodDays` | A4'ün "karar çoğunluğu eşiği" `P` işaretli ve `mvp`:53 çoğunluk göstergesini İP-2 kapsamına koyuyor, ama 20 tablonun hiçbirinde evi yoktu. `proje-dokumani`:49 zaten "paydaş anlaşma kuralları: karar çoğunluğu eşiği, itiraz süreleri" diyor |
+
+#### Özel kısıtların etkisi (1.2)
+
+1.1'de `SpecialConstraintCatalog` yalnızca `labelKey` + `isBlocking` taşıyordu: kullanıcı
+işaretliyor ama **L0'a hiçbir etkisi olmuyordu** — kontrol listesi kozmetik kalıyordu.
+Oysa "mania kotu" bir **sayıdır** ve `maxHeight`'ı capler; "yeşil alan terki" `maxFootprint`'i
+düşürür.
+
+Katalog etkinin **şeklini** bildirir, **değer** parsele özeldir ve `ZoningData.specialConstraints`
+içinde durur:
+
+| Alan | Değerler | Anlam |
+|---|---|---|
+| `effectTarget` | `maxHeight` · `maxFootprint` · `floorAreaRatio` · `none` | Hangi hesaplanan değeri etkiliyor |
+| `effectKind` | `cap` · `multiply` · `subtract` · `none` | Nasıl etkiliyor |
+
+Örnek: `maniaKotu` → `effectTarget: maxHeight`, `effectKind: cap`; kullanıcı bu parsel için
+`value: 47.5` girer → `maxHeight` 47,5 m ile sınırlanır.
+
+Bu ikisi **enum olarak kalır**, katalog tablosuna dönmez: kod her üyeyi ayrı ayrı
+*uygulamak* zorundadır (bkz. bölüm 15).
 
 ---
 
@@ -682,3 +781,62 @@ sürümü dondurur (bkz. bölüm 1.2).
 3. Hesaplama kuralları kataloğu (hangi alan neyden türüyor, formülüyle)
 4. Pilot bölge paketinin doldurulması
 5. Claude Code devir paketi
+
+---
+
+## 15. L0 Zarf Hesabı ve Enum/Katalog Ayrımı *(1.2)*
+
+### 15.1 Enum mü, katalog tablosu mu
+
+İlke 1 "yerel hiçbir şey koda gömülmez" der. Ama her değer kümesi yerel değildir; ayrım şudur:
+
+> **Enum meşrudur:** kod her üyeyi ayrı ayrı **uygulamak** zorundaysa.
+> Yeni bir değer zaten yeni kod gerektirir; enum bunu görünür kılar.
+> *Örnek:* `offsetJoinType` (`miter`|`round`) — iki farklı öteleme algoritması yazıyoruz.
+> `effectKind` (`cap`|`multiply`|`subtract`) — üç farklı aritmetik.
+>
+> **Katalog tablosu zorunludur:** değerler kodun yalnızca **sakladığı ve gösterdiği**
+> açık uçlu bir sözlükse. Yeni bir değer kod değişikliği gerektirmemelidir.
+> *Örnek:* yükseklik ölçüm referansı, özel kısıt listesi, cephe malzemeleri.
+
+1.1'de `heightReferenceMethod` yanlış tarafa düşmüştü: değerleri uydurulmuş bir kod enum'uydu
+ve `ZoningRuleSet` — yani paket verisi — onu kullanıyordu. 1.2'de kataloğa taşındı.
+
+### 15.2 L0 zinciri
+
+```
+parsel poligonu → çekme mesafesi ötelemesi → taban alanı kontrolü → kat adedi → zarf
+```
+
+**İki mod.** `geometry` K2 olduğu için K1'de poligon yoktur:
+
+| Kademe | Hesap | Çıktı |
+|---|---|---|
+| K1 | Skaler | `maxFootprint = alan × TAKS` · `maxTotalFloorArea = alan × emsal` |
+| K2+ | Geometrik | Yukarıdakiler + `buildableEnvelope` (öteleme) |
+
+**Kenar bazlı öteleme.** Tek tip uniform öteleme yanlıştır: `setbackFront/Side/Rear` üç ayrı
+değerdir. Hangi kenarın hangi rolü taşıdığı `roadFrontages[].role` ile belirlenir.
+Köşe davranışı `ZoningRuleSet.offsetJoinType`'tan gelir — **koda gömülü varsayılan yoktur**;
+paket bu değeri vermiyorsa zarf hesaplanmaz ve uyarı üretilir.
+
+> Ölçüm: L şeklinde bir parselde 3 m çekme `miter` ile 222,00 m², `round` ile 223,93 m²
+> verir; 5 m çekmede fark %8,1'e çıkar. Bu bir kütüphane ayrıntısı değil, mevzuat
+> yorumudur — bu yüzden pakettedir.
+
+**Taban alanı aşımı.** Ötelenmiş poligonun alanı `maxFootprint`'i aşarsa sistem **karar vermez,
+senaryo sunar** (bkz. ana doküman 7.2 "sistem senaryo üretir, karar vermez"):
+düzgün içe küçültme, veya seçilen kenardan geri çekme. Seçim yapılmadan zarf ötelenmiş
+poligon olarak kalır ve "taban alanı aşılıyor" uyarısını taşır — ilke 7: engelleme, uyar.
+Kullanıcının seçimi bir **ezme**dir (`buildableEnvelopeOverrideValue` + gerekçe).
+
+**Kat adedi.** `maxFloorCount`'tan gelir. Yalnızca `maxHeight` doluysa kat adedi
+**hesaplanmaz**: yükseklikten kat adedi çıkarmak kat yüksekliğini gerektirir, o da A5'te
+(İP-3) girilir. Bu durumda uyarı üretilir.
+
+**Bodrum kazanımı.** `basementGainFromLevelDifference` İP-2'de **hesaplanmaz** — kuralı bu
+dokümanların hiçbirinde tanımlı değil ve `mvp`:55'in L0 zincirinde de yer almıyor.
+Alan null kalır, uyarı üretilir, kural tanımlandığında İP-3'te doldurulur.
+
+**Emsal harici alanlar.** `maxTotalFloorArea` İP-2'de emsal harici kazançları **içermez** —
+onlar ancak program girildikten sonra (A5, İP-3) bilinir. Sonuç bu uyarıyla birlikte sunulur.
