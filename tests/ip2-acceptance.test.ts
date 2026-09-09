@@ -116,19 +116,24 @@ describe("sentetik test paketi", () => {
     expect(version?.regionPackage.adminUnit).toBe(FIXTURE_ADMIN_UNIT);
   });
 
-  it("yalnızca İP-2'nin ihtiyacı dolu — İP-3 tabloları BOŞ", async () => {
+  it("İP-2'nin ihtiyacı dolu", async () => {
     const where = { regionPackageVersionId: versionId };
     expect(await prisma.zoningRuleSet.count({ where })).toBe(1);
     expect(await prisma.specialConstraintCatalog.count({ where })).toBe(11);
     expect(await prisma.heightReferenceCatalog.count({ where })).toBe(4);
     expect(await prisma.stakeholderConsentRule.count({ where })).toBe(1);
+  });
 
-    // İP-3'ün tabloları bilinçli olarak boş: doldurmak olmayan bir mevzuatı
-    // varmış gibi göstermek olurdu.
-    expect(await prisma.parkingRule.count({ where })).toBe(0);
-    expect(await prisma.requiredSpaceRule.count({ where })).toBe(0);
-    expect(await prisma.coreRule.count({ where })).toBe(0);
-    expect(await prisma.fireSafetyRule.count({ where })).toBe(0);
+  it("İP-4 ve sonrasının tabloları HÂLÂ boş", async () => {
+    // İP-3 kendi tablolarını doldurdu; sonraki paketlerinki bilinçli boş.
+    // Doldurmak, olmayan bir mevzuatı varmış gibi göstermek olurdu.
+    const where = { regionPackageVersionId: versionId };
+    expect(await prisma.costItemCatalog.count({ where })).toBe(0);
+    expect(await prisma.objectCostMapping.count({ where })).toBe(0);
+    expect(await prisma.structuralCoefficientSet.count({ where })).toBe(0);
+    expect(await prisma.processTemplate.count({ where })).toBe(0);
+    expect(await prisma.incentiveProgram.count({ where })).toBe(0);
+    expect(await prisma.facadeMaterialCatalog.count({ where })).toBe(0);
   });
 
   it("yayımdan sonra DEĞİŞTİRİLEMİYOR — yeniden seed gerekir", async () => {

@@ -372,6 +372,30 @@ export const tr = {
     CORE_ESCAPE_DISTANCE_EXCEEDED:
       "Kaçış mesafesi {distance} m; sınır {limit} m.",
 
+    SERVICE_TRIGGER_UNKNOWN:
+      "“{ruleKey}” kuralının tetikleyicisi tanınmıyor ({triggerType}) — zorunluluk belirlenemedi.",
+    SERVICE_DRIVER_MISSING:
+      "“{ruleKey}” kuralı {triggerType} değerini okuyor ama bu ölçü henüz yok.",
+    SERVICE_AREA_FORMULA_INVALID:
+      "“{ruleKey}” kuralının alan formülü geçersiz ({code}) — alan hesaplanmadı.",
+
+    PARKING_FORMULA_INVALID:
+      "Otopark ihtiyaç formülü geçersiz ({code}) — ihtiyaç hesaplanmadı.",
+    PARKING_BASEMENT_AREA_MISSING:
+      "Bodrum kat alanı bilinmiyor — otopark senaryoları üretilemedi.",
+    PARKING_SERVICE_AREA_UNKNOWN:
+      "Zorunlu servis mekanlarının alanı bilinmiyor — otopark senaryoları üretilemedi.",
+    PARKING_NO_SCENARIO:
+      "Servis mekanları ve rampa düşüldükten sonra otoparka alan kalmıyor.",
+    PARKING_LIMIT_REACHED:
+      "{floors} bodrum katına kadar denendi; otopark ihtiyacı hiçbir senaryoda karşılanmadı.",
+    RAMP_SLOPE_MISSING:
+      "Bölge paketinde rampa eğim sınırı yok — rampa boyu hesaplanmadı.",
+    RAMP_DEPTH_MISSING:
+      "Bodrum derinliği bilinmiyor — rampa boyu hesaplanmadı.",
+    RAMP_WIDTH_MISSING:
+      "Rampa genişliği girilmedi — rampa ayak izi hesaplanmadı.",
+
     FORMULA_INPUT_MISSING:
       "Kural formülü “{variable}” değerini okuyor ama bu ölçü henüz girilmedi — hesaplanmadı.",
     FORMULA_DIVISION_BY_ZERO:

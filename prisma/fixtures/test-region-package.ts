@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { publishVersion } from "../../src/lib/region-package/version";
 
 /**
  * ════════════════════════════════════════════════════════════════════════
@@ -175,13 +176,221 @@ export async function loadTestRegionPackage(
     },
   });
 
+  // ==========================================================================
+  // İP-3 KURALLARI — hepsi UYDURMA. Gerçek Türk mevzuatı DEĞİLDİR.
+  //
+  // Amaç yalnızca çekirdek yerleşiminin, servis mekanı motorunun ve otopark
+  // çözücüsünün uçtan uca test edilebilmesi. Pilot bölge paketi geldiğinde
+  // her satır alan uzmanı tarafından değiştirilecektir.
+  // ==========================================================================
+
+  // --- Çekirdek ------------------------------------------------------------
+  await prisma.coreRule.create({
+    data: {
+      regionPackageVersionId,
+      ruleKey: "default",
+      elevatorRequiredFloorThreshold: 4,
+      elevatorRequiredHeightThreshold: "12.50",
+      minElevatorCount: 1,
+      stretcherElevatorRequired: true,
+      minStretcherCabinWidth: "1.20",
+      minStretcherCabinDepth: "2.30",
+      fireElevatorHeightThreshold: "51.50",
+      minStairWidth: "1.20",
+      minCirculationWidth: "1.50",
+      maxEscapeDistance: "30.00",
+      elevatorKgPerPerson: "75.00",
+    },
+  });
+
+  // --- Otopark -------------------------------------------------------------
+  // areaPerSpace park yerinin KENDİ alanı değil, GERÇEK VERİMDİR: kolon
+  // kayıpları, rampa başı ölü alanlar ve dönüş yarıçapları içindedir.
+  // 2,50 × 5,00 = 12,5 m²'lik bir yer, koridorla birlikte ~28 m² tutar.
+  // Bu sayı İP-10 geriye dönük doğrulamada kalibre edilecektir.
+  await prisma.parkingRule.create({
+    data: {
+      regionPackageVersionId,
+      ruleKey: "default",
+      requirementFormula: "ceil(unitCount * 1)",
+      spaceWidth: "2.50",
+      spaceLength: "5.00",
+      maxRampSlope: "0.1800",
+      accessibleRatio: "0.0500",
+      maneuveringAisleWidth: "5.00",
+      bicycleRatio: "0.1000",
+      areaPerSpace: "28.000",
+      accessibleAreaPerSpace: "35.000",
+      bicycleAreaPerSpace: "2.000",
+    },
+  });
+
+  // --- Yangın güvenliği ----------------------------------------------------
+  await prisma.fireSafetyRule.create({
+    data: {
+      regionPackageVersionId,
+      ruleKey: "default",
+      firePumpHeightThreshold: "30.50",
+      sprinklerAreaThreshold: "2000.00",
+      detectorCoverageArea: "60.00",
+      pressurizationThreshold: "21.50",
+      fireReserveVolume: "60.00",
+    },
+  });
+
+  // --- Tesisat katsayıları -------------------------------------------------
+  // Doküman §12.3 bunları "bölüm 7'deki servis mekanı formüllerinin 'paket
+  // katsayısı' dediği ama tanımlamadığı değerler" diye tarif ediyor.
+  await prisma.utilityCoefficientSet.create({
+    data: {
+      regionPackageVersionId,
+      ruleKey: "default",
+      demandPowerPerUnit: "3.0000",
+      demandPowerPerCommonArea: "0.0200",
+      transformerPowerThreshold: "250.0000",
+      personsPerUnit: "3.5000",
+      litresPerPerson: "150.0000",
+      generatorSizingFactor: "0.6000",
+      heatLossPerArea: "60.0000",
+      shelterAreaPerGasProofDoor: "50.0000",
+      shelterAreaPerPerson: "1.0000",
+      shelterPersonsPerUnit: "3.5000",
+    },
+  });
+
+  // --- Zorunlu servis mekanları -------------------------------------------
+  // Tetikleyiciler dokümanın saydığı dört sürücüden (bağımsız bölüm sayısı,
+  // alan, güç, yükseklik). Alan formülleri yayım kapısında doğrulanacak.
+  await prisma.requiredSpaceRule.createMany({
+    data: [
+      {
+        regionPackageVersionId,
+        ruleKey: "shelter",
+        serviceSpaceType: "shelter",
+        triggerType: "unitCount",
+        threshold: "12.0000",
+        areaFormula: "personCount * 1",
+      },
+      {
+        regionPackageVersionId,
+        ruleKey: "electricalRoom",
+        serviceSpaceType: "electricalRoom",
+        triggerType: "demandPowerKW",
+        threshold: "100.0000",
+        areaFormula: "12",
+      },
+      {
+        regionPackageVersionId,
+        ruleKey: "waterTank",
+        serviceSpaceType: "waterTank",
+        triggerType: "unitCount",
+        threshold: "20.0000",
+        areaFormula: "max(personCount * 0.15, 15)",
+      },
+      {
+        regionPackageVersionId,
+        ruleKey: "fireSystem",
+        serviceSpaceType: "fireSystem",
+        triggerType: "buildingHeight",
+        threshold: "30.5000",
+        areaFormula: "20",
+      },
+      {
+        regionPackageVersionId,
+        ruleKey: "generator",
+        serviceSpaceType: "generator",
+        triggerType: "demandPowerKW",
+        threshold: "250.0000",
+        areaFormula: "18",
+      },
+      {
+        regionPackageVersionId,
+        ruleKey: "heatingCenter",
+        serviceSpaceType: "heatingCenter",
+        triggerType: "totalFloorArea",
+        threshold: "3000.0000",
+        areaFormula: "totalFloorArea * 0.004",
+      },
+      {
+        regionPackageVersionId,
+        ruleKey: "janitorApartment",
+        serviceSpaceType: "janitorApartment",
+        triggerType: "unitCount",
+        threshold: "30.0000",
+        areaFormula: "45",
+      },
+      {
+        regionPackageVersionId,
+        ruleKey: "wasteRoom",
+        serviceSpaceType: "wasteRoom",
+        triggerType: "unitCount",
+        threshold: "8.0000",
+        areaFormula: "max(unitCount * 0.15, 6)",
+      },
+      {
+        regionPackageVersionId,
+        ruleKey: "bicycleParking",
+        serviceSpaceType: "bicycleParking",
+        triggerType: "unitCount",
+        threshold: "20.0000",
+        areaFormula: "unitCount * 0.2",
+      },
+    ],
+  });
+
+  // --- Mekan şekil faktörü -------------------------------------------------
+  // §1.5: G1 seviyesinde çevre ≈ k × √alan. Dikdörtgen için k ≈ 4,2.
+  await prisma.spaceShapeFactorRule.createMany({
+    data: (
+      [
+        ["salon", "4.2000"],
+        ["yatakOdasi", "4.2000"],
+        ["mutfak", "4.4000"],
+        ["banyo", "4.4000"],
+        ["hol", "5.0000"],
+        ["koridor", "6.0000"],
+      ] as const
+    ).map(([spaceType, shapeFactor]) => ({
+      regionPackageVersionId,
+      ruleKey: spaceType,
+      spaceType,
+      shapeFactor,
+    })),
+  });
+
+  // --- Mekan tipi → kategori ----------------------------------------------
+  // §12.3: "varsayılan eşleme EVRENSELDİR; bölge paketi yalnızca EZEBİLİR."
+  // Fixture yalnızca birkaç satır koyar; ezme değil, test verisi.
+  await prisma.spaceTypeCategoryMap.createMany({
+    data: (
+      [
+        ["salon", "yasam", false],
+        ["yatakOdasi", "yasam", false],
+        ["mutfak", "islak", true],
+        ["banyo", "islak", true],
+        ["wc", "islak", true],
+        ["hol", "sirkulasyon", false],
+        ["balkon", "dis", false],
+      ] as const
+    ).map(([spaceType, category, isWetArea]) => ({
+      regionPackageVersionId,
+      ruleKey: spaceType,
+      spaceType,
+      category,
+      isWetArea,
+      isRegionOverride: false,
+    })),
+  });
+
   // --- Yayım ---------------------------------------------------------------
   // Sıra önemli: içerik ÖNCE yazılır (draft'ken), status EN SON çevrilir.
   // Ters sırada yazım kendi değişmezlik trigger'ına takılırdı.
-  await prisma.regionPackageVersion.update({
-    where: { id: regionPackageVersionId },
-    data: { status: "published", publishedAt: new Date() },
-  });
+  //
+  // GERÇEK YAYIM KAPISINDAN geçiyoruz: publishVersion rowHash'leri yazar,
+  // tableHashes'i hesaplar ve FORMÜLLERİ DOĞRULAR. Fixture'ın kendi
+  // formülleri de böylece denetlenir — elle status çevirmek onları
+  // doğrulanmadan yayımlardı.
+  await publishVersion(regionPackageVersionId, prisma);
 
   return { regionPackageId: pkg.id, versionId: regionPackageVersionId };
 }

@@ -101,6 +101,32 @@ export const WARNING_CODES = [
   /** Kaçış mesafesi paket sınırını aştı. */
   "CORE_ESCAPE_DISTANCE_EXCEEDED",
 
+  // --- servis mekanı motoru (İP-3) ---
+  /** Paketten tanınmayan bir tetikleyici geldi — zorunluluk hesaplanamadı. */
+  "SERVICE_TRIGGER_UNKNOWN",
+  /** Tetikleyicinin okuduğu ölçü henüz yok (ör. talep gücü katsayısı eksik). */
+  "SERVICE_DRIVER_MISSING",
+  /** Alan formülü geçersiz — yayım kapısını atlamış bir pakette olabilir. */
+  "SERVICE_AREA_FORMULA_INVALID",
+
+  // --- otopark çözücü ve rampa (İP-3) ---
+  /** İhtiyaç formülü geçersiz. */
+  "PARKING_FORMULA_INVALID",
+  /** Bodrum kat alanı bilinmiyor — zarf henüz hesaplanmamış. */
+  "PARKING_BASEMENT_AREA_MISSING",
+  /** Servis mekanı alanı bilinmiyor; 0 saymak havuzu şişirirdi. */
+  "PARKING_SERVICE_AREA_UNKNOWN",
+  /** Hiçbir bodrum sayısında kullanılabilir alan kalmadı. */
+  "PARKING_NO_SCENARIO",
+  /** Korkuluğa çarpıldı: ihtiyaç hiçbir senaryoda karşılanmadı. */
+  "PARKING_LIMIT_REACHED",
+  /** Rampa eğim sınırı paket tarafından verilmemiş. */
+  "RAMP_SLOPE_MISSING",
+  /** Bodrum derinliği bilinmiyor — rampa boyu hesaplanamadı. */
+  "RAMP_DEPTH_MISSING",
+  /** Rampa genişliği yok — ayak izi hesaplanamadı. */
+  "RAMP_WIDTH_MISSING",
+
   // --- formül motoru (İP-3) ---
   // SÖZDİZİMİ hataları burada YOKTUR: onlar yayım anında yakalanır ve yayımı
   // reddeder. Buradakiler yalnızca ÇALIŞMA ZAMANI sorunlarıdır.
