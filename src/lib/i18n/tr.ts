@@ -346,6 +346,19 @@ export const tr = {
     MAJORITY_NOT_REACHED:
       "Karar çoğunluğu sağlanmadı: %{agreed}, eşik %{threshold}.",
 
+    PARKING_RULE_MISSING:
+      "Bölge paketinde otopark kuralı yok ({count} satır bulundu) — otopark hesaplanmadı.",
+    CORE_RULE_MISSING:
+      "Bölge paketinde çekirdek kuralı yok ({count} satır bulundu) — çekirdek yerleştirilmedi.",
+    FIRE_SAFETY_RULE_MISSING:
+      "Bölge paketinde yangın güvenliği kuralı yok ({count} satır bulundu).",
+    UTILITY_COEFFICIENTS_MISSING:
+      "Bölge paketinde tesisat katsayıları yok ({count} satır bulundu) — servis mekanı alanları hesaplanmadı.",
+    REQUIRED_SPACE_RULES_EMPTY:
+      "Bölge paketinde zorunlu servis mekanı kuralı yok — liste boş açıldı.",
+    PARKING_AREA_PER_SPACE_MISSING:
+      "Araç başına alan katsayısı tanımlı değil — kaç araç sığdığı hesaplanmadı.",
+
     FORMULA_INPUT_MISSING:
       "Kural formülü “{variable}” değerini okuyor ama bu ölçü henüz girilmedi — hesaplanmadı.",
     FORMULA_DIVISION_BY_ZERO:

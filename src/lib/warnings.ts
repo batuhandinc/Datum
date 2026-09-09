@@ -70,6 +70,23 @@ export const WARNING_CODES = [
   /** Karar çoğunluğu eşiğine ulaşılmadı. */
   "MAJORITY_NOT_REACHED",
 
+  // --- İP-3 kural tabloları ---
+  // Hepsi aynı sözleşme: kural yoksa hesaplama YAPILMAZ, koda gömülü
+  // varsayılan konmaz (ilke 1). `{count}` kaç satır bulunduğunu söyler —
+  // 0 "paket boş", >1 "hangisi seçilecek doküman tanımlamıyor" demektir.
+  /** Otopark kuralı yok veya birden çok. */
+  "PARKING_RULE_MISSING",
+  /** Çekirdek kuralı yok veya birden çok — çekirdek yerleştirilemez. */
+  "CORE_RULE_MISSING",
+  /** Yangın güvenliği kuralı yok veya birden çok. */
+  "FIRE_SAFETY_RULE_MISSING",
+  /** Tesisat katsayıları yok veya birden çok. */
+  "UTILITY_COEFFICIENTS_MISSING",
+  /** Zorunlu mekan kuralı hiç yok — servis mekanı listesi boş açılır. */
+  "REQUIRED_SPACE_RULES_EMPTY",
+  /** Araç başına alan katsayısı tanımsız — otopark sayımı yapılamaz. */
+  "PARKING_AREA_PER_SPACE_MISSING",
+
   // --- formül motoru (İP-3) ---
   // SÖZDİZİMİ hataları burada YOKTUR: onlar yayım anında yakalanır ve yayımı
   // reddeder. Buradakiler yalnızca ÇALIŞMA ZAMANI sorunlarıdır.

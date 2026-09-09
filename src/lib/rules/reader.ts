@@ -1,8 +1,15 @@
 import type {
+  CoreRule,
+  FireSafetyRule,
   HeightReferenceCatalog,
+  ParkingRule,
   PrismaClient,
+  RequiredSpaceRule,
+  SpaceShapeFactorRule,
+  SpaceTypeCategoryMap,
   SpecialConstraintCatalog,
   StakeholderConsentRule,
+  UtilityCoefficientSet,
   ZoningRuleSet,
 } from "@prisma/client";
 import { prisma, scopedPrisma } from "@/lib/db/client";
@@ -30,8 +37,10 @@ import { WarningCollector, type Warning } from "@/lib/warnings";
  * Bu sözleşme `SpaceShapeFactorRule` şema yorumunda zaten yazılıydı; burada
  * uygulanıyor.
  *
- * KAPSAM: İP-2 yalnızca TİPLİ OKUMA yapar. Formül dili
- * (`ParkingRule.requirementFormula`, `RequiredSpaceRule.areaFormula`) İP-3'e aittir.
+ * FORMÜL: metin formülleri (`ParkingRule.requirementFormula`,
+ * `RequiredSpaceRule.areaFormula`) burada AYRIŞTIRILMAZ — yayım kapısında
+ * (`publishVersion`) zaten doğrulanmışlardır. Okuyucu ham metni verir,
+ * değerlendirme `@/lib/formula` işidir.
  */
 
 export interface RuleReader {
@@ -44,6 +53,15 @@ export interface RuleReader {
   specialConstraints(): Promise<SpecialConstraintCatalog[]>;
   heightReferences(): Promise<HeightReferenceCatalog[]>;
   consentRule(): Promise<StakeholderConsentRule | null>;
+
+  // --- İP-3 ---
+  parkingRule(): Promise<ParkingRule | null>;
+  coreRule(): Promise<CoreRule | null>;
+  fireSafetyRule(): Promise<FireSafetyRule | null>;
+  utilityCoefficients(): Promise<UtilityCoefficientSet | null>;
+  requiredSpaceRules(): Promise<RequiredSpaceRule[]>;
+  spaceShapeFactors(): Promise<SpaceShapeFactorRule[]>;
+  spaceTypeCategories(): Promise<SpaceTypeCategoryMap[]>;
 }
 
 class FrozenRuleReader implements RuleReader {
@@ -103,6 +121,95 @@ class FrozenRuleReader implements RuleReader {
     if (rows.length === 1) return rows[0]!;
     this.collector.addOnce("CONSENT_RULE_MISSING", { count: rows.length });
     return null;
+  }
+
+  // ------------------------------------------------------------------ İP-3
+
+  /**
+   * Tekil kural okuma deseni.
+   *
+   * 0 satır: paket doldurulmamış. >1 satır: hangisinin seçileceğini doküman
+   * TANIMLAMIYOR; birini seçmek uydurma olurdu. İkisinde de uyarı + null.
+   */
+  private async single<T>(
+    read: () => Promise<T[]>,
+    code: Parameters<WarningCollector["addOnce"]>[0],
+  ): Promise<T | null> {
+    if (!this.versionId) return null;
+    const rows = await read();
+    if (rows.length === 1) return rows[0]!;
+    this.collector.addOnce(code, { count: rows.length });
+    return null;
+  }
+
+  async parkingRule(): Promise<ParkingRule | null> {
+    return this.single(
+      () =>
+        this.client.parkingRule.findMany({
+          where: { regionPackageVersionId: this.versionId! },
+          orderBy: { ruleKey: "asc" },
+        }),
+      "PARKING_RULE_MISSING",
+    );
+  }
+
+  async coreRule(): Promise<CoreRule | null> {
+    return this.single(
+      () =>
+        this.client.coreRule.findMany({
+          where: { regionPackageVersionId: this.versionId! },
+          orderBy: { ruleKey: "asc" },
+        }),
+      "CORE_RULE_MISSING",
+    );
+  }
+
+  async fireSafetyRule(): Promise<FireSafetyRule | null> {
+    return this.single(
+      () =>
+        this.client.fireSafetyRule.findMany({
+          where: { regionPackageVersionId: this.versionId! },
+          orderBy: { ruleKey: "asc" },
+        }),
+      "FIRE_SAFETY_RULE_MISSING",
+    );
+  }
+
+  async utilityCoefficients(): Promise<UtilityCoefficientSet | null> {
+    return this.single(
+      () =>
+        this.client.utilityCoefficientSet.findMany({
+          where: { regionPackageVersionId: this.versionId! },
+          orderBy: { ruleKey: "asc" },
+        }),
+      "UTILITY_COEFFICIENTS_MISSING",
+    );
+  }
+
+  async requiredSpaceRules(): Promise<RequiredSpaceRule[]> {
+    if (!this.versionId) return [];
+    const rows = await this.client.requiredSpaceRule.findMany({
+      where: { regionPackageVersionId: this.versionId },
+      orderBy: [{ serviceSpaceType: "asc" }, { ruleKey: "asc" }],
+    });
+    if (rows.length === 0) this.collector.addOnce("REQUIRED_SPACE_RULES_EMPTY");
+    return rows;
+  }
+
+  async spaceShapeFactors(): Promise<SpaceShapeFactorRule[]> {
+    if (!this.versionId) return [];
+    return this.client.spaceShapeFactorRule.findMany({
+      where: { regionPackageVersionId: this.versionId },
+      orderBy: { spaceType: "asc" },
+    });
+  }
+
+  async spaceTypeCategories(): Promise<SpaceTypeCategoryMap[]> {
+    if (!this.versionId) return [];
+    return this.client.spaceTypeCategoryMap.findMany({
+      where: { regionPackageVersionId: this.versionId },
+      orderBy: { spaceType: "asc" },
+    });
   }
 }
 
