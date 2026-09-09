@@ -160,6 +160,37 @@ projenin K1 formundaki soruları geriye dönük değiştirirdi — doğrudan ilk
 
 ---
 
+## 6b. İP-2 katmanları
+
+```
+src/lib/geometry/    SAF — Prisma/Next yok, sunucu ve tarayıcı aynı dosya
+  measure · clipper · offset · frame · schema
+src/lib/rules/       kural okuyucu — kural tablolarını okumanın TEK yolu
+src/lib/envelope/    l0.ts (saf hesap) + service.ts (okur, çağırır, yazar)
+src/lib/warnings.ts  Warning { code, params } — ilke 7'nin altyapısı
+src/lib/fields/      ÜRETİLMİŞ kademe kataloğu (şemadaki @tier'lardan)
+```
+
+- **Kural okuma yalnızca `createRuleReader()` üzerinden.** Kural tabloları
+  `ORG_SCOPED_MODELS`'te değil; doğrudan sorgu kiracı filtresinden geçmez ve
+  sürüm filtresini unutan sorgu YANLIŞ paketi okuyup sessizce yanlış sayı üretir.
+  Bir test bunu kilitler.
+- **Kural yoksa `null` + uyarı** — asla koda gömülü varsayılan (ilke 1).
+  `offsetJoinType` yoksa zarf hesaplanmaz; miter ile round arasında %8'e varan
+  alan farkı var, varsayılan seçmek mevzuat yorumu uydurmak olurdu.
+- **Geometri saf fonksiyondur**, veritabanı gerektirmez. İçe öteleme poligonu
+  BÖLEBİLİR veya YOK EDEBİLİR — ikisi de geçerli sonuç, istisna değil.
+  `buildableEnvelope` bu yüzden `MultiPolygon | null`.
+- **L0'ın iki modu var:** `Parcel.geometry` K2 olduğu için K1'de poligon yok →
+  skaler hesap; K2+ → geometrik.
+- **Taban alanı aşımında sistem KARAR VERMEZ**, uyarır. Zarf kırpılmaz;
+  küçültme yönü kullanıcınındır ve seçimi bir ezmedir.
+- **Uyarı ≠ hata.** `ok: false` yalnızca gerçek hatalar için. Eksik alan asla
+  kaydı engellemez (ilke 7); `warningMessage()` parametre enterpole eder,
+  `errorMessage()` edemez.
+
+---
+
 ## 7. Kapsam kilidi
 
 İş paketleri sıralıdır (`mvp-spesifikasyonu.md` §3). **Kapsamı genişletme.**
@@ -167,8 +198,8 @@ projenin K1 formundaki soruları geriye dönük değiştirirdi — doğrudan ilk
 | | Paket | Durum |
 |---|---|---|
 | İP-1 | Temel altyapı | ✅ tamam |
-| İP-2 | Sihirbaz ve kural motoru, L0 zarf | sırada |
-| İP-3 | Program, çekirdek, servis mekanları, otopark | |
+| İP-2 | Sihirbaz ve kural motoru, L0 zarf | ✅ tamam |
+| İP-3 | Program, çekirdek, servis mekanları, otopark | sırada |
 | İP-4 | Plan motoru (**manuel mod otomatikten önce**) | |
 | İP-5 | Metraj motoru | |
 | İP-6 | Maliyet ve nakit akışı | |
@@ -200,7 +231,11 @@ Kod yazarken bunlardan birine dokunuyorsan **önce sor**.
 | §7'nin 6 Türkçe başlıklı varlığı için İngilizce ad **önerildi**. `Elektrik Odası / Trafo` ve `Su Deposu ve Hidrofor` **ikişer nesne** adlandırıyor; tek varlıkta birleştirildi. | adlandırma |
 | `Space.electricalPresetId` ve `Fixture.productRef` — doküman "fk" diyor ama **hedef varlığı tanımlamıyor**. Uydurma model açılmadı. | İP-3/İP-5 |
 | `SurfaceFinish` katalog mu, Space'in çocuğu mu — §2 ile alan tabloları çelişiyor. Katalog varsayıldı. | İP-4 |
-| `SoilData.shoringArea` süreç modeli :126'da (H), veri modelinde K2 (manuel). Veri modeli otoriter alındı. | İP-3 |
+| `SoilData.shoringArea` süreç modeli A3'te (H), veri modelinde K2 (manuel). Veri modeli otoriter alındı. | İP-3 |
+| **Çoğunluk göstergesi SAKLANMIYOR**, okurken hesaplanıyor. Doküman onu "hesaplanan" sayıyor ama üçlü açılmadı — payların saf toplamı, bayatlama riski yaratmaya değmez. Rapor kalıcılık isterse geri dönülür. | İP-9 |
+| **Kot dış servisi (E sahipliği)** süreç modeli A2/A3'te var ama hiçbir iş paketinde yok; şemada `@own M`. | kapsam boşluğu |
+| **`kat-plani-uretim-mimarisi.md` repoda yok.** L0 İP-2'de yazıldı ama otoriter tanımı İP-4'e ait dokümanda olacaktı; elimizdeki tek tanım `mvp`:55. | İP-4 |
+| Özel kısıtların dokuzunda `effectTarget/effectKind` = `none`. Bir kısıtın emsali mi taban alanını mı düşürdüğü yerel mevzuat sorusu — pilot paket dolduracak. | Faz 0 |
 
 `etut-veri-modeli.md` **sürüm 1.1**'e güncellendi; kapatılan çelişkiler dosyanın başındaki
 değişiklik listesinde.
@@ -218,7 +253,7 @@ npm run dev
 
 npm run codegen        # hesaplanan alan altyapısını üret
 npm run codegen:check   # üretilenler güncel mi (CI)
-npm test               # 182 test
+npm test               # 222 test
 npm run typecheck
 node scripts/verify-migration.mjs   # migration'ı PGlite'ta çalıştır (Docker gerekmez)
 ```

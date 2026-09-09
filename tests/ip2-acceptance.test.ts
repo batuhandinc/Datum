@@ -5,6 +5,12 @@ import { loadTestRegionPackage, FIXTURE_ADMIN_UNIT } from "../prisma/fixtures/te
 import { SEEDED_ORGANIZATION_ID } from "@/lib/db/tenant";
 import { computeAndStoreL0 } from "@/lib/envelope/service";
 import { createRuleReader } from "@/lib/rules/reader";
+import {
+  addStakeholder,
+  computeMajority,
+  saveParcel,
+  saveZoningData,
+} from "@/lib/parcel/repository";
 import { LOCAL_CRS, partCount } from "@/lib/geometry";
 import type { WarningCode } from "@/lib/warnings";
 
@@ -236,6 +242,102 @@ describe("L0 — bitti sayılır ölçütü", () => {
       `SELECT "fieldKey" FROM "OverrideLedger" WHERE "projectId" = 'pOverride'`,
     );
     expect(ledger.map((r) => r.fieldKey)).toContain("maxFootprint");
+  });
+});
+
+describe("A1–A4 repository", () => {
+  it("createProject parsel oluşturmuyor; ilk kayıt oluşturuyor", async () => {
+    await prisma.project.create({
+      data: {
+        id: "pRepo",
+        organizationId: SEEDED_ORGANIZATION_ID,
+        name: "Repo",
+        projectType: "kentselDonusum",
+        tier: "K2",
+      },
+    });
+    expect(await prisma.parcel.findUnique({ where: { projectId: "pRepo" } })).toBeNull();
+
+    await saveParcel("pRepo", { province: "Ankara", area: "800.00" }, prisma);
+    const parcel = await prisma.parcel.findUnique({ where: { projectId: "pRepo" } });
+    expect(parcel?.province).toBe("Ankara");
+  });
+
+  it("yarım kayıt serbest — eksik alan ENGELLEMİYOR", async () => {
+    // A1–A4'ün tüm alanları nullable; ilke 7 gereği eksiklik kaydı durdurmaz.
+    await saveZoningData("pRepo", { groundCoverageRatio: "0.3000" }, prisma);
+    const zoning = await prisma.zoningData.findFirst({
+      where: { parcel: { projectId: "pRepo" } },
+    });
+    expect(Number(zoning?.groundCoverageRatio)).toBeCloseTo(0.3, 6);
+    // Girilmemiş alanlar null kalıyor
+    expect(zoning?.floorAreaRatio).toBeNull();
+    expect(zoning?.maxFloorCount).toBeNull();
+  });
+
+  it("başka organizasyonun projesine yazılamıyor", async () => {
+    await prisma.organization.create({ data: { id: "orgOther", name: "Öteki" } });
+    await prisma.project.create({
+      data: {
+        id: "pOther",
+        organizationId: "orgOther",
+        name: "Öteki",
+        projectType: "yeniYapi",
+        tier: "K1",
+      },
+    });
+    await expect(saveParcel("pOther", { province: "X" }, prisma)).rejects.toThrow(
+      /DATUM_NOT_FOUND/,
+    );
+  });
+});
+
+describe("A4 çoğunluk göstergesi", () => {
+  it("anlaşan pay oranını eşikle karşılaştırıyor", async () => {
+    await createProjectWithZoning({ id: "pMaj" });
+    await addStakeholder("pMaj", { name: "A", shareRatio: "0.5000", agreementStance: "olumlu" }, prisma);
+    await addStakeholder("pMaj", { name: "B", shareRatio: "0.3000", agreementStance: "olumlu" }, prisma);
+    await addStakeholder("pMaj", { name: "C", shareRatio: "0.2000", agreementStance: "itirazci" }, prisma);
+
+    const m = await computeMajority("pMaj", prisma);
+
+    expect(m.stakeholderCount).toBe(3);
+    expect(m.totalShare).toBeCloseTo(1, 6);
+    expect(m.agreedShare).toBeCloseTo(0.8, 6);
+    // Fixture eşiği 0,6667
+    expect(m.threshold).toBeCloseTo(0.6667, 4);
+    expect(m.reached).toBe(true);
+    expect(m.warnings.map((w) => w.code)).not.toContain("MAJORITY_NOT_REACHED");
+  });
+
+  it("eşik altında UYARIR ama engellemez", async () => {
+    await createProjectWithZoning({ id: "pMaj2" });
+    await addStakeholder("pMaj2", { name: "A", shareRatio: "0.5000", agreementStance: "olumlu" }, prisma);
+    await addStakeholder("pMaj2", { name: "B", shareRatio: "0.5000", agreementStance: "kararsiz" }, prisma);
+
+    const m = await computeMajority("pMaj2", prisma);
+    expect(m.agreedShare).toBeCloseTo(0.5, 6);
+    expect(m.reached).toBe(false);
+    expect(m.warnings.map((w) => w.code)).toContain("MAJORITY_NOT_REACHED");
+  });
+
+  it("paylar %100 etmiyorsa uyarıyor", async () => {
+    await createProjectWithZoning({ id: "pMaj3" });
+    await addStakeholder("pMaj3", { name: "A", shareRatio: "0.4000", agreementStance: "olumlu" }, prisma);
+
+    const m = await computeMajority("pMaj3", prisma);
+    expect(m.totalShare).toBeCloseTo(0.4, 6);
+    expect(m.warnings.map((w) => w.code)).toContain("SHARES_DO_NOT_SUM");
+  });
+
+  it("pakete bağlı olmayan projede eşik yok — gösterge hesaplanmıyor", async () => {
+    await createProjectWithZoning({ id: "pMaj4", bind: false });
+    await addStakeholder("pMaj4", { name: "A", shareRatio: "1.0000", agreementStance: "olumlu" }, prisma);
+
+    const m = await computeMajority("pMaj4", prisma);
+    expect(m.threshold).toBeNull();
+    expect(m.reached).toBeNull();
+    expect(m.warnings.map((w) => w.code)).toContain("PACKAGE_NOT_BOUND");
   });
 });
 

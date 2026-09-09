@@ -1,3 +1,5 @@
+import Link from "next/link";
+import type { Route } from "next";
 import { listProjects } from "@/lib/projects/repository";
 import { tr } from "@/lib/i18n/tr";
 import { ProjectForm } from "./project-form";
@@ -48,7 +50,14 @@ export default async function HomePage() {
           <tbody>
             {projects.map((p) => (
               <tr key={p.id}>
-                <td style={cell}>{p.name}</td>
+                <td style={cell}>
+                  <Link
+                    href={`/projects/${p.id}` as Route}
+                    style={{ color: "#18181b" }}
+                  >
+                    {p.name}
+                  </Link>
+                </td>
                 <td style={cell}>{tr.projectType[p.projectType]}</td>
                 <td style={cell}>{tr.tier[p.tier]}</td>
                 <td style={cell}>{tr.projectStatus[p.status]}</td>
