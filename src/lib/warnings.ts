@@ -174,6 +174,28 @@ export const WARNING_CODES = [
   "L2_RESIDUAL_AREA",
   /** Program plakadan büyük — kuyruktaki birimler yerleşemedi. */
   "L2_PROGRAM_EXCEEDS_PLATE",
+
+  // --- manuel bölümleme (İP-4) ---
+  /** Kesme çizgisi en az iki nokta ister. */
+  "PLAN_CUT_INVALID",
+  /**
+   * Kesme çizgisi çekirdeğin veya sirkülasyonun üzerinden geçiyor.
+   *
+   * Engellemez: çekirdek ve sirkülasyon plakadan ZATEN düşülmüştür, dolayısıyla
+   * çizginin orada bir etkisi olmaz. Uyarı, kullanıcının "neden bölünmedi"
+   * diye sormasını engellemek içindir.
+   */
+  "PLAN_CUT_CROSSES_CORE",
+  /** Hiç kesme çizilmemiş — plaka tek parça. */
+  "PLAN_NO_CUTS",
+  /** Kesmelerden çıkan parçalardan bazıları hiçbir bağımsız bölüme atanmadı. */
+  "PLAN_PIECE_UNASSIGNED",
+  /** Parça sayısı birim sayısıyla uyuşmuyor. */
+  "PLAN_PIECE_COUNT_MISMATCH",
+  /** Plaka henüz hesaplanmadı — L0 çalışmamış veya zarf üretilememiş. */
+  "PLAN_PLATE_MISSING",
+  /** Çekirdek yerleşmemiş — erişim kontrolü yapılamaz. */
+  "PLAN_CORE_MISSING",
 ] as const;
 
 export type WarningCode = (typeof WARNING_CODES)[number];

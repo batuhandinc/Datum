@@ -368,6 +368,69 @@ export const tr = {
     total: "Zorunlu alan toplamı (m²)",
   },
 
+  /** İP-4 — plan motoru ekranı. */
+  plan: {
+    title: "Kat planı",
+    link: "Kat planı →",
+    intro:
+      "Çekirdek ve sirkülasyon plakadan düşüldü. Kalan alanda kesme çizgileri çizerek " +
+      "bağımsız bölüm sınırlarını belirleyin.",
+    manualTitle: "Manuel bölümleme",
+    autoTitle: "Otomatik bölümleme (L2)",
+    floor: "Kat",
+    noFloors: "Henüz kat tanımlanmadı — önce program ekranından kat ekleyin.",
+    noPlate: "Kat plakası hesaplanmadı. İmar verisi girilince zarf çıkar.",
+    noCore: "Çekirdek yerleşmedi. Bölge paketinde çekirdek kuralı gerekiyor.",
+    plateArea: "Plaka",
+    coreArea: "Çekirdek",
+    remainderArea: "Kalan alan",
+    residualArea: "Artık",
+    coverage: "Kaplama",
+
+    canvasHint:
+      "Tuvale tıklayarak kesme çizgisinin noktalarını koyun; “Kesmeyi bitir” ile " +
+      "çizgiyi tamamlayın. Çizgi çekirdeği kesemez — çekirdek zaten düşülmüştür.",
+    finishCut: "Kesmeyi bitir",
+    undoPoint: "Son noktayı sil",
+    removeLastCut: "Son kesmeyi sil",
+    clearCuts: "Kesmeleri temizle",
+    cutCount: "kesme",
+    pieceCount: "parça",
+    lostArea: "Bıçak kaybı",
+
+    assignTitle: "Parça → bağımsız bölüm eşleşmesi",
+    piece: "Parça",
+    unassigned: "— atanmadı —",
+    apply: "Bölümlemeyi uygula",
+    clearManual: "Manuel bölümlemeyi kaldır",
+
+    diagnosticsTitle: "Bağımsız bölüm tanıları",
+    unit: "Bağımsız bölüm",
+    target: "Hedef (net)",
+    grossTarget: "Hedef (brüt)",
+    achieved: "Gerçekleşen",
+    source: "Kaynak",
+    sourceManual: "manuel",
+    sourceAuto: "otomatik",
+    notPlaced: "yerleşmedi",
+
+    constraint: {
+      coreAccess: "Çekirdek erişimi",
+      facade: "Cephe",
+      facadeLength: "Cephe uzunluğu",
+      areaTolerance: "Alan toleransı",
+      aspectRatio: "En-boy oranı",
+    },
+    state: {
+      saglandi: "sağlandı",
+      ihlal: "ihlal",
+      degerlendirilemedi: "değerlendirilemedi",
+    },
+    stateHint:
+      "“Değerlendirilemedi”, kısıtın sağlandığı anlamına GELMEZ: ya ölçüm yapılamadı " +
+      "ya da bölge paketinde eşik tanımlı değil.",
+  },
+
   parking: {
     title: "Otopark senaryoları",
     empty: "Senaryo üretilemedi.",
@@ -649,6 +712,18 @@ export const tr = {
     L2_RESIDUAL_AREA: "{area} m² hiçbir bağımsız bölüme verilemedi.",
     L2_PROGRAM_EXCEEDS_PLATE:
       "Program plakadan {shortfall} m² büyük — {count} bağımsız bölüm yerleşemedi.",
+
+    // --- manuel bölümleme (İP-4) ---
+    PLAN_CUT_INVALID: "Kesme çizgisi en az iki nokta gerektirir — {count} nokta verildi.",
+    PLAN_CUT_CROSSES_CORE:
+      "Kesme çizgisi çekirdeğin veya sirkülasyonun üzerinden geçiyor; oralarda etkisi yok. " +
+      "Çekirdek ve sirkülasyon plakadan zaten düşülmüştür.",
+    PLAN_NO_CUTS: "Henüz kesme çizilmedi — kalan alan tek parça.",
+    PLAN_PIECE_UNASSIGNED: "{count} parça hiçbir bağımsız bölüme atanmadı.",
+    PLAN_PIECE_COUNT_MISMATCH:
+      "{pieces} parça çıktı ama {units} bağımsız bölüm var — eşleşme elle yapılmalı.",
+    PLAN_PLATE_MISSING: "Kat plakası yok — önce imar verisinden zarf hesaplanmalı.",
+    PLAN_CORE_MISSING: "Çekirdek yerleşmedi — erişim kontrolü yapılamadı.",
   } satisfies Record<WarningCode, string>,
 } as const;
 

@@ -194,9 +194,12 @@ export default async function ProgramPage({ params }: { params: Promise<{ id: st
 
   return (
     <>
-      <p style={{ margin: 0 }}>
+      <p style={{ margin: 0, display: "flex", gap: "1rem", flexWrap: "wrap" }}>
         <Link href={`/projects/${id}` as Route} style={{ color: "#52525b", fontSize: 13 }}>
           ← {tr.program.back}
+        </Link>
+        <Link href={`/projects/${id}/plan` as Route} style={{ color: "#18181b", fontSize: 13 }}>
+          {tr.plan.link}
         </Link>
       </p>
       <h1 style={{ fontSize: "1.4rem", margin: "0.25rem 0 0.25rem" }}>{tr.program.title}</h1>
