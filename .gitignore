@@ -16,3 +16,6 @@ npm-debug.log*
 
 coverage/
 .vitest/
+
+# Yerel PGlite veritabanı (npm run db:local) — makineye özel, paylaşılmaz
+.pglite/

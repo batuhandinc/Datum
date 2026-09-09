@@ -13,6 +13,7 @@
     "codegen:check": "tsx prisma/codegen/generate.ts --check",
     "db:up": "docker compose up -d db",
     "db:down": "docker compose down",
+    "db:local": "node scripts/dev-db.mjs",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
@@ -38,6 +39,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
+    "@electric-sql/pglite-socket": "^0.2.11",
     "@types/clipper-lib": "^6.4.0",
     "@types/geojson": "^7946.0.16",
     "@types/node": "^22.10.5",

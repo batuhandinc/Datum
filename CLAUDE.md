@@ -246,6 +246,7 @@ değişiklik listesinde.
 
 ```bash
 npm run db:up          # Postgres (docker compose)
+npm run db:local       # Docker YOKSA: PGlite'ı 5432'de Postgres olarak sun (açık kalmalı)
 npm run db:migrate     # migration uygula
 npm run db:seed        # tek organizasyon + boş draft bölge paketi
 npm run db:fixture     # SENTETİK test paketi (gerçek mevzuat DEĞİL)
@@ -266,6 +267,13 @@ değişmezlik böyle test edilir.
 - **Sınır:** adapter `prisma migrate dev/deploy` desteklemiyor. Migration **üretimi** hâlâ
   gerçek Postgres ister; PGlite yalnızca **uygular**.
 - Gerçek Postgres'in yerini tutmaz — uzantı, eşzamanlılık ve rol davranışı farklıdır.
+
+**Uygulamayı Docker'sız çalıştırmak** (`npm run db:local`): testlerdeki PGlite süreç
+içindedir ve dev sunucusu onu göremez. `scripts/dev-db.mjs` kalıcı bir PGlite'ı Postgres
+**tel protokolüyle** 5432'de sunar — `.env`, uygulama kodu ve Prisma Studio değişmez.
+Migration'lar ham SQL olarak uygulanır ve `_datum_local_migrations` tablosunda işaretlenir;
+bu veritabanı **Prisma Migrate tarafından yönetilmez**. Kimlik doğrulaması **yoktur**,
+yalnızca 127.0.0.1'i dinler — üretimde kullanılmaz.
 
 **Migration yazarken:** generated kolonlar ve trigger'lar Prisma şemasından türetilemez.
 `prisma migrate dev --create-only` ile oluştur, sonra `prisma/sql/` altındaki üç dosyayı
