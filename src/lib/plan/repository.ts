@@ -86,6 +86,8 @@ export interface PlanContext {
   readonly envelope: LocalMultiPolygon | null;
   /** L1'in ürettiği çekirdek. */
   readonly core: LocalPolygon | null;
+  /** `Core.coreStrategy` — L1 önerir, kullanıcı ezer. */
+  readonly coreStrategy: string | null;
   readonly circulation: readonly LocalPolygon[];
   readonly floors: readonly FloorPlanContext[];
 }
@@ -157,6 +159,7 @@ export async function loadPlanContext(
     blockId: block?.id ?? null,
     envelope: parseLocalMultiPolygon(zoning?.buildableEnvelope),
     core: parseLocalPolygon(block?.core?.geometry),
+    coreStrategy: block?.core?.coreStrategy ?? null,
     circulation,
     floors,
   };

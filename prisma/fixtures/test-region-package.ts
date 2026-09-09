@@ -18,9 +18,11 @@ import { publishVersion } from "../../src/lib/region-package/version";
  *   · `db:seed`'e GİRMEZ; ayrı komutla (`db:fixture`) ve testlerle yüklenir
  *   · Paket adı da açıkça test paketi olduğunu söyler
  *
- * KAPSAM: yalnızca İP-2'nin ihtiyacı. İP-3'ün tabloları (ParkingRule,
- * RequiredSpaceRule, CoreRule, FireSafetyRule…) BİLİNÇLİ OLARAK BOŞ bırakıldı
- * — doldurmak, olmayan bir mevzuatı varmış gibi göstermek olurdu.
+ * KAPSAM: İP-2 (imar kural seti, özel kısıt listesi, yükseklik referansı,
+ * anlaşma kuralı) · İP-3 (çekirdek, otopark, yangın, tesisat katsayıları,
+ * zorunlu servis mekanları) · İP-4 (birim bölümleme ve yapı elemanı kuralları).
+ * İP-5 ve sonrasının tabloları BİLİNÇLİ OLARAK BOŞ — doldurmak, olmayan bir
+ * mevzuatı varmış gibi göstermek olurdu.
  */
 
 export const FIXTURE_ADMIN_UNIT = "TEST-FIXTURE";
@@ -380,6 +382,79 @@ export async function loadTestRegionPackage(
       isWetArea,
       isRegionOverride: false,
     })),
+  });
+
+  // --- İP-4: birim ölçeğinde bölümleme kuralı -----------------------------
+  // UYDURMA. Gerçek değerler pilot bölge çalışmasından (Faz 0) gelecek.
+  await prisma.unitLayoutRule.create({
+    data: {
+      regionPackageVersionId,
+      ruleKey: "konut",
+      // Brüt birim alanı ÷ net mekan alanları toplamı. Türk apartmanında
+      // duvar + birim içi sirkülasyon payı tipik olarak %20-30 arasıdır.
+      grossToNetFactor: "1.2500",
+      // `kat-plani-uretim-mimarisi.md` §9 madde 1 "%3 mü %5 mi" diye
+      // soruyordu; karar KODDA DEĞİL burada verilir.
+      areaTolerance: "0.0500",
+      // Pencere alabilmesi için asgari cephe teması.
+      minUnitFacadeLength: "3.00",
+      // "Aşırı uzun dar birim olmasın" kısıtının sayısal karşılığı.
+      maxUnitAspectRatio: "3.500",
+    },
+  });
+
+  // --- İP-4: yapı elemanı ölçeğinde kurallar ------------------------------
+  // Üç grup: mekan kuralları (asgari ölçü, aydınlatma), duvar kalınlıkları,
+  // kolon aks aralığı. Hepsi UYDURMADIR.
+  await prisma.buildingElementRule.createMany({
+    data: [
+      // Mekan tipi kuralları — asgari alan, asgari net genişlik, pencere oranı.
+      ...(
+        [
+          ["salon", "12.000", "3.00", "0.1250"],
+          ["yatakOdasi", "9.000", "2.50", "0.1250"],
+          ["ebeveynYatak", "12.000", "2.80", "0.1250"],
+          ["cocukOdasi", "9.000", "2.50", "0.1250"],
+          ["mutfak", "6.000", "1.80", "0.1000"],
+          ["banyo", "3.000", "1.20", null],
+          ["ebeveynBanyo", "3.000", "1.20", null],
+          ["wc", "1.200", "0.90", null],
+          ["hol", "2.000", "1.10", null],
+          ["koridor", "2.000", "1.20", null],
+          ["balkon", "2.000", "1.00", null],
+        ] as const
+      ).map(([spaceType, minArea, minClearWidth, daylightRatio]) => ({
+        regionPackageVersionId,
+        ruleKey: `mekan-${spaceType}`,
+        spaceType,
+        minArea,
+        minClearWidth,
+        daylightRatio,
+        minDoorWidth: "0.80",
+      })),
+      // Duvar kalınlıkları — tipe göre. Kural yoksa duvar ÜRETİLMEZ.
+      ...(
+        [
+          ["dis", "0.300"],
+          ["ic", "0.100"],
+          ["islakHacim", "0.150"],
+          ["saft", "0.200"],
+          ["birimAyirici", "0.200"],
+        ] as const
+      ).map(([wallType, wallThickness]) => ({
+        regionPackageVersionId,
+        ruleKey: `duvar-${wallType}`,
+        wallType,
+        wallThickness,
+      })),
+      // Kolon aks aralığı — KABA. Otopark verimi doğrulaması için.
+      {
+        regionPackageVersionId,
+        ruleKey: "aks",
+        columnSpanX: "6.00",
+        columnSpanY: "6.00",
+      },
+    ],
   });
 
   // --- Yayım ---------------------------------------------------------------

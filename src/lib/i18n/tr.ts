@@ -377,6 +377,11 @@ export const tr = {
       "bağımsız bölüm sınırlarını belirleyin.",
     manualTitle: "Manuel bölümleme",
     autoTitle: "Otomatik bölümleme (L2)",
+    runAuto: "Otomatik bölümle",
+    autoHint:
+      "L2 birimleri KENDİ hedeflerine keser; program plakayı doldurmuyorsa fark artık " +
+      "olarak kalır, aşıyorsa kuyruktaki birimler yerleşmez. Sonuç hesaplanan değere " +
+      "yazılır; manuel çiziminiz varsa o geçerli kalmaya devam eder.",
     floor: "Kat",
     noFloors: "Henüz kat tanımlanmadı — önce program ekranından kat ekleyin.",
     noProgramFloors:
@@ -727,6 +732,9 @@ export const tr = {
       "{pieces} parça çıktı ama {units} bağımsız bölüm var — eşleşme elle yapılmalı.",
     PLAN_PLATE_MISSING: "Kat plakası yok — önce imar verisinden zarf hesaplanmalı.",
     PLAN_CORE_MISSING: "Çekirdek yerleşmedi — erişim kontrolü yapılamadı.",
+    L2_DOUBLE_CORE_UNSUPPORTED:
+      "Çift çekirdek stratejisi henüz uygulanamıyor (şemada blok başına tek çekirdek var) — " +
+      "bölümleme yapılmadı. Tek çekirdek gibi davranmak, tanımsız bir durumu uydurmak olurdu.",
   } satisfies Record<WarningCode, string>,
 } as const;
 

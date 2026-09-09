@@ -203,7 +203,7 @@ export function checkSubdivision(input: SubdivisionInput): SubdivisionReport {
       constraint: "coreAccess",
       // Erişim kaynağı hiç yoksa (çekirdek üretilememiş) ölçüm yapılamaz.
       state: hasAccess === null ? "degerlendirilemedi" : hasAccess ? "saglandi" : "ihlal",
-      measured: hasAccess === null ? null : contactLength(u.geometry, access),
+      measured: hasAccess === null ? null : round(contactLength(u.geometry, access)),
       limit: null,
     });
 

@@ -14,8 +14,8 @@ import {
 } from "@/lib/subdivide/check";
 import { multiPolygonArea, polygonArea, polygon, type LocalPolygon } from "@/lib/geometry";
 import type { Warning } from "@/lib/warnings";
-import { PlanCanvas, ClearPartitionForm } from "./plan-canvas";
-import { savePartitionAction, clearPartitionAction } from "./actions";
+import { PlanCanvas, ClearPartitionForm, RunAutoForm } from "./plan-canvas";
+import { savePartitionAction, clearPartitionAction, runL2Action } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -200,6 +200,9 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
                   }))}
                   action={savePartitionAction}
                 />
+
+                <h3 style={{ fontSize: 14, margin: "1.1rem 0 0.4rem" }}>{tr.plan.autoTitle}</h3>
+                <RunAutoForm projectId={id} floorId={floor.floorId} action={runL2Action} />
 
                 <h3 style={{ fontSize: 14, margin: "1rem 0 0.4rem" }}>{tr.plan.diagnosticsTitle}</h3>
                 <p style={{ fontSize: 11, color: "#a1a1aa", marginTop: 0 }}>{tr.plan.stateHint}</p>

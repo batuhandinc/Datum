@@ -12,6 +12,7 @@ import {
   writePartition,
   type UnitAssignment,
 } from "@/lib/plan/repository";
+import { computeAndStoreL2 } from "@/lib/plan/service";
 
 /**
  * A5 PLAN — sunucu eylemleri.
@@ -83,6 +84,25 @@ export async function savePartitionAction(
     });
 
     await writePartition(projectId, assignments, "manuel");
+    return [...result.warnings];
+  });
+}
+
+/**
+ * L2 OTOMATİK bölümlemeyi çalıştırır.
+ *
+ * Sonuç `geometryComputedValue`'ya yazılır; kullanıcının manuel çizimi
+ * `OverrideValue`'da durduğu için YOK EDİLMEZ — COALESCE ezmeyi seçmeye
+ * devam eder. Otomatik sonucu görmek isteyen önce manuel bölümlemeyi kaldırır.
+ */
+export async function runL2Action(
+  _prev: ActionResult | null,
+  fd: FormData,
+): Promise<ActionResult> {
+  const projectId = text(fd, "projectId");
+  const floorId = text(fd, "floorId");
+  return run(projectId, async () => {
+    const result = await computeAndStoreL2(projectId, floorId);
     return [...result.warnings];
   });
 }

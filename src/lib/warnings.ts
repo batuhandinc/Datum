@@ -196,6 +196,14 @@ export const WARNING_CODES = [
   "PLAN_PLATE_MISSING",
   /** Çekirdek yerleşmemiş — erişim kontrolü yapılamaz. */
   "PLAN_CORE_MISSING",
+  /**
+   * Çift çekirdek şemada UYGULANAMAZ (`Core.blockId @unique`) — hesaplanmadı.
+   *
+   * Tahmin edilmiş bir varsayılanla (tek çekirdek gibi davranarak) devam etmek
+   * ilke 1'in davranışsal biçimini ihlal ederdi: tanımsız bir durum uydurulup
+   * SAKLANIRDI. `offsetJoinType` ve `areaPerSpace` ile aynı sertlik.
+   */
+  "L2_DOUBLE_CORE_UNSUPPORTED",
 ] as const;
 
 export type WarningCode = (typeof WARNING_CODES)[number];

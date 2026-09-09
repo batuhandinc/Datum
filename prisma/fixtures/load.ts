@@ -27,7 +27,8 @@ async function main() {
   console.log(`  adminUnit = "${FIXTURE_ADMIN_UNIT}" — gerçek mevzuat DEĞİLDİR.`);
   console.log("  Kapsam: İP-2 (imar kural seti, özel kısıt listesi, yükseklik referansı,");
   console.log("  anlaşma kuralı) + İP-3 (çekirdek, otopark, yangın, tesisat katsayıları,");
-  console.log("  zorunlu servis mekanları). İP-4 ve sonrasının tabloları bilinçli boş.");
+  console.log("  zorunlu servis mekanları) + İP-4 (birim bölümleme, yapı elemanı");
+  console.log("  kuralları). İP-5 ve sonrasının tabloları bilinçli boş.");
 }
 
 main()

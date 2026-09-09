@@ -124,9 +124,9 @@ describe("sentetik test paketi", () => {
     expect(await prisma.stakeholderConsentRule.count({ where })).toBe(1);
   });
 
-  it("İP-4 ve sonrasının tabloları HÂLÂ boş", async () => {
-    // İP-3 kendi tablolarını doldurdu; sonraki paketlerinki bilinçli boş.
-    // Doldurmak, olmayan bir mevzuatı varmış gibi göstermek olurdu.
+  it("İP-5 ve sonrasının tabloları HÂLÂ boş", async () => {
+    // İP-3 ve İP-4 kendi tablolarını doldurdu; sonraki paketlerinki bilinçli
+    // boş. Doldurmak, olmayan bir mevzuatı varmış gibi göstermek olurdu.
     const where = { regionPackageVersionId: versionId };
     expect(await prisma.costItemCatalog.count({ where })).toBe(0);
     expect(await prisma.objectCostMapping.count({ where })).toBe(0);
