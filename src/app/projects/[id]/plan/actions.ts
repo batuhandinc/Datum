@@ -12,7 +12,8 @@ import {
   writePartition,
   type UnitAssignment,
 } from "@/lib/plan/repository";
-import { computeAndStoreL2 } from "@/lib/plan/service";
+import { computeAndStoreL2, computeAndStoreL3 } from "@/lib/plan/service";
+import { computeAndStoreL4 } from "@/lib/plan/l4-service";
 
 /**
  * A5 PLAN — sunucu eylemleri.
@@ -104,6 +105,35 @@ export async function runL2Action(
   return run(projectId, async () => {
     const result = await computeAndStoreL2(projectId, floorId);
     return [...result.warnings];
+  });
+}
+
+/**
+ * L3 + L4: mekanları esnetir, duvarları ve açıklıkları üretir.
+ *
+ * ZİNCİR SIRASI: L3 her birim için ayrı ayrı koşar (mekan poligonları),
+ * SONRA L4 kat genelinde duvarları türetir — duvar iki mekanın paylaştığı
+ * sınırdan çıktığı için mekanlar önce yerleşmiş olmalıdır.
+ */
+export async function runDetailAction(
+  _prev: ActionResult | null,
+  fd: FormData,
+): Promise<ActionResult> {
+  const projectId = text(fd, "projectId");
+  const floorId = text(fd, "floorId");
+  return run(projectId, async () => {
+    const warnings: Warning[] = [];
+    const context = await loadPlanContext(projectId);
+    const floor = context.floors.find((f) => f.floorId === floorId);
+    if (!floor) throw new Error(`DATUM_NOT_FOUND: kat bulunamadı: ${floorId}`);
+
+    for (const u of floor.units) {
+      const r = await computeAndStoreL3(projectId, u.unitId);
+      warnings.push(...r.warnings);
+    }
+    const l4 = await computeAndStoreL4(projectId, floorId);
+    warnings.push(...l4.warnings);
+    return warnings;
   });
 }
 

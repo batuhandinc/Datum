@@ -355,6 +355,45 @@ export function RunAutoForm({
   );
 }
 
+/** L3 + L4 detaylandırmayı çalıştıran form. */
+export function RunDetailForm({
+  projectId,
+  floorId,
+  action,
+}: {
+  projectId: string;
+  floorId: string;
+  action: (prev: ActionResult | null, fd: FormData) => Promise<ActionResult>;
+}) {
+  const [state, formAction, pending] = useActionState<ActionResult | null, FormData>(action, null);
+  return (
+    <form action={formAction}>
+      <input type="hidden" name="projectId" value={projectId} />
+      <input type="hidden" name="floorId" value={floorId} />
+      <p style={{ fontSize: 12, color: "#71717a", margin: "0 0 0.5rem" }}>{tr.plan.detailHint}</p>
+      <button
+        type="submit"
+        disabled={pending}
+        style={{ ...button, background: "#18181b", padding: "0.4rem 0.9rem", fontSize: 13 }}
+      >
+        {tr.plan.runDetail}
+      </button>
+      {state?.ok === false ? (
+        <p role="alert" style={{ color: "#b91c1c", fontSize: 13 }}>
+          {state.message}
+        </p>
+      ) : null}
+      {state?.warnings && state.warnings.length > 0 ? (
+        <ul style={{ margin: "0.5rem 0 0", paddingLeft: "1.1rem", color: "#a16207", fontSize: 12 }}>
+          {state.warnings.map((w, i) => (
+            <li key={`${w.code}-${i}`}>{warningMessage(w as never)}</li>
+          ))}
+        </ul>
+      ) : null}
+    </form>
+  );
+}
+
 /** Basit tek düğmeli form — manuel bölümlemeyi kaldırmak için. */
 export function ClearPartitionForm({
   projectId,

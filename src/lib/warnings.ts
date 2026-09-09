@@ -255,6 +255,18 @@ export const WARNING_CODES = [
    * geometrik yerleşim onu DOĞRULAR, değiştirmez. Bu bir uyarıdır, düzeltme değil.
    */
   "L4_PARKING_COEFFICIENT_DEVIATION",
+
+  // --- tipik kat çoğaltma (İP-4) ---
+  /** Kilitli katın şablonu bulunamadı — plan türetilemedi. */
+  "TYPICAL_TEMPLATE_MISSING",
+  /**
+   * Kilitli katın birim dizisi şablonunkiyle UYUŞMUYOR — kopyalama YAPILMADI.
+   *
+   * Sayı eşitliği tip eşitliği değildir: konumla eşleştirilseydi 4. kattaki
+   * 2+1'e 3+1'in poligonu düşer, hem de sessizce. Yanlış plan üretmektense
+   * hiç üretmemek.
+   */
+  "TYPICAL_SIGNATURE_MISMATCH",
 ] as const;
 
 export type WarningCode = (typeof WARNING_CODES)[number];

@@ -378,6 +378,13 @@ export const tr = {
     manualTitle: "Manuel bölümleme",
     autoTitle: "Otomatik bölümleme (L2)",
     runAuto: "Otomatik bölümle",
+    detailTitle: "Detaylandırma (L3 · L4)",
+    runDetail: "Mekanları ve duvarları üret",
+    detailHint:
+      "Tipoloji şablonu birimlerin gerçek poligonuna esnetilir, sonra mekan sınırlarından " +
+      "duvarlar türer ve açıklıklar yerleşir. Duvar ÇİZİLMEZ — iki mekanın paylaştığı " +
+      "sınır duvara dönüşür.",
+    detailResult: "{walls} duvar · {openings} açıklık · {columns} kolon",
     autoHint:
       "L2 birimleri KENDİ hedeflerine keser; program plakayı doldurmuyorsa fark artık " +
       "olarak kalır, aşıyorsa kuyruktaki birimler yerleşmez. Sonuç hesaplanan değere " +
@@ -767,6 +774,14 @@ export const tr = {
       "Aks ızgarasından ölçülen park verimi {measured} m²/araç; paket katsayısı " +
       "{coefficient} m²/araç (%{deviation} sapma). KATSAYI DEĞİŞMEDİ — otorite " +
       "pakettedir, geometri onu yalnızca doğrular.",
+
+    // --- tipik kat çoğaltma (İP-4) ---
+    TYPICAL_TEMPLATE_MISSING:
+      "{floorNo}. kat kilitli ama şablon katı bulunamadı — plan türetilmedi.",
+    TYPICAL_SIGNATURE_MISMATCH:
+      "{floorNo}. katın bağımsız bölüm dizisi şablonuyla uyuşmuyor, plan KOPYALANMADI. " +
+      "Şablon: {template} · Kat: {target}. Sayı eşit olsa bile tipler farklıysa " +
+      "yanlış poligon düşerdi.",
   } satisfies Record<WarningCode, string>,
 } as const;
 

@@ -86,7 +86,7 @@ Her ezilebilir değer **dört** kolon taşır. Adlandırma **mekanik**:
 - `OverrideLedger` view'ı registry'den **üretilir** — elle yazılmadığı için bayatlayamaz.
   "Bu projedeki tüm ezmeler" tek sorgudur.
 
-Şu an **61 hesaplanan alan, 20 model, 244 kolon**. Bir test dördünün de varlığını doğrular.
+Şu an **74 hesaplanan alan, 24 model, 296 kolon**. Bir test dördünün de varlığını doğrular.
 Sayaç kasıtlı olarak SABİTTİR: alan eklemek testi kırar ve dört adımlı ritüelin
 atlanmadığını görmeye zorlar.
 
@@ -94,7 +94,8 @@ atlanmadığını görmeye zorlar.
 
 ## 4. Kiracılık
 
-`organizationId` **yalnızca kök varlıklarda**: `Project`, `RegionPackage`, `PriceListVersion`.
+`organizationId` **yalnızca kök varlıklarda**: `Project`, `RegionPackage`, `PriceListVersion`,
+`UnitTypeTemplate`.
 Başka hiçbir tabloda yok; alt varlıklar kiracılığı `Project` üzerinden miras alır.
 
 Kök = bağımsız adreslenebilen ve kiracıya ait olan. `PriceListVersion` köktür çünkü
@@ -236,6 +237,85 @@ okumada üretilir. Kalıcı olan yalnızca karar: `basementFloorCountOverrideVal
 
 ---
 
+## 6d. İP-4 katmanları
+
+```
+src/lib/geometry/hull.ts   dışbükey kabuk · DÖNÜK minimum dikdörtgen
+src/lib/subdivide/         kernel (cutByArea + süpürmeler) · boundary · check
+src/lib/plan/              manual · l2 · l3 · l4 · template · library
+                           repository (TEK yazma yolu) · service · l4-service
+                           typical-floor
+src/app/projects/[id]/plan/  SVG tuval — yeni bağımlılık YOK
+```
+
+**SİSTEM PROGRAMI ÖLÇEKLEMEZ.** Yaygın hata `hedef_i = kalan × hedef_i / Σhedef`
+normalizasyonudur: plakayı daima tam tüketir, program plakanın %60'ıysa bütün
+daireleri sessizce %66 şişirir ve **alan toleransı kontrolünü ölçülemez kılar**
+(sapma tanım gereği sıfır olur). Her birim KENDİ hedefine kesilir; artan alan
+**artık**, sığmayan birim **yerleşmemiş** kalır.
+
+**Brüt/net katsayısı PAKETTEN.** Hedef NET (`Σ Space.area`), plaka BRÜT.
+Katsayı bölmeyle uydurulamaz — o, normalizasyonun ta kendisidir.
+`UnitLayoutRule.grossToNetFactor` yoksa **L2 hesaplamaz + uyarı**.
+
+**Hedef ŞABLONDAN değil, BİRİMİN KENDİ PROGRAMINDAN** okunur. `instantiateUnitType`
+şablon mekanlarını birimin `Space` satırlarına kopyalıyor ve `divergedUnits()`
+tam da ayrışmayı izlemek için var.
+
+**KURALSIZ BİLİNEN OLGU ile EŞİK GEREKTİREN HÜKÜM ayrıdır.** "Çekirdeğe değiyor
+mu" saf topolojidir: paket satırı gerektirmez ve **paket boşken bile ihlal
+üretir**. "Yeterince mi değiyor" hükümdür. Tanı üç durumludur:
+`saglandi · ihlal · degerlendirilemedi` — **eksik kural "sağlandı" demek değildir.**
+
+**EŞİKLER GEOMETRİYİ YÖNLENDİRMEZ, yalnızca uyarır.** Bir kod sabiti kesme yönünü
+seçseydi, sabiti değiştirmek paket sürümü **dondurulmuş** eski bir projeye farklı
+bir plan — dolayısıyla farklı bir maliyet — üretirdi (ilke 2).
+
+**MANUEL ≡ OTOMATİK, üç katmanda yapısal:** tek yazma yolu (`writePartition`) ·
+tek doğrulayıcı (`checkSubdivision`, otomatik kendi çıktısını da geçirir) ·
+köken hesaplanan alan dörtlüsünde. Otomatik → `ComputedValue`, manuel →
+`OverrideValue`. **Ezme burada taşıyıcıdır**: kullanıcının çizimi `OverrideValue`'da
+durduğu için L2 yeniden koştuğunda `COALESCE` onu seçer ve çizim yok edilmez.
+
+**KESME ÇİZGİSİ, serbest poligon değil.** Boşluk ve çakışma böylece **yapısal
+olarak imkânsız** olur; `Σbirim + çekirdek + sirkülasyon = kat` denetlenen değil
+inşa gereği doğru bir şey olur.
+
+**DUVAR TÜRETİLİR, ÇİZİLMEZ.** İki mekanın paylaştığı sınır duvara dönüşür, tip
+ilişkiden çıkar. Ayrıca çizilebilseydi mekan sınırı ile duvar ekseni bağımsız iki
+gerçek olurdu. `Wall.netArea`/`volume` **saklanmaz** — açıklık düşümü kalem
+bazındadır (ilke 6).
+
+**KARAR ALANLA VERİLİR, UZUNLUKLA DEĞİL.** Alan yalnızca çarpma ve toplamadan
+çıkar; IEEE-754 ikisini de tam belirtir. `Math.sqrt`/`hypot` ECMA-262'de
+"implementation-approximated"tır. Uzunluk eşiği karar veriyorsa **kare uzunlukla**
+karşılaştırılır.
+
+**KUANTALAMA SINIRI:** clipper mm ızgarasında çalışır; alan hatasının üst sınırı
+`çevre × ızgara`dır (`areaQuantizationBound`). Bu okunmadan tolerans karşılaştırması
+yapılırsa **her eğik birim sahte uyarı üretir**.
+
+**ŞABLON YAPIYI TAŞIR, HEDEF ALANI DEĞİL.** Reçete yapraklarında `weight` var,
+mutlak alan yok — iki doğruluk kaynağı olsaydı A5'te değiştirilen hedef plan
+motoruna ulaşmazdı. **Şablon kütüphanesi organizasyon seviyesinde** ve projeye
+**kopyalanır**: kütüphaneyi iyileştirmek biten projeyi geriye dönük değiştirmez.
+
+**`Space.area` HEDEFTİR**, plan motoru onu yazmaz. Gerçekleşen alan `geometry`den
+ölçülür ve fark bir **uyarıdır**. Hesaplanan alana çevrilseydi (a) her program
+girişi gerekçesiz bir ezme olur, (b) `divergedUnits()` ölürdü.
+
+**`Space.layoutKey` kararlı kimliktir.** Olmadan aynı tipten iki yatak odasının
+geometrisi yeniden çözümde sessizce yer değiştirir ve
+`QuantityLine.sourceObjectId` bağı çürür (ilke 10).
+
+**ÇİFT ÇEKİRDEK uygulanamaz** (`Core.blockId @unique`): hesaplanmaz + uyarı.
+Tek çekirdek gibi davranmak tanımsız bir durumu uydurmak olurdu.
+
+**KOLON AKSI OTOPARK KATSAYISINI DOĞRULAR, DEĞİŞTİRMEZ** — İP-3'ün verdiği söz.
+Otorite `ParkingRule.areaPerSpace`'te kalır.
+
+---
+
 ## 7. Kapsam kilidi
 
 İş paketleri sıralıdır (`mvp-spesifikasyonu.md` §3). **Kapsamı genişletme.**
@@ -245,8 +325,8 @@ okumada üretilir. Kalıcı olan yalnızca karar: `basementFloorCountOverrideVal
 | İP-1 | Temel altyapı | ✅ tamam |
 | İP-2 | Sihirbaz ve kural motoru, L0 zarf | ✅ tamam |
 | İP-3 | Program, çekirdek, servis mekanları, otopark | ✅ tamam |
-| İP-4 | Plan motoru (**manuel mod otomatikten önce**) | sırada |
-| İP-5 | Metraj motoru | |
+| İP-4 | Plan motoru (**manuel mod otomatikten önce**) | ✅ tamam |
+| İP-5 | Metraj motoru | sırada |
 | İP-6 | Maliyet ve nakit akışı | |
 | İP-7 | Gelir, paylaşım, fizibilite | |
 | İP-8 | Düzenleme ve canlı panel | |
@@ -269,29 +349,43 @@ Kod yazarken bunlardan birine dokunuyorsan **önce sor**.
 | `QuantityLine` `isOverridden`+`overrideReason` kullanıyor (:534); §1.3 ise üçlüyü tanımlıyor. Dokümanda **iki farklı ezme şekli** var. Birebir korundu, uzlaştırılmadı. | İP-5 |
 | `openingDeductionRule` değerleri snake_case, diğer tüm enum'lar camelCase (:519-522). | İP-5 |
 | `ObjectCostMapping` "çoklu" satırları ifade edemiyor (bir nesne → çok kalem, :508). | İP-5 |
-| `Wall` :508'de `objectType` olarak kullanılıyor ama **hiçbir yerde tanımlı değil**. | İP-5 |
+| ~~`Wall` hiçbir yerde tanımlı değil~~ — ✅ **v1.4'te alan tablosu eklendi ve İP-4'te uygulandı.** Mekan sınırlarından TÜRER, ayrıca çizilmez. Bu not önceden İP-5'e park edilmişti; kullanıcı kararıyla İP-4'e alındı. | ✅ İP-4 |
 | Kalite seviyesi 4 mü 3 mü — veri modeli :544 vs süreç modeli :194. | İP-6 |
 | `UnitType` proje kapsamlı mı, organizasyon tipoloji kütüphanesi mi (§13.3). İP-3'te **proje kapsamlı** olarak uygulandı (`projectId` + `unitTypeCode`). | ✅ İP-3 |
 | `FloorTemplate` varlığı ile `Floor.templateFloorId` aynı fikir mi? İP-3 **`Floor.templateFloorId`'yi** uyguladı; `FloorTemplate` kullanılmayan stub kaldı. | ✅ İP-3 |
 | §7'nin 6 Türkçe başlıklı varlığı için İngilizce ad **önerildi**. `Elektrik Odası / Trafo` ve `Su Deposu ve Hidrofor` **ikişer nesne** adlandırıyor; tek varlıkta birleştirildi. | adlandırma |
 | `Space.electricalPresetId` ve `Fixture.productRef` — doküman "fk" diyor ama **hedef varlığı tanımlamıyor**. Uydurma model açılmadı. | İP-3/İP-5 |
-| `SurfaceFinish` katalog mu, Space'in çocuğu mu — §2 ile alan tabloları çelişiyor. Katalog varsayıldı. | İP-4 |
+| `SurfaceFinish` katalog mu, Space'in çocuğu mu — §2 ile alan tabloları çelişiyor. Katalog varsayıldı; **İP-4'te de kullanılmadı**. | İP-5 |
 | `SoilData.shoringArea` süreç modeli A3'te (H), veri modelinde K2 (manuel). Veri modeli otoriter alındı; İP-3 buna dokunmadı. | İP-5 |
 | **Çoğunluk göstergesi SAKLANMIYOR**, okurken hesaplanıyor. Doküman onu "hesaplanan" sayıyor ama üçlü açılmadı — payların saf toplamı, bayatlama riski yaratmaya değmez. Rapor kalıcılık isterse geri dönülür. | İP-9 |
 | **Kot dış servisi (E sahipliği)** süreç modeli A2/A3'te var ama hiçbir iş paketinde yok; şemada `@own M`. | kapsam boşluğu |
-| **`kat-plani-uretim-mimarisi.md` repoda yok.** L0 ve L1 yazıldı ama otoriter tanımları İP-4'e ait dokümanda olacaktı; elimizdeki tek tanım `mvp` §3. **İP-4'ten önce gerekli.** | İP-4 |
+| ~~`kat-plani-uretim-mimarisi.md` repoda yok~~ — ✅ **eklendi**, `DOKUMANLAR.md` güncellendi. | ✅ İP-4 |
 | Özel kısıtların dokuzunda `effectTarget/effectKind` = `none`. Bir kısıtın emsali mi taban alanını mı düşürdüğü yerel mevzuat sorusu — pilot paket dolduracak. | Faz 0 |
 | **Rampa "kot farkı" = bodrum derinliği** varsayıldı (v1.3 §8). Doküman hem topografyayı hem bodrumu ima ediyordu; fizik bodrumu gerektiriyor. | varsayım |
-| **Çekirdek derinlik varsayımı:** merdiven asansörlerle aynı derinlik bandına oturur. Merdivenin kendi ayak izi kol sayısı ve sahanlık derinliği ister; ikisi de tanımsız. | İP-4 |
+| **Çekirdek derinlik varsayımı:** merdiven asansörlerle aynı derinlik bandına oturur. Merdivenin kendi ayak izi kol sayısı ve sahanlık derinliği ister; ikisi de tanımsız. | İP-5 |
 | **Strateji öneri eşikleri (en-boy oranı) KODDA.** Algoritma sezgiseli, yerel mevzuat değil; çıktı zaten ezilebilir bir öneri. | kabul edildi |
 | **Otopark iterasyon korkuluğu (8 bodrum) kodda.** Yönetmelik "en fazla kaç bodrum" demiyor; sonsuz döngüyü kesiyoruz ve sınıra çarpınca uyarıyoruz. | kabul edildi |
-| **Kaçış mesafesi KUŞ UÇUŞU ölçülüyor.** Koridor boyu ölçüm gerçek plan geometrisi ister; kuş uçuşu daima küçük olduğu için aşımı gizlemez, geç yakalar. | İP-4 |
+| **Kaçış mesafesi hâlâ KUŞ UÇUŞU.** Koridor boyu ölçüm artık *mümkün* (sirkülasyon poligonu var) ama İP-4 kapsamında değildi. Kuş uçuşu daima küçük olduğu için aşımı gizlemez, geç yakalar. | İP-8 |
 | **8 sorunun altısının pakette ön-dolum kaynağı YOK.** Dokümanın "kural katmanı ön-doldurur" ifadesi yalnızca otopark hedefi ve asansör sayısı için karşılıklı. | Faz 0 |
 | **Soru 4 "bağımsız bölüm depoları"nın hedef alanı yok.** Arayüzde soruluyor ama saklanmıyor; uydurma alan açılmadı. | açık |
-| **Soru 2 (ısıtma) ve 7 (yedek güç)** bir `ServiceSpace` satırı gerektiriyor; o satır servis mekanı onayında doğuyor. Sihirbazdan yazılmıyor. | İP-4 |
+| **Soru 2 (ısıtma) ve 7 (yedek güç)** bir `ServiceSpace` satırı gerektiriyor; o satır servis mekanı onayında doğuyor. Sihirbazdan yazılmıyor. | İP-5 |
 | `Shelter.alternativeUseWhenIdle = otopark` sayılmıyor; dokümanın etkisi tanımlı değil. | Faz 0 |
 
-`etut-veri-modeli.md` **sürüm 1.1**'e güncellendi; kapatılan çelişkiler dosyanın başındaki
+### İP-4'te kaydedilen açık kararlar
+
+| Konu | Durum |
+|---|---|
+| **Kat başına plaka modellenmiyor.** Elimizdeki tek poligon `buildableEnvelope` ve proje başına tektir; `cekmeKat` tanımı gereği küçük, `bodrum` genellikle büyüktür. `Floor.grossArea` yalnızca plakası gerçekten zarf olan katlara yazılmalı. | İP-5 |
+| **Dubleks iki `Unit` satırıdır** (`linkedUnitId`). Şema hazır ama L2/L3 dublekse özel davranmıyor: iki yarı bağımsız kesiliyor. | İP-8 |
+| **Aday uzayı yalnızca AYNALAMA.** L3 iki aday deniyor. Aynı tipteki yaprakların permütasyonu faktöriyeldir ve determinizm zaman aşımıyla kesmeyi yasaklıyor; daha geniş arama **Faz 3** optimizasyon katmanına aittir. | Faz 3 |
+| **`minWidth` çevreleyen kutunun kısa kenarıdır**, dar kolun genişliği değil. L/U biçimli mekanda gerçek dar yerden BÜYÜK çıkar — ihlali gizleyebilir ama uydurma ihlal üretmez. Gerçek ölçüm medial eksen ister. | İP-8 |
+| **Kesme çizgileri SAKLANMIYOR.** Birim poligonları saklanınca `sharedBoundaryRuns` ile geri türer; aynı bölümlemeyi veren sonsuz kesme kümesi var. Mevcut sınırı OYNATMAK İP-8'in işi. | kabul edildi |
+| **Kama süpürmesi ince üçgen hücreler üretiyor.** `merkezi` stratejide L3'ün `minClearWidth` kontrolü sık ihlal veriyor. Gerçek bir teşhis; koridorlu düzene geçiş eşiği (`kat-plani` §9.4) hâlâ açık. | Faz 0 |
+| **Bıçak kalınlığı 2 mm** — poliçizgiyle bölmenin boolean karşılığı yok. Kayıp ölçülüp raporlanıyor ve kuantalama sınırının altında kalıyor. | kabul edildi |
+| **L4 sapma eşiği %20 kodda.** Otopark katsayısı doğrulamasının "belirgin sapma" sınırı algoritmik bir eşiktir; çıktısı yalnızca uyarıdır ve katsayıyı değiştirmez. | kabul edildi |
+| **`FloorTemplate` hâlâ kullanılmayan stub.** İP-4 de `Floor.templateFloorId`'yi kullandı. | açık |
+
+`etut-veri-modeli.md` **sürüm 1.4**'e güncellendi; kapatılan çelişkiler dosyanın başındaki
 değişiklik listesinde.
 
 ---
@@ -308,7 +402,7 @@ npm run dev
 
 npm run codegen        # hesaplanan alan altyapısını üret
 npm run codegen:check   # üretilenler güncel mi (CI)
-npm test               # 393 test
+npm test               # 588 test
 npm run typecheck
 node scripts/verify-migration.mjs   # migration'ı PGlite'ta çalıştır (Docker gerekmez)
 ```
