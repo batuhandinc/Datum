@@ -1,8 +1,22 @@
 # Etüt Veri Modeli ve Detay Spesifikasyonu
 
-**Sürüm:** 1.2
-**Tarih:** 9 Eylül 2026 (1.1: 8 Eylül · 1.0: 7 Eylül 2026)
+**Sürüm:** 1.3
+**Tarih:** 9 Eylül 2026 (1.2: 9 Eylül · 1.1: 8 Eylül · 1.0: 7 Eylül 2026)
 **Amaç:** Kat planı üretimi ve gerçek metraj için gereken veri derinliğini tanımlamak. Claude Code devir paketinin şema tarafıdır.
+
+**Sürüm 1.3 değişiklikleri** — İP-3 (program, çekirdek, servis mekanları, otopark) yazılmadan önce:
+
+1. Bölüm 6 — `Core` alan tablosu eklendi. Bölüm 2'de adı geçiyordu ama alanı yoktu; "çekirdek yerleşiyor" ölçütünün saklanacağı yer tanımsızdı
+2. Bölüm 6 — `Shaft`'a çekirdeğe **göreli** konum eklendi (`offsetX`, `offsetY`). Düşey süreklilik böylece kontrol değil, **yapısal garanti** olur
+3. Bölüm 5 — `Block` alan tablosu eklendi; `buildingHeight` üç kural eşiğinin girdisiydi ve evi yoktu
+4. Bölüm 7 — `ServiceSpace`'e `requiredArea` eklendi; `RequiredSpaceRule.areaFormula`'nın sonucunu yazacak kolon yoktu
+5. Bölüm 8 — `ParkingLayout`'a `acceptedDeficitCount` eklendi (bilinçli eksik kabulü, İP-9 raporunda görünür)
+6. Bölüm 8 — `Ramp`'a `footprintArea` eklendi; "bodrum alanının ciddi kısmını yer" ifadesinin sayısal karşılığı yoktu
+7. Bölüm 12 — `ParkingRule`'a `areaPerSpace`, `accessibleAreaPerSpace`, `bicycleAreaPerSpace` eklendi
+8. Bölüm 12.5 — **formül sözleşmesi** tanımlandı: dilbilgisi, kural tipi başına değişken beyaz listesi, birim, yayım kapısı
+9. Bölüm 4 — "Servis | (bkz. bölüm 6)" yanlış çapraz referansı düzeltildi (servis mekanları **bölüm 7**)
+10. Bölüm 15 — L1 zinciri eklendi (L0'ın devamı)
+11. Bölüm 5 — proje başlangıç sihirbazının 8 sorusunun **bu dokümanda olmadığı** kaydedildi; kaynağı `etut-portali-proje-dokumani.md` bölüm 5'tir
 
 **Sürüm 1.2 değişiklikleri** — İP-2 (sihirbaz, kural motoru, L0 zarf) yazılmadan önce:
 
@@ -341,7 +355,7 @@ Metrajın kalitesi buradan çıkar. Her bağımsız bölüm mekanlardan oluşur;
 | Depolama | giyinmeOdasi · kiler · depo · ankastreDolapNis |
 | Dış | balkon · fransizBalkon · teras · bahce · camBalkon |
 | Ortak | katHolu · merdivenHolu · binaGirisi · sigmanakKoridor |
-| Servis | (ayrı varlık — bkz. bölüm 6) |
+| Servis | (ayrı varlık — bkz. bölüm 7) *(1.3: referans 6 idi, yanlıştı)* |
 
 **Mekandan doğan metraj:**
 
@@ -435,9 +449,38 @@ Metrajın kalitesi buradan çıkar. Her bağımsız bölüm mekanlardan oluşur;
 
 Çok bloklu projeler için. Tek bloklu projede otomatik tek blok oluşur, arayüzde görünmez.
 
+| Alan | Tip | Kademe | Not |
+|---|---|---|---|
+| name | text | K2 | tek bloklu projede gizli |
+| sortOrder | int | — | |
+| isDefault | bool | — | otomatik oluşan tek blok |
+| buildingHeight | decimal (m) | H | Σ `Floor.grossHeight` *(1.3)* |
+
+**`buildingHeight` neden eklendi** *(1.3)*: `CoreRule.elevatorRequiredHeightThreshold`, `CoreRule.fireElevatorHeightThreshold` ve `FireSafetyRule.firePumpHeightThreshold` bir **bina yüksekliği** değeri okuyor; bu değerin şemada evi yoktu. Blok başınadır — çok bloklu projede bloklar farklı yükseklikte olabilir.
+
+> **Proje başlangıç sihirbazı (8 soru)** bu dokümanda **tanımlı değildir**; kaynağı `etut-portali-proje-dokumani.md` bölüm 5'in sonudur. Sorulardan yalnızca ikisinin (hedef otopark sayısı, asansör sayısı) bölge paketinde ön-dolum kaynağı vardır. *(1.3)*
+
 ---
 
 ## 6. Çekirdek
+
+### Core (çekirdek) *(1.3)*
+
+Merdiven, asansör(ler), hol ve şaftların oluşturduğu mekânsal gruplama. **Kat planı üretiminin sabit noktasıdır** (`etut-portali-proje-dokumani.md` bölüm 5, katman 3). `Block` başına tekildir.
+
+| Alan | Tip | Kademe | Not |
+|---|---|---|---|
+| blockId | fk | — | `Block` başına tek çekirdek |
+| coreStrategy | enum | H | `merkezi · kenar · cift` — L1 **önerir**, kullanıcı ezer |
+| geometry | polygon | H | yerel metrik. **Basit form:** dikdörtgen veya L. Optimize serbest form plan motorunun (İP-4) işidir |
+| area | decimal (m²) | H | poligondan |
+| requiredElevatorCount | int | H | `CoreRule` eşiklerinden (kat/yükseklik) |
+
+**Çekirdek proje geneli sabittir.** Konumu değişirse **tüm katlar** etkilenir; sistem onay ister. Konum bir ezmedir (`geometryOverrideValue` + gerekçe).
+
+**Paketten gelen kurallar** `CoreRule`'da: asansör zorunluluk eşikleri · minimum kabin ölçüleri · merdiven genişlikleri · kaçış mesafesi.
+
+**Neden strateji enum, katalog değil (bkz. 15.1):** kod üç yerleşimi de ayrı ayrı *uygular*; yeni bir strateji zaten yeni kod demektir.
 
 ### Elevator (asansör)
 
@@ -487,7 +530,10 @@ Metrajın kalitesi buradan çıkar. Her bağımsız bölüm mekanlardan oluşur;
 |---|---|
 | shaftType | enum: tesisat · havalandirma · cop · asansor · duman |
 | width / depth | decimal |
-| runsThroughFloors | int[] |
+| runsThroughFloors | int[] — `Floor.floorNo` değerleri *(1.3)* |
+| offsetX / offsetY | decimal (m) — **çekirdek orijinine göreli** konum *(1.3)* |
+
+**Şaft konumu neden göreli** *(1.3)*: şaftlar tüm katlarda **aynı** konumda olmak zorundadır (düşey süreklilik). Mutlak konum saklansaydı çekirdek taşınınca her katta ayrı ayrı güncellenmesi gerekir, biri unutulduğunda süreklilik sessizce kırılırdı. Göreli konumda mutlak yer `çekirdek + offset` ile **türetilir** — süreklilik korunması gereken bir kural değil, **yapısal bir sonuçtur**.
 
 ---
 
@@ -497,7 +543,11 @@ Bölge paketindeki eşiklerden zorunluluk türer; sistem checklist sunar, kullan
 
 ### ServiceSpace (ortak alanlar)
 
-Temel alanlar: `serviceType` · `isMandatory` (H) · `area` · `width/length` · `clearHeight` · `location` (hangi kat) · `floorFinish` · `wallFinish` · `hasVentilation` · `hasDrainage` · `hasFireRating` · `doorType`
+Temel alanlar: `serviceType` · `isMandatory` (H) · `requiredArea` (H) *(1.3)* · `area` · `width/length` · `clearHeight` · `location` (hangi kat) · `floorFinish` · `wallFinish` · `hasVentilation` · `hasDrainage` · `hasFireRating` · `doorType`
+
+**`requiredArea`** *(1.3)*: `RequiredSpaceRule.areaFormula`'nın sonucu. Formül tanımlıydı ama sonucunu yazacak kolon yoktu. `area` kullanıcının yerleştirdiği fiili alandır; `requiredArea` paketin istediği asgari alandır. İkisi ayrıdır ve rapor ikisini de gösterir.
+
+**Programa dahil olma** *(1.3)*: ayrı bir "onaylandı" alanı **yoktur** — *satırın varlığı dahil olmak demektir*. Zorunlular onayda otomatik oluşur, tercihe bağlılar kullanıcı işaretleyince; işaret kaldırılınca satır silinir. `isMandatory` yalnızca checklist'te **kilitli** olup olmadığını söyler.
 
 ### Sığınak (özel alan seti)
 
@@ -563,14 +613,25 @@ Görevli dairesi (eşikten) · Çöp odası · Bisiklet park alanı · Temizlik 
 | bicycleSpaceCount | int (H) | paketten |
 | maneuveringAisleWidth | decimal (P) | |
 | markingLength | decimal (H) | yer çizgileri |
+| acceptedDeficitCount | int (M) | **kabul edilen eksik** *(1.3)* |
+
+**`deficitCount` = `requiredCount − plannedCount`** *(1.3)*. `targetCount` kullanıcının hedefidir ve eksiği tanımlamaz — eksik, **yönetmelik ihtiyacına** göre ölçülür.
+
+**`acceptedDeficitCount`** *(1.3)*: kullanıcı eksikli bir senaryoyu bilerek seçerse, **seçim anındaki** eksik buraya yazılır. "2 park eksik olduğu bilinerek 1 bodrum seçildi" bir **risk kabulüdür**; `deficitCount` sonradan program değişince kayar, kabul edilen sayı kaymaz. İP-9 raporu bunu gösterir. Hesaplanan değil, karar anında yazılan bir kayıttır — bu yüzden ezme üçlüsü açılmaz.
+
+**Senaryolar saklanmaz** *(1.3)*: otopark senaryoları her okumada yeniden üretilir. Kalıcı olan yalnızca **karar**: `basementFloorCountOverrideValue` + gerekçe + `acceptedDeficitCount`.
 
 ### ParkingSpace / Ramp
 
 Park yeri: `width × length` (paket minimumu) · `isAccessible` · `isMechanical` · `assignedUnitId`
 
-Rampa: `slope` (paket maksimumu) · `width` · `length` (H: kot farkı ÷ eğim) · `isCovered` · `hasHeating` · `shutterType` · `turningRadius`
+Rampa: `slope` (paket maksimumu) · `width` · `length` (H: kot farkı ÷ eğim) · `footprintArea` (H) *(1.3)* · `isCovered` · `hasHeating` · `shutterType` · `turningRadius`
 
 > Rampa uzunluğu kot farkından türer ve bodrum alanının ciddi kısmını yer. En çok unutulan kalemdir.
+
+**`footprintArea = length × width`** *(1.3)*: yukarıdaki cümlenin sayısal karşılığı yoktu. Rampa ayak izi, otopark çözücüsünün kullanılabilir alan havuzundan **düşülür**.
+
+**"Kot farkı" hangi değerdir** *(1.3)*: bodrum rampası zeminden **en alt bodruma** iner, dolayısıyla düşülen kot = bodrum kat sayısı × bodrum kat yüksekliği (bölüm 5, `Floor.grossHeight`). `SiteData.topographyLevelDifference` rampanın **giriş kotunu** etkiler ama boyunu bu belirlemez. Doküman ikisini de ima ediyordu, hiçbirini tanımlamıyordu; bodrum derinliği fiziksel olarak zorunlu olandır.
 
 ---
 
@@ -704,7 +765,7 @@ sürümü dondurur (bkz. bölüm 1.2).
 |---|---|
 | `ZoningRuleSet` | emsal hesap yöntemi, yükseklik ölçüm referansı (**katalog anahtarı**), emsal harici kurallar, **çekme ötelemesi köşe davranışı** (`offsetJoinType`) |
 | `RequiredSpaceRule` | mekan tipi, tetikleyici (bağımsız bölüm sayısı / alan / güç / yükseklik), eşik, alan formülü |
-| `ParkingRule` | ihtiyaç formülü, park yeri boyutları, rampa eğim sınırı, engelli oranı |
+| `ParkingRule` | ihtiyaç formülü, park yeri boyutları, rampa eğim sınırı, engelli oranı, **araç başına alan katsayıları** *(1.3)* |
 | `CoreRule` | asansör eşikleri, minimum kabin ölçüleri, merdiven genişlikleri, kaçış mesafeleri |
 | `FireSafetyRule` | pompa/sprinkler/basınçlandırma eşikleri, yangın merdiveni şartları |
 | `CostItemCatalog` | kalem kodu, ad, birim, kategori, açıklık düşüm kuralı |
@@ -759,6 +820,41 @@ içinde durur:
 
 Bu ikisi **enum olarak kalır**, katalog tablosuna dönmez: kod her üyeyi ayrı ayrı
 *uygulamak* zorundadır (bkz. bölüm 15).
+
+### 12.5 Sürüm 1.3'te eklenenler
+
+#### `ParkingRule` — araç başına alan katsayıları
+
+| Alan | Birim | Not |
+|---|---|---|
+| `areaPerSpace` | m²/araç | normal park yeri |
+| `accessibleAreaPerSpace` | m²/araç | engelli park yeri |
+| `bicycleAreaPerSpace` | m²/yer | bisiklet |
+
+**Neden `spaceWidth × spaceLength` yetmiyor:** o çarpım park yerinin **kendi** alanıdır, gerçek verim değil. Aradaki farkı kolon kayıpları, rampa başı ölü alanlar, sütun aralığı ve dönüş yarıçapları belirler — hiçbiri o üç değerden türetilemez ve türetilen sayı **sistematik olarak iyimser** çıkar. `spaceWidth` / `spaceLength` / `maneuveringAisleWidth` **silinmez**; plan motoru (İP-4) gerçek yerleşimi çizerken kullanacaktır.
+
+**Otorite katsayıdadır.** İP-4'te kolon aksları geldiğinde geometrik yerleşim bu katsayıyı **değiştirmez, doğrular**: fiili yerleşim katsayıdan belirgin saparsa uyarı üretilir. Katsayı, İP-10 geriye dönük doğrulamada kalibre edilecek kalemler listesindedir.
+
+**Kural yoksa sayım yapılmaz + uyarı.** Koda gömülü varsayılan yoktur (ilke 1).
+
+#### Formül sözleşmesi
+
+`ParkingRule.requirementFormula` ve `RequiredSpaceRule.areaFormula` metin alanlarıdır. Dilbilgisi ve değerlendirme kuralları:
+
+**Dilbilgisi (kapalı küme):** sayı · değişken adı · `+ - * /` · parantez · karşılaştırma (`< <= > >= == !=`) · üçlü `? :` · `min max ceil floor round abs`. Üye erişimi, fonksiyon tanımı, atama, dizi ve dize **yoktur**.
+
+**Kural tipi başına değişken beyaz listesi ve birim** — kodun sözleşmesidir, yerel kural değildir; bu yüzden pakette değil kodda yaşar:
+
+| Formül alanı | Görebildiği değişkenler | Birim | Sonuç kısıtı |
+|---|---|---|---|
+| `ParkingRule.requirementFormula` | `unitCount` · `totalFloorArea` · `commercialArea` · `residentialUnitCount` | araç | tamsayı ≥ 0 |
+| `RequiredSpaceRule.areaFormula` | `unitCount` · `totalFloorArea` · `personCount` · `demandPowerKW` · `buildingHeight` | m² | ≥ 0 |
+
+Otopark formülünün gördüğü değişkenlerle alan formülününki **aynı değildir**.
+
+**Doğrulama yayım anındadır, okuma anında değil.** Sürüm `published`'a çevrilmeden önce her formül ayrıştırılır ve sözleşmesine karşı doğrulanır; bozuk formül yayımı **reddeder** ve sürüm `draft` kalır. Böylece bozuk bir formül, projeler onu okumaya başlamadan yakalanır. Okuma anında formülün geçerli olduğu **garantidir**; orada yalnızca çalışma zamanı sorunları (sıfıra bölme, eksik değişken değeri) uyarı üretir ve sonuç `null` kalır.
+
+**Determinizm:** tarih, saat ve rastgelelik erişimi yoktur — aynı girdi her zaman aynı sonucu verir (ilke 2'nin gereği: dondurulmuş paket dondurulmuş sonuç üretmeli).
 
 ---
 
@@ -840,3 +936,31 @@ Alan null kalır, uyarı üretilir, kural tanımlandığında İP-3'te doldurulu
 
 **Emsal harici alanlar.** `maxTotalFloorArea` İP-2'de emsal harici kazançları **içermez** —
 onlar ancak program girildikten sonra (A5, İP-3) bilinir. Sonuç bu uyarıyla birlikte sunulur.
+
+### 15.3 L1 zinciri — çekirdek yerleşimi *(1.3)*
+
+L0 zarfı verir; L1 zarfın **sabit noktasını** yerleştirir. `mvp-spesifikasyonu.md` bölüm 3 İP-3
+tek satırla tanımlıyor ("strateji önerisi (merkezî / kenar / çift), merdiven + asansör + şaft");
+L0–L4'ün otoriter dokümanı (`kat-plani-uretim-mimarisi.md`) henüz repoda yok.
+
+```
+zarf → çekirdek stratejisi → çekirdek poligonu → şaft göreli konumları → kaçış mesafesi kontrolü
+```
+
+| Adım | Girdi | Çıktı |
+|---|---|---|
+| 1 | `buildableEnvelope`'un en büyük parçası | plaka |
+| 2 | plaka en-boy oranı + birim sayısı | `coreStrategy` **önerisi** |
+| 3 | `CoreRule` ölçüleri + `requiredElevatorCount` | çekirdek poligonu (dikdörtgen veya L) |
+| 4 | çekirdek orijini | `Shaft.offsetX/offsetY` |
+| 5 | en uzak birim → çekirdek mesafesi | `CoreRule.maxEscapeDistance` aşılırsa **uyarı** |
+
+**Strateji bir öneridir, karar değildir.** Kullanıcı hem stratejiyi hem poligonu ezebilir.
+En-boy oranı eşikleri bir **algoritma sezgiselidir**, yerel mevzuat değildir — bu yüzden kodda
+kalır; çıktısı zaten ezilebilir bir öneridir.
+
+**`CoreRule` yoksa çekirdek üretilmez** + uyarı (ilke 1): asansör adedi, merdiven genişliği ve
+kaçış mesafesi yerel mevzuattır, uydurulamaz.
+
+**Kaçış mesafesi aşımı engellemez, uyarır** (ilke 7). Ölçüm İP-3'te kuş uçuşudur; koridor boyu
+ölçüm gerçek plan geometrisi gerektirir ve İP-4'e aittir.
