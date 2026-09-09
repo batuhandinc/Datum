@@ -1,4 +1,5 @@
 import type {
+  BuildingElementRule,
   CoreRule,
   FireSafetyRule,
   HeightReferenceCatalog,
@@ -9,6 +10,7 @@ import type {
   SpaceTypeCategoryMap,
   SpecialConstraintCatalog,
   StakeholderConsentRule,
+  UnitLayoutRule,
   UtilityCoefficientSet,
   ZoningRuleSet,
 } from "@prisma/client";
@@ -62,6 +64,9 @@ export interface RuleReader {
   requiredSpaceRules(): Promise<RequiredSpaceRule[]>;
   spaceShapeFactors(): Promise<SpaceShapeFactorRule[]>;
   spaceTypeCategories(): Promise<SpaceTypeCategoryMap[]>;
+  // --- İP-4 ---
+  unitLayoutRule(): Promise<UnitLayoutRule | null>;
+  buildingElementRules(): Promise<BuildingElementRule[]>;
 }
 
 class FrozenRuleReader implements RuleReader {
@@ -210,6 +215,36 @@ class FrozenRuleReader implements RuleReader {
       where: { regionPackageVersionId: this.versionId },
       orderBy: { spaceType: "asc" },
     });
+  }
+
+  // --- İP-4 ---
+
+  async unitLayoutRule(): Promise<UnitLayoutRule | null> {
+    return this.single(
+      () =>
+        this.client.unitLayoutRule.findMany({
+          where: { regionPackageVersionId: this.versionId! },
+        }),
+      "UNIT_LAYOUT_RULE_MISSING",
+    );
+  }
+
+  /**
+   * Yapı elemanı kuralları — mekan tipi, duvar tipi veya blok geneli için.
+   *
+   * LİSTE döner, tekil değil: bir paket her `spaceType` ve her `wallType` için
+   * ayrı satır taşır. Boş liste uyarı üretir; duvar ve açıklık üretilemez.
+   */
+  async buildingElementRules(): Promise<BuildingElementRule[]> {
+    if (!this.versionId) return [];
+    const rows = await this.client.buildingElementRule.findMany({
+      where: { regionPackageVersionId: this.versionId },
+      orderBy: [{ spaceType: "asc" }, { wallType: "asc" }, { ruleKey: "asc" }],
+    });
+    if (rows.length === 0) {
+      this.collector.addOnce("BUILDING_ELEMENT_RULE_MISSING", { count: 0 });
+    }
+    return rows;
   }
 }
 

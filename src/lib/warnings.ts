@@ -138,6 +138,42 @@ export const WARNING_CODES = [
   "FORMULA_DIVISION_BY_ZERO",
   /** Sonuç sözleşmenin alt sınırının altına düştü. */
   "FORMULA_RESULT_BELOW_MINIMUM",
+
+  // --- plan motorunun kural tabloları (İP-4) ---
+  /** Birim ölçeğinde bölümleme kuralı yok — L2 hesaplayamaz. */
+  "UNIT_LAYOUT_RULE_MISSING",
+  /** Yapı elemanı kuralı yok — duvar, açıklık ve aks üretilemez. */
+  "BUILDING_ELEMENT_RULE_MISSING",
+
+  // --- L2 bölümleme (İP-4) ---
+  /**
+   * Brüt/net katsayısı paketten gelmiyor.
+   *
+   * Hedef NET (mekan alanları toplamı), plaka BRÜT. Katsayı `plaka ÷ Σhedef`
+   * ile UYDURULAMAZ: bu, programın plakayı tam doldurduğunu VARSAYMAK olur ve
+   * program plakanın %60'ıysa bütün daireleri sessizce %66 şişirir.
+   */
+  "L2_GROSS_TO_NET_MISSING",
+  /** Birimin hedef alanı bilinmiyor; 0 saymak diğerlerinin payını şişirirdi. */
+  "L2_UNIT_TARGET_UNKNOWN",
+  /** Birime poligon düşmedi — program plakaya sığmadı. */
+  "L2_UNIT_UNPLACED",
+  /** Birim ne çekirdeğe ne sirkülasyona değiyor. KURALSIZ bilinen olgu. */
+  "L2_UNIT_NO_CORE_ACCESS",
+  /** Birim hiçbir cepheye değmiyor — penceresiz daire. KURALSIZ bilinen olgu. */
+  "L2_UNIT_NO_FACADE",
+  /** Cephe teması paket asgarisinin altında. */
+  "L2_UNIT_FACADE_SHORT",
+  /** Gerçekleşen alan hedeften tolerans dışı saptı. */
+  "L2_UNIT_AREA_OFF_TARGET",
+  /** Birim en-boy oranı paket sınırını aştı — aşırı uzun dar birim. */
+  "L2_UNIT_ASPECT_RATIO",
+  /** Birim poligonu AYRIK parçalara bölündü; erişilebilen parça alındı. */
+  "L2_UNIT_SPLIT",
+  /** Hiçbir birime verilemeyen artık alan kaldı. */
+  "L2_RESIDUAL_AREA",
+  /** Program plakadan büyük — kuyruktaki birimler yerleşemedi. */
+  "L2_PROGRAM_EXCEEDS_PLATE",
 ] as const;
 
 export type WarningCode = (typeof WARNING_CODES)[number];

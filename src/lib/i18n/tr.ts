@@ -618,6 +618,37 @@ export const tr = {
       "Kural formülünde sıfıra bölme oluştu — sonuç hesaplanmadı.",
     FORMULA_RESULT_BELOW_MINIMUM:
       "Kural formülü {value} üretti; en az {minimum} olmalıydı — sonuç kullanılmadı.",
+
+    // --- plan motorunun kural tabloları (İP-4) ---
+    UNIT_LAYOUT_RULE_MISSING:
+      "Bölge paketinde birim bölümleme kuralı yok ({count} satır) — kat plakası bölümlenmedi.",
+    BUILDING_ELEMENT_RULE_MISSING:
+      "Bölge paketinde yapı elemanı kuralı yok ({count} satır) — duvar, açıklık ve kolon aksı üretilmedi.",
+
+    // --- L2 bölümleme (İP-4) ---
+    L2_GROSS_TO_NET_MISSING:
+      "Brüt/net katsayısı pakette tanımlı değil — bölümleme yapılmadı. " +
+      "Hedefler net mekan alanı, plaka ise brüttür; katsayı bölmeyle türetilseydi " +
+      "program plakayı doldurmadığında bütün daireler sessizce şişerdi.",
+    L2_UNIT_TARGET_UNKNOWN:
+      "{unitNo} nolu bağımsız bölümün hedef alanı bilinmiyor — yerleştirilmedi. " +
+      "Sıfır sayılsaydı diğer birimlerin payı orantısız büyürdü.",
+    L2_UNIT_UNPLACED: "{unitNo} nolu bağımsız bölüme plakada yer kalmadı.",
+    L2_UNIT_NO_CORE_ACCESS:
+      "{unitNo} nolu bağımsız bölüm ne çekirdeğe ne sirkülasyona değiyor — kapısı yok.",
+    L2_UNIT_NO_FACADE: "{unitNo} nolu bağımsız bölüm hiçbir cepheye değmiyor — penceresiz.",
+    L2_UNIT_FACADE_SHORT:
+      "{unitNo} nolu bağımsız bölümün cephesi {measured} m; paket en az {limit} m istiyor.",
+    L2_UNIT_AREA_OFF_TARGET:
+      "{unitNo} nolu bağımsız bölüm {achieved} m² çıktı; hedef {target} m² (%{deviation} sapma).",
+    L2_UNIT_ASPECT_RATIO:
+      "{unitNo} nolu bağımsız bölümün en-boy oranı {measured}; paket sınırı {limit}.",
+    L2_UNIT_SPLIT:
+      "{unitNo} nolu bağımsız bölüm ayrık parçalara bölündü; erişilebilen parça alındı, " +
+      "{discarded} m² artığa aktarıldı.",
+    L2_RESIDUAL_AREA: "{area} m² hiçbir bağımsız bölüme verilemedi.",
+    L2_PROGRAM_EXCEEDS_PLATE:
+      "Program plakadan {shortfall} m² büyük — {count} bağımsız bölüm yerleşemedi.",
   } satisfies Record<WarningCode, string>,
 } as const;
 
