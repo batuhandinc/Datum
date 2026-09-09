@@ -766,7 +766,7 @@ sürümü dondurur (bkz. bölüm 1.2).
 | `ZoningRuleSet` | emsal hesap yöntemi, yükseklik ölçüm referansı (**katalog anahtarı**), emsal harici kurallar, **çekme ötelemesi köşe davranışı** (`offsetJoinType`) |
 | `RequiredSpaceRule` | mekan tipi, tetikleyici (bağımsız bölüm sayısı / alan / güç / yükseklik), eşik, alan formülü |
 | `ParkingRule` | ihtiyaç formülü, park yeri boyutları, rampa eğim sınırı, engelli oranı, **araç başına alan katsayıları** *(1.3)* |
-| `CoreRule` | asansör eşikleri, minimum kabin ölçüleri, merdiven genişlikleri, kaçış mesafeleri |
+| `CoreRule` | asansör eşikleri, minimum kabin ölçüleri, merdiven genişlikleri, kaçış mesafeleri, **sirkülasyon asgari genişliği** *(1.3)* |
 | `FireSafetyRule` | pompa/sprinkler/basınçlandırma eşikleri, yangın merdiveni şartları |
 | `CostItemCatalog` | kalem kodu, ad, birim, kategori, açıklık düşüm kuralı |
 | `CostCategoryTree` | kaba/ince/diğer kırılımı (bölgeye göre değişir) |

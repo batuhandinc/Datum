@@ -359,6 +359,19 @@ export const tr = {
     PARKING_AREA_PER_SPACE_MISSING:
       "Araç başına alan katsayısı tanımlı değil — kaç araç sığdığı hesaplanmadı.",
 
+    CORE_ELEVATOR_COUNT_UNAVAILABLE:
+      "Asansör zorunlu ama bölge paketinde asgari adet tanımlı değil — çekirdek boyutlandırılamadı.",
+    CORE_PLATE_MISSING:
+      "Yapılaşabilir zarf yok — çekirdek yerleştirilemedi.",
+    CORE_ENVELOPE_SPLIT:
+      "Zarf {parts} parçaya bölünmüş; çekirdek en büyük parçaya yerleştirildi.",
+    CORE_DIMENSIONS_UNAVAILABLE:
+      "Merdiven, sirkülasyon veya kabin ölçüleri eksik — çekirdek boyutlandırılamadı.",
+    CORE_OUTSIDE_ENVELOPE:
+      "Önerilen çekirdek zarfa sığmıyor — konumu veya ölçüsünü değiştirin.",
+    CORE_ESCAPE_DISTANCE_EXCEEDED:
+      "Kaçış mesafesi {distance} m; sınır {limit} m.",
+
     FORMULA_INPUT_MISSING:
       "Kural formülü “{variable}” değerini okuyor ama bu ölçü henüz girilmedi — hesaplanmadı.",
     FORMULA_DIVISION_BY_ZERO:

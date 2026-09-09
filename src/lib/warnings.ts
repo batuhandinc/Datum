@@ -87,6 +87,20 @@ export const WARNING_CODES = [
   /** Araç başına alan katsayısı tanımsız — otopark sayımı yapılamaz. */
   "PARKING_AREA_PER_SPACE_MISSING",
 
+  // --- L1 çekirdek yerleşimi (İP-3) ---
+  /** Asansör zorunluluk eşiği sağlandı ama minimum adet tanımsız. */
+  "CORE_ELEVATOR_COUNT_UNAVAILABLE",
+  /** Zarf yok veya alanı sıfır — çekirdek yerleştirilecek plaka yok. */
+  "CORE_PLATE_MISSING",
+  /** Zarf bölünmüş; çekirdek EN BÜYÜK parçaya yerleşti. */
+  "CORE_ENVELOPE_SPLIT",
+  /** Merdiven/sirkülasyon/kabin ölçüleri eksik — çekirdek boyutlandırılamadı. */
+  "CORE_DIMENSIONS_UNAVAILABLE",
+  /** Önerilen çekirdek zarfa sığmadı — engellenmez, kullanıcı taşır (ilke 7). */
+  "CORE_OUTSIDE_ENVELOPE",
+  /** Kaçış mesafesi paket sınırını aştı. */
+  "CORE_ESCAPE_DISTANCE_EXCEEDED",
+
   // --- formül motoru (İP-3) ---
   // SÖZDİZİMİ hataları burada YOKTUR: onlar yayım anında yakalanır ve yayımı
   // reddeder. Buradakiler yalnızca ÇALIŞMA ZAMANI sorunlarıdır.
