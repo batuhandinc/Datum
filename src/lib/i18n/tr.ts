@@ -379,6 +379,9 @@ export const tr = {
     autoTitle: "Otomatik bölümleme (L2)",
     floor: "Kat",
     noFloors: "Henüz kat tanımlanmadı — önce program ekranından kat ekleyin.",
+    noProgramFloors:
+      "Programı girilmemiş katlar bölümleme ekranında gösterilmiyor: {floors}. " +
+      "Bağımsız bölümleri program ekranından ekleyin.",
     noPlate: "Kat plakası hesaplanmadı. İmar verisi girilince zarf çıkar.",
     noCore: "Çekirdek yerleşmedi. Bölge paketinde çekirdek kuralı gerekiyor.",
     plateArea: "Plaka",

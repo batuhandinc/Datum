@@ -277,3 +277,33 @@ describe("ENGELLEMEZ, UYARIR (ilke 7)", () => {
     expect(report.residualArea).toBeCloseTo(600 - 24, 1);
   });
 });
+
+describe("çalışan uygulamada bulunan kusurlar", () => {
+  it("BRÜT HEDEF BİLİNMİYORSA nicel program uyarısı VERİLMEZ", () => {
+    // Katsayı yoksa hiçbir birimin brüt hedefi bilinmez; toplam 0 çıkar ve
+    // "program plakadan 0 m² büyük" diye anlamsız bir cümle doğardı.
+    const report = checkSubdivision(
+      input({
+        units: [{ unitId: "1", unitNo: "1", targetArea: 90, geometry: null }],
+        rule: { ...FULL_RULE, grossToNetFactor: null },
+      }),
+    );
+    expect(report.warnings.map((w) => w.code)).toContain("L2_UNIT_UNPLACED");
+    expect(report.warnings.map((w) => w.code)).not.toContain("L2_PROGRAM_EXCEEDS_PLATE");
+  });
+
+  it("brüt hedef biliniyorsa nicel uyarı VERİLİR", () => {
+    const report = checkSubdivision(
+      input({ units: [{ unitId: "1", unitNo: "1", targetArea: 90, geometry: null }] }),
+    );
+    const w = report.warnings.find((x) => x.code === "L2_PROGRAM_EXCEEDS_PLATE");
+    expect(w).toBeDefined();
+    expect(w!.params!.shortfall).toBeCloseTo(112.5, 2); // 90 × 1,25
+  });
+
+  it("BİRİM YOKSA artık uyarısı verilmez ama DEĞERİ hesaplanır", () => {
+    const report = checkSubdivision(input({ units: [] }));
+    expect(report.residualArea).toBeCloseTo(600 - 24, 1);
+    expect(report.warnings.map((w) => w.code)).not.toContain("L2_RESIDUAL_AREA");
+  });
+});

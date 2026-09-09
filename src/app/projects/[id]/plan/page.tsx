@@ -93,7 +93,11 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
   const region = remainderOf(plate, context.core, context.circulation);
 
   // Bodrum katlar bölümlenmez — otopark ve servis mekanı orada.
-  const floors = context.floors.filter((f) => f.floorType !== "bodrum");
+  const planned = context.floors.filter((f) => f.floorType !== "bodrum");
+  // PROGRAMI OLMAYAN KAT GÖSTERİLMEZ. Bölümlenecek bir şey yoktur ve her kat
+  // için boş bir tuval + boş bir tanı tablosu basmak sayfayı gürültüye boğar.
+  const floors = planned.filter((f) => f.units.length > 0);
+  const withoutProgram = planned.filter((f) => f.units.length === 0);
 
   const warnings: Warning[] = [...l1.warnings, ...reader.warnings];
 
@@ -131,9 +135,20 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
         </div>
       )}
 
-      {floors.length === 0 ? (
+      {planned.length === 0 ? (
         <div style={panel}>
           <p style={{ margin: 0, fontSize: 13, color: "#a16207" }}>{tr.plan.noFloors}</p>
+        </div>
+      ) : null}
+
+      {withoutProgram.length > 0 ? (
+        <div style={panel}>
+          <p style={{ margin: 0, fontSize: 12, color: "#a16207" }}>
+            {tr.plan.noProgramFloors.replace(
+              "{floors}",
+              withoutProgram.map((f) => f.floorNo).join(", "),
+            )}
+          </p>
         </div>
       ) : null}
 

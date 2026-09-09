@@ -330,15 +330,25 @@ export function checkSubdivision(input: SubdivisionInput): SubdivisionReport {
     const noise = areaQuantizationBound(asMultiPolygon(input.plate));
     residualArea = Math.abs(raw) <= noise ? 0 : round(raw, 3);
     coverageRatio = plateArea > 0 ? round(unitArea / plateArea, 4) : null;
-    if (residualArea > 0) w.add("L2_RESIDUAL_AREA", { area: residualArea });
+    // Birim yoksa "hiçbir birime verilemedi" demek gürültüdür: verilecek birim
+    // henüz tanımlanmamıştır. Artık DEĞERİ yine hesaplanır ve raporlanır.
+    if (residualArea > 0 && input.units.length > 0) {
+      w.add("L2_RESIDUAL_AREA", { area: residualArea });
+    }
   }
 
-  const unplaced = units.filter((u) => !u.placed).length;
-  if (unplaced > 0 && input.plate) {
-    const shortfall = units
-      .filter((u) => !u.placed)
-      .reduce((s, u) => s + (u.grossTarget ?? 0), 0);
-    w.addOnce("L2_PROGRAM_EXCEEDS_PLATE", { shortfall: round(shortfall), count: unplaced });
+  // "Program plakadan X m² büyük" NİCEL bir iddiadır ve bilinmeyen bir
+  // miktarla kurulamaz: brüt/net katsayısı yoksa hiçbir birimin brüt hedefi
+  // bilinmez ve toplam 0 çıkar — "0 m² büyük" diye anlamsız bir cümle doğardı.
+  // Yerleşmeyen birimlerin kendi satırları (`L2_UNIT_UNPLACED`) bilgiyi zaten
+  // taşıyor; nicel özet yalnızca ölçülebiliyorsa verilir.
+  const unplacedWithTarget = units.filter((u) => !u.placed && u.grossTarget !== null);
+  if (unplacedWithTarget.length > 0 && input.plate) {
+    const shortfall = unplacedWithTarget.reduce((s, u) => s + (u.grossTarget ?? 0), 0);
+    w.addOnce("L2_PROGRAM_EXCEEDS_PLATE", {
+      shortfall: round(shortfall),
+      count: unplacedWithTarget.length,
+    });
   }
 
   return { units, residualArea, coverageRatio, warnings: w.all };
