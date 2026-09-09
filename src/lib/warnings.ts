@@ -234,6 +234,27 @@ export const WARNING_CODES = [
    * olmayan bir yerleşimi tarif ederdi.
    */
   "L3_SPACE_NOT_IN_RECIPE",
+
+  // --- L4 detaylandırma (İP-4) ---
+  /**
+   * Asgari kapı genişliği pakette yok — açıklık ÜRETİLMEDİ.
+   *
+   * Türkiye'de asgari kapı genişliği YANGIN ve ERİŞİLEBİLİRLİK mevzuatıdır;
+   * kodda varsayılan olamaz. Üretilseydi ölçüsüz açıklık doğar ve İP-5'in
+   * `(2×(w+h))×count` doğrama metrajı SESSİZCE SIFIR çıkardı.
+   */
+  "L4_DOOR_RULE_MISSING",
+  /** Mekan net yüksekliği girilmemiş — açıklık boyutlandırılamadı. */
+  "L4_CLEAR_HEIGHT_MISSING",
+  /** Kolon aks aralığı pakette yok — ızgara üretilmedi. */
+  "L4_COLUMN_SPAN_MISSING",
+  /**
+   * Aks ızgarasından ölçülen park verimi paket katsayısından belirgin sapıyor.
+   *
+   * KATSAYI DEĞİŞMEZ. İP-3'ün kararı: otorite `ParkingRule.areaPerSpace`'tedir;
+   * geometrik yerleşim onu DOĞRULAR, değiştirmez. Bu bir uyarıdır, düzeltme değil.
+   */
+  "L4_PARKING_COEFFICIENT_DEVIATION",
 ] as const;
 
 export type WarningCode = (typeof WARNING_CODES)[number];

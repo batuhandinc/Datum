@@ -754,6 +754,19 @@ export const tr = {
     L3_SPACE_NOT_IN_RECIPE:
       "“{spaceType}” programda var ama şablon reçetesinde yok — geometri üretilmedi, " +
       "hedef alanıyla kaldı (G1).",
+
+    // --- L4 detaylandırma (İP-4) ---
+    L4_DOOR_RULE_MISSING:
+      "Asgari kapı genişliği pakette tanımlı değil — kapı ve pencere üretilmedi. " +
+      "Ölçüsüz açıklık üretilseydi doğrama metrajı sessizce sıfır çıkardı.",
+    L4_CLEAR_HEIGHT_MISSING:
+      "Mekan net yüksekliği girilmemiş — açıklıklar boyutlandırılamadı.",
+    L4_COLUMN_SPAN_MISSING:
+      "Kolon aks aralığı pakette tanımlı değil — aks ızgarası üretilmedi.",
+    L4_PARKING_COEFFICIENT_DEVIATION:
+      "Aks ızgarasından ölçülen park verimi {measured} m²/araç; paket katsayısı " +
+      "{coefficient} m²/araç (%{deviation} sapma). KATSAYI DEĞİŞMEDİ — otorite " +
+      "pakettedir, geometri onu yalnızca doğrular.",
   } satisfies Record<WarningCode, string>,
 } as const;
 
