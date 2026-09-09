@@ -50,7 +50,11 @@ ve bu dosyadaki açık kararlar listesine ekle.
 - **Arayüz metinleri Türkçe, i18n katmanında** (`src/lib/i18n/tr.ts`).
   **Koda gömülü Türkçe metin yok.** Hata mesajları `DATUM_*` kodu döndürür, `errorMessage()` çevirir.
 - Şema dosyalarındaki `///` açıklamaları yapısal: `@tier`, `@own`, `@src`.
-  `@src` daima dokümandaki satıra işaret eder.
+  **`@src` BÖLÜME işaret eder, satıra değil** — `etut-veri-modeli.md§3`.
+  Satır numarası kırılgandır: dokümana bir paragraf eklemek yüzlerce referansı
+  birden bozar (v1.1 ve v1.2'de tam olarak bu oldu, 539 referansın 495'i
+  yanlış satıra bakar hâle gelmişti). Bölüm numarası anlamsaldır ve kaymaz.
+  Bir test alanın referans verilen bölümde gerçekten geçtiğini doğrular.
 - Yorumlar ve doküman metni Türkçe.
 
 **ASCII kısıtı:** Prisma enum değerleri `[A-Za-z][A-Za-z0-9_]*` olmak zorunda. Türkçe

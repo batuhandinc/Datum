@@ -16,7 +16,7 @@ model SpecificationSet {
   projectId String  @unique
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  /// @tier K1 @own M @src etut-veri-modeli.md:562 — K1'de tek seçim yapılır
+  /// @tier K1 @own M @src etut-veri-modeli.md§11 — K1'de tek seçim yapılır
   selectedLevel SpecificationLevel?
 
   createdAt DateTime @default(now())
@@ -55,26 +55,26 @@ model QuantityLine {
   quantityTakeoffId String
   quantityTakeoff   QuantityTakeoff @relation(fields: [quantityTakeoffId], references: [id], onDelete: Cascade)
 
-  /// @src etut-veri-modeli.md:534 — CostItemCatalog.costItemCode'a mantıksal referans
+  /// @src etut-veri-modeli.md§10 — CostItemCatalog.costItemCode'a mantıksal referans
   costItemCode String
-  /// @src etut-veri-modeli.md:534
+  /// @src etut-veri-modeli.md§10
   description  String?
-  /// @src etut-veri-modeli.md:534
+  /// @src etut-veri-modeli.md§10
   quantity     Decimal @db.Decimal(18, 4)
-  /// @src etut-veri-modeli.md:534
+  /// @src etut-veri-modeli.md§10
   unit         String
 
-  /// @src etut-veri-modeli.md:534 — hangi nesneden geldi.
+  /// @src etut-veri-modeli.md§10 — hangi nesneden geldi.
   /// Polimorfik referans: FK bütünlüğü YOK (dokümanın seçtiği şekil).
   sourceObjectType String?
   sourceObjectId   String?
-  /// @src etut-veri-modeli.md:534 — hangi formülle çıktı.
+  /// @src etut-veri-modeli.md§10 — hangi formülle çıktı.
   /// Geometri seviyesi (G1/G2/G3) ve kullanılan katsayı bilgisi de burada yaşar.
   formula          String?
 
-  /// @src etut-veri-modeli.md:534
+  /// @src etut-veri-modeli.md§10
   isOverridden   Boolean @default(false)
-  /// @src etut-veri-modeli.md:534
+  /// @src etut-veri-modeli.md§10
   overrideReason String?
 
   createdAt DateTime @default(now())

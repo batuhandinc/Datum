@@ -4,6 +4,7 @@
  *   1. prisma/sql/computed-columns.sql   generated kolonlar (migration'a eklenir)
  *   2. prisma/sql/override-ledger.sql    "bu projedeki tüm ezmeler" view'ı
  *   3. src/lib/computed/generated.ts     tipler ve yazma koruması
+ *   4. src/lib/fields/generated.ts       kademe kataloğu (sihirbaz alan görünürlüğü)
  *
  * View ÜRETİLDİĞİ için bayatlayamaz: yeni bir hesaplanan alan eklendiğinde
  * view da otomatik büyür. Elle yazılmış bir UNION'da unutulan alan, raporda
@@ -22,10 +23,12 @@ import {
   reasonColumn,
   computedFieldCount,
 } from "../computed-fields.js";
+import { parseAllAnnotations } from "./parse-schema.js";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const SQL_DIR = path.join(ROOT, "prisma", "sql");
 const TS_DIR = path.join(ROOT, "src", "lib", "computed");
+const FIELDS_DIR = path.join(ROOT, "src", "lib", "fields");
 
 const BANNER = `-- ÜRETİLMİŞ DOSYA — ELLE DÜZENLEME.
 -- Kaynak: prisma/computed-fields.ts · Üretici: prisma/codegen/generate.ts
@@ -176,6 +179,94 @@ export function findGeneratedColumnViolations(
 `;
 }
 
+// ------------------------------------------------------- 4. kademe kataloğu
+
+function generateFieldCatalog(): string {
+  const annotations = parseAllAnnotations(path.join(ROOT, "prisma", "schema"));
+
+  // Yalnızca KADEMESİ OLAN alanlar sihirbaz girdisidir. Hesaplanan alanların
+  // ve altyapı alanlarının (id, FK, zaman damgası) kademesi yoktur.
+  const byModel = new Map<string, { field: string; tier: string; own: string[]; src: string | null }[]>();
+  for (const a of annotations) {
+    if (a.tier === null) continue;
+    const list = byModel.get(a.model) ?? [];
+    list.push({ field: a.field, tier: a.tier, own: [...a.ownership], src: a.src });
+    byModel.set(a.model, list);
+  }
+
+  const models = [...byModel.entries()].sort(([a], [b]) => (a < b ? -1 : 1));
+  const total = models.reduce((n, [, fields]) => n + fields.length, 0);
+
+  const blocks = models
+    .map(([model, fields]) => {
+      const rows = fields
+        .map(
+          (f) =>
+            `    ${f.field}: { tier: "${f.tier}", ownership: [${f.own
+              .map((o) => `"${o}"`)
+              .join(", ")}], src: ${f.src === null ? "null" : `"${f.src}"`} },`,
+        )
+        .join("\n");
+      return `  ${model}: {\n${rows}\n  },`;
+    })
+    .join("\n");
+
+  return `/**
+ * ÜRETİLMİŞ DOSYA — ELLE DÜZENLEME.
+ * Kaynak: prisma/schema/*.prisma içindeki /// @tier @own @src açıklamaları
+ * Üretici: prisma/codegen/generate.ts · Yeniden üretmek için: npm run codegen
+ *
+ * SİHİRBAZ ALAN KATALOĞU — "kademeye göre alan gösterimi" (İP-2).
+ *
+ * Yalnızca KADEMESİ OLAN alanlar buradadır: hesaplanan alanlar ve altyapı
+ * alanları (id, FK, zaman damgası) sihirbaz GİRDİSİ değildir.
+ *
+ * ${total} alan, ${models.length} modelde.
+ */
+
+export type FieldTier = "K1" | "K2" | "K3";
+export type FieldOwnership = "M" | "B" | "H" | "P" | "E";
+
+export interface CatalogEntry {
+  readonly tier: FieldTier;
+  readonly ownership: readonly FieldOwnership[];
+  /** Dokümandaki kaynak BÖLÜM — ör. "etut-veri-modeli.md§3". */
+  readonly src: string | null;
+}
+
+export const FIELD_CATALOG = {
+${blocks}
+} as const satisfies Record<string, Record<string, CatalogEntry>>;
+
+export type CatalogModel = keyof typeof FIELD_CATALOG;
+
+const TIER_ORDER: Record<FieldTier, number> = { K1: 1, K2: 2, K3: 3 };
+
+/**
+ * Bir modelin verilen kademede GÖRÜNEN alanları.
+ *
+ * Görünürlük KÜMÜLATİFTİR: K2 projesinde K1 ∪ K2 alanları görünür.
+ * Kademe yalnızca görünürlüğü kapatır, ASLA zorunluluk üretmez —
+ * "kademe yükseltince önceki veriler korunur" (etut-surec-modeli.md§2).
+ */
+export function fieldsForTier<M extends CatalogModel>(
+  model: M,
+  tier: FieldTier,
+): (keyof (typeof FIELD_CATALOG)[M])[] {
+  const entries = FIELD_CATALOG[model] as Record<string, CatalogEntry>;
+  return Object.entries(entries)
+    .filter(([, e]) => TIER_ORDER[e.tier] <= TIER_ORDER[tier])
+    .map(([field]) => field) as (keyof (typeof FIELD_CATALOG)[M])[];
+}
+
+/** Alanın kademe bilgisi; katalogda yoksa null (sihirbaz girdisi değil). */
+export function catalogEntry(model: string, field: string): CatalogEntry | null {
+  const entries = (FIELD_CATALOG as Record<string, Record<string, CatalogEntry>>)[model];
+  return entries?.[field] ?? null;
+}
+`;
+}
+
 // ---------------------------------------------------------------------- main
 
 function write(file: string, content: string, check: boolean): boolean {
@@ -206,6 +297,7 @@ const results = [
   write(path.join(SQL_DIR, "computed-columns.sql"), generateComputedColumnsSql(), check),
   write(path.join(SQL_DIR, "override-ledger.sql"), generateOverrideLedgerSql(), check),
   write(path.join(TS_DIR, "generated.ts"), generateTypes(), check),
+  write(path.join(FIELDS_DIR, "generated.ts"), generateFieldCatalog(), check),
 ];
 
 if (results.some((ok) => !ok)) {

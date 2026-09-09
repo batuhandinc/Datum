@@ -38,14 +38,14 @@ model Floor {
   blockId String
   block   Block  @relation(fields: [blockId], references: [id], onDelete: Cascade)
 
-  /// @tier K1 @own M @src etut-veri-modeli.md:309 — bodrum negatif
+  /// @tier K1 @own M @src etut-veri-modeli.md§5 — bodrum negatif
   floorNo   Int
-  /// @tier K1 @own M @src etut-veri-modeli.md:310
+  /// @tier K1 @own M @src etut-veri-modeli.md§5
   floorType FloorType
 
-  /// @tier K2 @own M @src etut-veri-modeli.md:311 — tipik kat kilidi
+  /// @tier K2 @own M @src etut-veri-modeli.md§5 — tipik kat kilidi
   isLocked        Boolean @default(false)
-  /// @tier K2 @own M @src etut-veri-modeli.md:312 — kilitliyse referans kat.
+  /// @tier K2 @own M @src etut-veri-modeli.md§5 — kilitliyse referans kat.
   /// BELİRSİZLİK: bölüm 2 (:80) ayrıca bir FloorTemplate VARLIĞI gösteriyor.
   /// Alan tablosu yalnızca bu öz-ilişkiyi tanımlıyor; ikisi aynı fikir mi,
   /// iki ayrı fikir mi doküman söylemiyor. Alan tablosu esas alındı.
@@ -53,11 +53,11 @@ model Floor {
   templateFloor   Floor?  @relation("TypicalFloor", fields: [templateFloorId], references: [id])
   derivedFloors   Floor[] @relation("TypicalFloor")
 
-  /// @tier K1 @own M @src etut-veri-modeli.md:313
+  /// @tier K1 @own M @src etut-veri-modeli.md§5
   grossHeight Decimal? @db.Decimal(6, 2)
   clearHeight Decimal? @db.Decimal(6, 2)
 
-  /// @own H @src etut-veri-modeli.md:314 — kat brüt alanı.
+  /// @own H @src etut-veri-modeli.md§5 — kat brüt alanı.
   /// Türetme formülü dokümanda VERİLMEMİŞ (boşluk).
   grossAreaComputedValue  Decimal? @db.Decimal(14, 3)
   grossAreaOverrideValue  Decimal? @db.Decimal(14, 3)
@@ -65,7 +65,7 @@ model Floor {
   /// GENERATED
   grossArea               Decimal? @db.Decimal(14, 3)
 
-  /// @tier K1 @own M @src etut-veri-modeli.md:315
+  /// @tier K1 @own M @src etut-veri-modeli.md§5
   hasCommercial Boolean @default(false)
 
   units         Unit[]
@@ -100,7 +100,7 @@ model UnitType {
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  /// @src etut-veri-modeli.md:303 — "3+1 A" gibi tipoloji kodu
+  /// @src etut-veri-modeli.md§5 — "3+1 A" gibi tipoloji kodu
   unitTypeCode String
   /// Şablonun taşıdığı mekan listesi. Örneklenince Space[] olarak kopyalanır.
   spaceList    Json?
@@ -118,58 +118,58 @@ model Unit {
   floorId String
   floor   Floor  @relation(fields: [floorId], references: [id], onDelete: Cascade)
 
-  /// @tier K2 @own M @src etut-veri-modeli.md:289
+  /// @tier K2 @own M @src etut-veri-modeli.md§5
   unitNo       String?
-  /// @tier K2 @own M @src etut-veri-modeli.md:290 — tipoloji kodu.
+  /// @tier K2 @own M @src etut-veri-modeli.md§5 — tipoloji kodu.
   /// NOT: doküman bunu `text` diyor, `fk` demiyor — UnitType'a referans
   /// bilinçli olarak GEVŞEK bırakılmış. Birebir korundu.
   unitTypeCode String?
-  /// @tier K1 @own M @src etut-veri-modeli.md:292
+  /// @tier K1 @own M @src etut-veri-modeli.md§5
   usageType    UsageType?
-  /// @tier K2 @own M @src etut-veri-modeli.md:293
+  /// @tier K2 @own M @src etut-veri-modeli.md§5
   isDuplex     Boolean    @default(false)
 
-  /// @own H @src etut-veri-modeli.md:294 — türetme formülü dokümanda VERİLMEMİŞ
+  /// @own H @src etut-veri-modeli.md§5 — türetme formülü dokümanda VERİLMEMİŞ
   grossAreaComputedValue  Decimal? @db.Decimal(12, 3)
   grossAreaOverrideValue  Decimal? @db.Decimal(12, 3)
   grossAreaOverrideReason String?
   /// GENERATED
   grossArea               Decimal? @db.Decimal(12, 3)
 
-  /// @own H @src etut-veri-modeli.md:295 — "mekan alanları toplamı"
+  /// @own H @src etut-veri-modeli.md§5 — "mekan alanları toplamı"
   netAreaComputedValue  Decimal? @db.Decimal(12, 3)
   netAreaOverrideValue  Decimal? @db.Decimal(12, 3)
   netAreaOverrideReason String?
   /// GENERATED
   netArea               Decimal? @db.Decimal(12, 3)
 
-  /// @own H @src etut-veri-modeli.md:296 — türetme formülü dokümanda VERİLMEMİŞ
+  /// @own H @src etut-veri-modeli.md§5 — türetme formülü dokümanda VERİLMEMİŞ
   balconyAreaComputedValue  Decimal? @db.Decimal(12, 3)
   balconyAreaOverrideValue  Decimal? @db.Decimal(12, 3)
   balconyAreaOverrideReason String?
   /// GENERATED
   balconyArea               Decimal? @db.Decimal(12, 3)
 
-  /// @own H @src etut-veri-modeli.md:297 — türetme formülü dokümanda VERİLMEMİŞ
+  /// @own H @src etut-veri-modeli.md§5 — türetme formülü dokümanda VERİLMEMİŞ
   commonAreaShareComputedValue  Decimal? @db.Decimal(12, 3)
   commonAreaShareOverrideValue  Decimal? @db.Decimal(12, 3)
   commonAreaShareOverrideReason String?
   /// GENERATED
   commonAreaShare               Decimal? @db.Decimal(12, 3)
 
-  /// @own H @src etut-veri-modeli.md:298 — "ıslak mekan alanları toplamı"
+  /// @own H @src etut-veri-modeli.md§5 — "ıslak mekan alanları toplamı"
   wetAreaTotalComputedValue  Decimal? @db.Decimal(12, 3)
   wetAreaTotalOverrideValue  Decimal? @db.Decimal(12, 3)
   wetAreaTotalOverrideReason String?
   /// GENERATED
   wetAreaTotal               Decimal? @db.Decimal(12, 3)
 
-  /// @tier K3 @own M @src etut-veri-modeli.md:299 — arsa payı
+  /// @tier K3 @own M @src etut-veri-modeli.md§5 — arsa payı
   landShareRatio        Decimal?     @db.Decimal(9, 6)
-  /// @tier K3 @own M @src etut-veri-modeli.md:300
+  /// @tier K3 @own M @src etut-veri-modeli.md§5
   assignedStakeholderId String?
   assignedStakeholder   Stakeholder? @relation(fields: [assignedStakeholderId], references: [id], onDelete: SetNull)
-  /// @tier K3 @own M @src etut-veri-modeli.md:301
+  /// @tier K3 @own M @src etut-veri-modeli.md§5
   salePrice             Decimal?     @db.Decimal(16, 2)
 
   spaces        Space[]
@@ -189,12 +189,12 @@ model Space {
   unitId String
   unit   Unit   @relation(fields: [unitId], references: [id], onDelete: Cascade)
 
-  /// @tier K2 @own M @src etut-veri-modeli.md:197 — "Salon", "Ebeveyn Banyo"
+  /// @tier K2 @own M @src etut-veri-modeli.md§4 — "Salon", "Ebeveyn Banyo"
   name      String?
-  /// @tier K2 @own M @src etut-veri-modeli.md:198
+  /// @tier K2 @own M @src etut-veri-modeli.md§4
   spaceType SpaceType
 
-  /// @own H @src etut-veri-modeli.md:199 — "tipten türer".
+  /// @own H @src etut-veri-modeli.md§4 — "tipten türer".
   /// Eşleme SpaceTypeCategoryMap paket tablosunda (ilke 1) — kodda değil.
   categoryComputedValue  SpaceCategory?
   categoryOverrideValue  SpaceCategory?
@@ -202,15 +202,15 @@ model Space {
   /// GENERATED
   category               SpaceCategory?
 
-  /// @tier K2 @own M @src etut-veri-modeli.md:200 — G1 seviyesi
+  /// @tier K2 @own M @src etut-veri-modeli.md§4 — G1 seviyesi
   area     Decimal? @db.Decimal(12, 3)
-  /// @tier K2 @own M @src etut-veri-modeli.md:201 — G2 seviyesi, OPSİYONEL (bölüm 1.5)
+  /// @tier K2 @own M @src etut-veri-modeli.md§4 — G2 seviyesi, OPSİYONEL (bölüm 1.5)
   width    Decimal? @db.Decimal(8, 3)
   length   Decimal? @db.Decimal(8, 3)
-  /// @tier K3 @own H @src etut-veri-modeli.md:202 — G3 seviyesi, GeoJSON poligon
+  /// @tier K3 @own H @src etut-veri-modeli.md§4 — G3 seviyesi, GeoJSON poligon
   geometry Json?
 
-  /// @own H @src etut-veri-modeli.md:203 — G1/G2/G3'e göre.
+  /// @own H @src etut-veri-modeli.md§4 — G1/G2/G3'e göre.
   /// G1: k × √area (k = SpaceShapeFactorRule'dan, KODDA DEĞİL) · G2: 2×(width+length) · G3: gerçek çevre
   perimeterComputedValue  Decimal? @db.Decimal(12, 3)
   perimeterOverrideValue  Decimal? @db.Decimal(12, 3)
@@ -218,56 +218,56 @@ model Space {
   /// GENERATED
   perimeter               Decimal? @db.Decimal(12, 3)
 
-  /// @tier K2 @own M @src etut-veri-modeli.md:204 — net tavan yüksekliği
+  /// @tier K2 @own M @src etut-veri-modeli.md§4 — net tavan yüksekliği
   clearHeight Decimal? @db.Decimal(6, 3)
 
-  /// @own H @src etut-veri-modeli.md:205 — "tipten türer, ezilebilir"
+  /// @own H @src etut-veri-modeli.md§4 — "tipten türer, ezilebilir"
   isWetAreaComputedValue  Boolean?
   isWetAreaOverrideValue  Boolean?
   isWetAreaOverrideReason String?
   /// GENERATED
   isWetArea               Boolean?
 
-  /// @tier K2 @own P @src etut-veri-modeli.md:206 — kalite paketinden ön-dolar
+  /// @tier K2 @own P @src etut-veri-modeli.md§4 — kalite paketinden ön-dolar
   floorFinishId String?
   floorFinish   SurfaceFinish? @relation("FloorFinish", fields: [floorFinishId], references: [id], onDelete: SetNull)
-  /// @tier K3 @own M @src etut-veri-modeli.md:207
+  /// @tier K3 @own M @src etut-veri-modeli.md§4
   skirtingType   SkirtingType?
   skirtingHeight Decimal?      @db.Decimal(6, 3)
-  /// @tier K2 @own P @src etut-veri-modeli.md:208
+  /// @tier K2 @own P @src etut-veri-modeli.md§4
   wallFinishId  String?
   wallFinish    SurfaceFinish? @relation("WallFinish", fields: [wallFinishId], references: [id], onDelete: SetNull)
-  /// @tier K2 @own M @src etut-veri-modeli.md:209 — ıslak hacimde seramik yüksekliği
+  /// @tier K2 @own M @src etut-veri-modeli.md§4 — ıslak hacimde seramik yüksekliği
   wallCladdingHeight Decimal? @db.Decimal(6, 3)
 
-  /// @tier K2 @own M @src etut-veri-modeli.md:210
+  /// @tier K2 @own M @src etut-veri-modeli.md§4
   ceilingType CeilingType?
 
-  /// @own H @src etut-veri-modeli.md:211 — "= çevre (kartonpiyer varsa)"
+  /// @own H @src etut-veri-modeli.md§4 — "= çevre (kartonpiyer varsa)"
   ceilingCorniceLengthComputedValue  Decimal? @db.Decimal(12, 3)
   ceilingCorniceLengthOverrideValue  Decimal? @db.Decimal(12, 3)
   ceilingCorniceLengthOverrideReason String?
   /// GENERATED
   ceilingCorniceLength               Decimal? @db.Decimal(12, 3)
 
-  /// @tier K2 @own M @src etut-veri-modeli.md:212
+  /// @tier K2 @own M @src etut-veri-modeli.md§4
   waterproofing  Boolean @default(false)
-  /// @tier K2 @own M @src etut-veri-modeli.md:213
+  /// @tier K2 @own M @src etut-veri-modeli.md§4
   heatingElement HeatingElement?
 
-  /// @own H @src etut-veri-modeli.md:214 — radyatör mtül veya döşeme m²
+  /// @own H @src etut-veri-modeli.md§4 — radyatör mtül veya döşeme m²
   heatingElementSizeComputedValue  Decimal? @db.Decimal(12, 3)
   heatingElementSizeOverrideValue  Decimal? @db.Decimal(12, 3)
   heatingElementSizeOverrideReason String?
   /// GENERATED
   heatingElementSize               Decimal? @db.Decimal(12, 3)
 
-  /// @tier K2 @own M @src etut-veri-modeli.md:215
+  /// @tier K2 @own M @src etut-veri-modeli.md§4
   hasAirConditioner Boolean @default(false)
-  /// @tier K3 @own M @src etut-veri-modeli.md:216
+  /// @tier K3 @own M @src etut-veri-modeli.md§4
   ventilationType   VentilationType?
 
-  /// @tier K2 @own P @src etut-veri-modeli.md:217 — priz/anahtar/aydınlatma adetleri paketten.
+  /// @tier K2 @own P @src etut-veri-modeli.md§4 — priz/anahtar/aydınlatma adetleri paketten.
   /// Doküman "fk" diyor ama HEDEF VARLIĞI TANIMLAMIYOR. Paket verisi olduğu için
   /// bir kural anahtarı olarak tutuldu; uydurma bir model açılmadı.
   electricalPresetId String?
@@ -289,38 +289,38 @@ model Space {
 /// CostItemCatalog.openingDeductionRule'da (ilke 6), burada değil.
 model Opening {
   id      String @id @default(cuid())
-  /// @src etut-veri-modeli.md:253 — hangi mekanda
+  /// @src etut-veri-modeli.md§4 — hangi mekanda
   spaceId String
   space   Space  @relation("SpaceOpenings", fields: [spaceId], references: [id], onDelete: Cascade)
 
-  /// @src etut-veri-modeli.md:252
+  /// @src etut-veri-modeli.md§4
   openingType OpeningType
 
-  /// @src etut-veri-modeli.md:254 — iç kapılarda karşı mekan
+  /// @src etut-veri-modeli.md§4 — iç kapılarda karşı mekan
   adjacentSpaceId String?
   adjacentSpace   Space?  @relation("AdjacentSpaceOpenings", fields: [adjacentSpaceId], references: [id], onDelete: SetNull)
 
-  /// @src etut-veri-modeli.md:255 — cepheye mi bakıyor
+  /// @src etut-veri-modeli.md§4 — cepheye mi bakıyor
   isExterior Boolean @default(false)
-  /// @src etut-veri-modeli.md:256
+  /// @src etut-veri-modeli.md§4
   width      Decimal? @db.Decimal(8, 3)
   height     Decimal? @db.Decimal(8, 3)
-  /// @src etut-veri-modeli.md:257 — aynı tipten kaç adet
+  /// @src etut-veri-modeli.md§4 — aynı tipten kaç adet
   count      Int      @default(1)
 
-  /// @src etut-veri-modeli.md:258
+  /// @src etut-veri-modeli.md§4
   frameMaterial  FrameMaterial?
-  /// @src etut-veri-modeli.md:259
+  /// @src etut-veri-modeli.md§4
   frameType      FrameType?
-  /// @src etut-veri-modeli.md:260
+  /// @src etut-veri-modeli.md§4
   glazingType    GlazingType?
-  /// @src etut-veri-modeli.md:261 — denizlik
+  /// @src etut-veri-modeli.md§4 — denizlik
   hasSill        Boolean  @default(false)
-  /// @src etut-veri-modeli.md:262 — pervaz
+  /// @src etut-veri-modeli.md§4 — pervaz
   hasArchitrave  Boolean  @default(false)
-  /// @src etut-veri-modeli.md:263
+  /// @src etut-veri-modeli.md§4
   shutterType    ShutterType?
-  /// @src etut-veri-modeli.md:264
+  /// @src etut-veri-modeli.md§4
   doorType       DoorType?
 
   createdAt DateTime @default(now())
@@ -334,19 +334,19 @@ model Opening {
 /// Donanım (:272-279). IFC: IfcFurnishingElement / IfcSanitaryTerminal.
 model Fixture {
   id      String @id @default(cuid())
-  /// @src etut-veri-modeli.md:275
+  /// @src etut-veri-modeli.md§4
   spaceId String
   space   Space  @relation(fields: [spaceId], references: [id], onDelete: Cascade)
 
-  /// @src etut-veri-modeli.md:274
+  /// @src etut-veri-modeli.md§4
   fixtureType FixtureType
-  /// @src etut-veri-modeli.md:276
+  /// @src etut-veri-modeli.md§4
   count       Int      @default(1)
-  /// @src etut-veri-modeli.md:277 — mutfak dolabı/tezgah için
+  /// @src etut-veri-modeli.md§4 — mutfak dolabı/tezgah için
   lengthMeters Decimal? @db.Decimal(8, 3)
-  /// @src etut-veri-modeli.md:278 — kalite paketinden
+  /// @src etut-veri-modeli.md§4 — kalite paketinden
   specLevel   SpecificationLevel?
-  /// @src etut-veri-modeli.md:279 — marka/model (opsiyonel).
+  /// @src etut-veri-modeli.md§4 — marka/model (opsiyonel).
   /// HEDEF VARLIK DOKÜMANDA TANIMLI DEĞİL; uydurma model açılmadı.
   productRef  String?
 

@@ -6,12 +6,16 @@
 //        Bir alanı "iyileştirme", yeniden adlandırma, çoğullaştırma yok.
 //        Dokümanda olmayan alan uydurulmaz.
 //
-// AÇIKLAMA SÖZDİZİMİ:  /// @tier <K1|K2|K3|unspecified> @own <M|B|H|P|E> @src <dosya:satır>
+// AÇIKLAMA SÖZDİZİMİ:  /// @tier <K1|K2|K3> @own <M|B|H|P|E> @src <dosya>§<bölüm>
 //        @tier  — sihirbaz kademesi (bölüm 1.4). Yalnızca GÖRÜNÜRLÜK kapatır,
 //                 asla NOT NULL üretmez: kademe yükseltince veri korunur.
 //        @own   — veri sahipliği (etut-surec-modeli.md:42)
 //                 M=manuel · B=belge · H=sistem hesaplar · P=paketten · E=dış servis
-//        @src   — dokümandaki kaynak satır
+//        @src   — dokümandaki kaynak BÖLÜM (satır değil).
+//                 Satır numarası kırılgandır: dokümanın başına bir paragraf
+//                 eklemek yüzlerce referansı birden bozar — v1.1 ve v1.2'de
+//                 tam olarak bu oldu. Bölüm numarası anlamsaldır ve kaymaz.
+//                 Bir test alanın o bölümde gerçekten geçtiğini doğrular.
 //
 // HESAPLANAN ALANLAR: <alan>ComputedValue / <alan>OverrideValue /
 //        <alan>OverrideReason / <alan>  — sonuncusu Postgres GENERATED ALWAYS AS

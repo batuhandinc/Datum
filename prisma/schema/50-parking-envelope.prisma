@@ -10,7 +10,7 @@ model ParkingLayout {
   projectId String  @unique
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  /// @own H @src etut-veri-modeli.md:438 — paket kuralından (ParkingRule.requirementFormula):
+  /// @own H @src etut-veri-modeli.md§8 — paket kuralından (ParkingRule.requirementFormula):
   /// bağımsız bölüm sayısı veya alan bazlı.
   requiredCountComputedValue  Int?
   requiredCountOverrideValue  Int?
@@ -18,27 +18,27 @@ model ParkingLayout {
   /// GENERATED
   requiredCount               Int?
 
-  /// @own M @src etut-veri-modeli.md:439 — kullanıcı hedefi. Hesaplanan DEĞİL.
+  /// @own M @src etut-veri-modeli.md§8 — kullanıcı hedefi. Hesaplanan DEĞİL.
   targetCount Int?
 
-  /// @own H @src etut-veri-modeli.md:440 — yerleşimden
+  /// @own H @src etut-veri-modeli.md§8 — yerleşimden
   plannedCountComputedValue  Int?
   plannedCountOverrideValue  Int?
   plannedCountOverrideReason String?
   /// GENERATED
   plannedCount               Int?
 
-  /// @own H @src etut-veri-modeli.md:441 — fark; risk göstergesi
+  /// @own H @src etut-veri-modeli.md§8 — fark; risk göstergesi
   deficitCountComputedValue  Int?
   deficitCountOverrideValue  Int?
   deficitCountOverrideReason String?
   /// GENERATED
   deficitCount               Int?
 
-  /// @own M @src etut-veri-modeli.md:442
+  /// @own M @src etut-veri-modeli.md§8
   parkingType ParkingType?
 
-  /// @own H/M @src etut-veri-modeli.md:443 — "çözücüden veya elle".
+  /// @own H/M @src etut-veri-modeli.md§8 — "çözücüden veya elle".
   /// Doküman bunu H/M işaretliyor: hesaplanan AMA kullanıcının doğrudan
   /// yazabildiği bir değer. Üçlü mekanizması bunu zaten karşılıyor —
   /// elle giriş overrideValue'ya düşer ve raporda işaretlenir.
@@ -48,27 +48,27 @@ model ParkingLayout {
   /// GENERATED
   basementFloorCount               Int?
 
-  /// @own H @src etut-veri-modeli.md:444 — engelli park, paket oranından
+  /// @own H @src etut-veri-modeli.md§8 — engelli park, paket oranından
   accessibleSpaceCountComputedValue  Int?
   accessibleSpaceCountOverrideValue  Int?
   accessibleSpaceCountOverrideReason String?
   /// GENERATED
   accessibleSpaceCount               Int?
 
-  /// @own M @src etut-veri-modeli.md:445
+  /// @own M @src etut-veri-modeli.md§8
   electricChargingCount Int?
 
-  /// @own H @src etut-veri-modeli.md:446 — paketten (ParkingRule.bicycleRatio)
+  /// @own H @src etut-veri-modeli.md§8 — paketten (ParkingRule.bicycleRatio)
   bicycleSpaceCountComputedValue  Int?
   bicycleSpaceCountOverrideValue  Int?
   bicycleSpaceCountOverrideReason String?
   /// GENERATED
   bicycleSpaceCount               Int?
 
-  /// @own P @src etut-veri-modeli.md:447 — paketten (ParkingRule.maneuveringAisleWidth)
+  /// @own P @src etut-veri-modeli.md§8 — paketten (ParkingRule.maneuveringAisleWidth)
   maneuveringAisleWidth Decimal? @db.Decimal(6, 2)
 
-  /// @own H @src etut-veri-modeli.md:448 — yer çizgileri
+  /// @own H @src etut-veri-modeli.md§8 — yer çizgileri
   markingLengthComputedValue  Decimal? @db.Decimal(12, 3)
   markingLengthOverrideValue  Decimal? @db.Decimal(12, 3)
   markingLengthOverrideReason String?
@@ -90,13 +90,13 @@ model ParkingSpace {
   parkingLayoutId String
   parkingLayout   ParkingLayout @relation(fields: [parkingLayoutId], references: [id], onDelete: Cascade)
 
-  /// @src etut-veri-modeli.md:452 — paket minimumu
+  /// @src etut-veri-modeli.md§8 — paket minimumu
   width  Decimal? @db.Decimal(6, 2)
   length Decimal? @db.Decimal(6, 2)
-  /// @src etut-veri-modeli.md:452
+  /// @src etut-veri-modeli.md§8
   isAccessible Boolean @default(false)
   isMechanical Boolean @default(false)
-  /// @src etut-veri-modeli.md:452
+  /// @src etut-veri-modeli.md§8
   assignedUnitId String?
   assignedUnit   Unit?   @relation(fields: [assignedUnitId], references: [id], onDelete: SetNull)
 
@@ -116,12 +116,12 @@ model Ramp {
   parkingLayoutId String
   parkingLayout   ParkingLayout @relation(fields: [parkingLayoutId], references: [id], onDelete: Cascade)
 
-  /// @own P @src etut-veri-modeli.md:454 — paket maksimumu (ParkingRule.maxRampSlope)
+  /// @own P @src etut-veri-modeli.md§8 — paket maksimumu (ParkingRule.maxRampSlope)
   slope Decimal? @db.Decimal(6, 4)
-  /// @src etut-veri-modeli.md:454
+  /// @src etut-veri-modeli.md§8
   width Decimal? @db.Decimal(6, 2)
 
-  /// @own H @src etut-veri-modeli.md:454 — kot farkı ÷ eğim.
+  /// @own H @src etut-veri-modeli.md§8 — kot farkı ÷ eğim.
   /// Dokümanda H işareti satır içinde veriliyor.
   lengthComputedValue  Decimal? @db.Decimal(10, 3)
   lengthOverrideValue  Decimal? @db.Decimal(10, 3)
@@ -129,7 +129,7 @@ model Ramp {
   /// GENERATED
   length               Decimal? @db.Decimal(10, 3)
 
-  /// @src etut-veri-modeli.md:454
+  /// @src etut-veri-modeli.md§8
   isCovered     Boolean @default(false)
   hasHeating    Boolean @default(false)
   shutterType   ShutterType?
@@ -148,51 +148,51 @@ model Facade {
   blockId String
   block   Block  @relation(fields: [blockId], references: [id], onDelete: Cascade)
 
-  /// @src etut-veri-modeli.md:468
+  /// @src etut-veri-modeli.md§9
   facadeNo    Int
-  /// @src etut-veri-modeli.md:468 — yön
+  /// @src etut-veri-modeli.md§9 — yön
   orientation String?
 
-  /// @own H @src etut-veri-modeli.md:470 — geometriden
+  /// @own H @src etut-veri-modeli.md§9 — geometriden
   widthComputedValue  Decimal? @db.Decimal(10, 3)
   widthOverrideValue  Decimal? @db.Decimal(10, 3)
   widthOverrideReason String?
   /// GENERATED
   width               Decimal? @db.Decimal(10, 3)
 
-  /// @own H @src etut-veri-modeli.md:471
+  /// @own H @src etut-veri-modeli.md§9
   heightComputedValue  Decimal? @db.Decimal(10, 3)
   heightOverrideValue  Decimal? @db.Decimal(10, 3)
   heightOverrideReason String?
   /// GENERATED
   height               Decimal? @db.Decimal(10, 3)
 
-  /// @own H @src etut-veri-modeli.md:472
+  /// @own H @src etut-veri-modeli.md§9
   grossAreaComputedValue  Decimal? @db.Decimal(12, 3)
   grossAreaOverrideValue  Decimal? @db.Decimal(12, 3)
   grossAreaOverrideReason String?
   /// GENERATED
   grossArea               Decimal? @db.Decimal(12, 3)
 
-  /// @own H @src etut-veri-modeli.md:473 — açıklıklardan
+  /// @own H @src etut-veri-modeli.md§9 — açıklıklardan
   openingAreaComputedValue  Decimal? @db.Decimal(12, 3)
   openingAreaOverrideValue  Decimal? @db.Decimal(12, 3)
   openingAreaOverrideReason String?
   /// GENERATED
   openingArea               Decimal? @db.Decimal(12, 3)
 
-  /// @own H @src etut-veri-modeli.md:474
+  /// @own H @src etut-veri-modeli.md§9
   netAreaComputedValue  Decimal? @db.Decimal(12, 3)
   netAreaOverrideValue  Decimal? @db.Decimal(12, 3)
   netAreaOverrideReason String?
   /// GENERATED
   netArea               Decimal? @db.Decimal(12, 3)
 
-  /// @src etut-veri-modeli.md:476
+  /// @src etut-veri-modeli.md§9
   insulationType      String?
   insulationThickness Decimal? @db.Decimal(6, 3)
 
-  /// @own H @src etut-veri-modeli.md:476 — KALEME GÖRE açıklık düşümü.
+  /// @own H @src etut-veri-modeli.md§9 — KALEME GÖRE açıklık düşümü.
   /// Kural CostItemCatalog.openingDeductionRule'dan (ilke 6) — bu alanda değil.
   insulationAreaComputedValue  Decimal? @db.Decimal(12, 3)
   insulationAreaOverrideValue  Decimal? @db.Decimal(12, 3)
@@ -200,7 +200,7 @@ model Facade {
   /// GENERATED
   insulationArea               Decimal? @db.Decimal(12, 3)
 
-  /// @src etut-veri-modeli.md:477
+  /// @src etut-veri-modeli.md§9
   scaffoldingArea   Decimal? @db.Decimal(12, 3)
   scaffoldingMonths Int?
 
@@ -228,7 +228,7 @@ model FacadeMaterial {
   catalogId String?
   catalog   FacadeMaterialCatalog? @relation(fields: [catalogId], references: [id], onDelete: SetNull)
 
-  /// @src etut-veri-modeli.md:474 — oran (%)
+  /// @src etut-veri-modeli.md§9 — oran (%)
   ratioPercent Decimal? @db.Decimal(6, 3)
 
   createdAt DateTime @default(now())
@@ -244,28 +244,28 @@ model Roof {
   blockId String @unique
   block   Block  @relation(fields: [blockId], references: [id], onDelete: Cascade)
 
-  /// @src etut-veri-modeli.md:483
+  /// @src etut-veri-modeli.md§9
   roofType          RoofType?
   structureMaterial String?
 
-  /// @own H @src etut-veri-modeli.md:483 — türetme formülü dokümanda VERİLMEMİŞ
+  /// @own H @src etut-veri-modeli.md§9 — türetme formülü dokümanda VERİLMEMİŞ
   structureWeightComputedValue  Decimal? @db.Decimal(14, 3)
   structureWeightOverrideValue  Decimal? @db.Decimal(14, 3)
   structureWeightOverrideReason String?
   /// GENERATED
   structureWeight               Decimal? @db.Decimal(14, 3)
 
-  /// @src etut-veri-modeli.md:483
+  /// @src etut-veri-modeli.md§9
   coveringType String?
 
-  /// @own H @src etut-veri-modeli.md:483
+  /// @own H @src etut-veri-modeli.md§9
   coveringAreaComputedValue  Decimal? @db.Decimal(12, 3)
   coveringAreaOverrideValue  Decimal? @db.Decimal(12, 3)
   coveringAreaOverrideReason String?
   /// GENERATED
   coveringArea               Decimal? @db.Decimal(12, 3)
 
-  /// @src etut-veri-modeli.md:483 — H işareti YOK, birebir korundu
+  /// @src etut-veri-modeli.md§9 — H işareti YOK, birebir korundu
   insulationType      String?
   insulationThickness Decimal? @db.Decimal(6, 3)
   insulationArea      Decimal? @db.Decimal(12, 3)
@@ -291,7 +291,7 @@ model Landscape {
   projectId String  @unique
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  /// @src etut-veri-modeli.md:487
+  /// @src etut-veri-modeli.md§9
   gardenWallLength    Decimal? @db.Decimal(10, 3)
   gardenWallHeight    Decimal? @db.Decimal(6, 3)
   lawnArea            Decimal? @db.Decimal(12, 3)

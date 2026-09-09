@@ -43,11 +43,11 @@ model RegionPackage {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  /// @tier unspecified @own P @src etut-veri-modeli.md:582
+  /// @tier unspecified @own P @src etut-veri-modeli.md§3
   name      String
-  /// @tier unspecified @own P @src etut-veri-modeli.md:582
+  /// @tier unspecified @own P @src etut-veri-modeli.md§12
   country   String
-  /// @tier unspecified @own P @src etut-veri-modeli.md:582 — idari birim
+  /// @tier unspecified @own P @src etut-veri-modeli.md§12 — idari birim
   adminUnit String
 
   versions RegionPackageVersion[]
@@ -68,9 +68,9 @@ model RegionPackageVersion {
   regionPackageId String
   regionPackage   RegionPackage @relation(fields: [regionPackageId], references: [id], onDelete: Cascade)
 
-  /// @tier unspecified @own P @src etut-veri-modeli.md:582 — sürüm no, ör. "2026.1"
+  /// @tier unspecified @own P @src etut-veri-modeli.md§1 — sürüm no, ör. "2026.1"
   version       String
-  /// @tier unspecified @own P @src etut-veri-modeli.md:582 — geçerlilik tarihi
+  /// @tier unspecified @own P @src etut-veri-modeli.md§12 — geçerlilik tarihi
   effectiveFrom DateTime                   @db.Date
   status        RegionPackageVersionStatus @default(draft)
 
@@ -158,16 +158,16 @@ model ZoningRuleSet {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:634 — emsal hesap yöntemi
+  /// @own P @src etut-veri-modeli.md§3 — emsal hesap yöntemi
   farCalculationBasis     FarCalculationBasis
-  /// @own P @src etut-veri-modeli.md:634 — yükseklik ölçüm referansı.
+  /// @own P @src etut-veri-modeli.md§3 — yükseklik ölçüm referansı.
   /// 1.2: kod enum'undan HeightReferenceCatalog anahtarına döndü (ilke 1).
   heightReferenceRuleKey  String?
-  /// @own P @src etut-veri-modeli.md:634 — emsal harici alan kuralları.
+  /// @own P @src etut-veri-modeli.md§12 — emsal harici alan kuralları.
   /// Doküman alan adı vermiyor, yalnızca tarif ediyor. İP-2 bunları HESABA KATMAZ
   /// (emsal harici alanlar ancak program girildikten sonra, A5/İP-3'te bilinir) — uyarı üretir.
   farExemptionRules       Json?
-  /// @own P @src etut-veri-modeli.md:634 — çekme ötelemesinde içbükey köşe davranışı.
+  /// @own P @src etut-veri-modeli.md§12 — çekme ötelemesinde içbükey köşe davranışı.
   /// VARSAYILAN YOK: paket vermezse zarf hesaplanmaz, uyarı üretilir (ilke 1).
   offsetJoinType          OffsetJoinType?
 
@@ -183,13 +183,13 @@ model RequiredSpaceRule {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:584 — hangi servis mekanı
+  /// @own P @src etut-veri-modeli.md§12 — hangi servis mekanı
   serviceSpaceType ServiceSpaceType
-  /// @own P @src etut-veri-modeli.md:584 — tetikleyici: unitCount · area · power · height
+  /// @own P @src etut-veri-modeli.md§12 — tetikleyici: unitCount · area · power · height
   triggerType      String
-  /// @own P @src etut-veri-modeli.md:584 — eşik değeri
+  /// @own P @src etut-veri-modeli.md§10 — eşik değeri
   threshold        Decimal              @db.Decimal(18, 4)
-  /// @own P @src etut-veri-modeli.md:584 — alan formülü (sürücü değişkene bağlı)
+  /// @own P @src etut-veri-modeli.md§12 — alan formülü (sürücü değişkene bağlı)
   areaFormula      String?
 
   @@unique([regionPackageVersionId, ruleKey])
@@ -204,20 +204,20 @@ model ParkingRule {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:585 — ihtiyaç formülü
+  /// @own P @src etut-veri-modeli.md§12 — ihtiyaç formülü
   requirementFormula   String
-  /// @own P @src etut-veri-modeli.md:585 — park yeri boyutları
+  /// @own P @src etut-veri-modeli.md§12 — park yeri boyutları
   spaceWidth           Decimal  @db.Decimal(6, 2)
   spaceLength          Decimal  @db.Decimal(6, 2)
-  /// @own P @src etut-veri-modeli.md:585 — rampa eğim sınırı (:454 maksimumu)
+  /// @own P @src etut-veri-modeli.md§8 — rampa eğim sınırı (:454 maksimumu)
   maxRampSlope         Decimal  @db.Decimal(5, 4)
-  /// @own P @src etut-veri-modeli.md:585 — engelli park oranı (:444)
+  /// @own P @src etut-veri-modeli.md§12 — engelli park oranı (:444)
   accessibleRatio      Decimal  @db.Decimal(5, 4)
-  /// @own P @src etut-veri-modeli.md:447 — manevra koridoru genişliği
+  /// @own P @src etut-veri-modeli.md§8 — manevra koridoru genişliği
   maneuveringAisleWidth Decimal @db.Decimal(6, 2)
-  /// @own P @src etut-veri-modeli.md:446 — bisiklet park oranı
+  /// @own P @src etut-veri-modeli.md§12 — bisiklet park oranı
   bicycleRatio         Decimal? @db.Decimal(5, 4)
-  /// @own P @src etut-veri-modeli.md:445 — elektrikli şarj noktası oranı/zorunlu adet
+  /// @own P @src etut-veri-modeli.md§12 — elektrikli şarj noktası oranı/zorunlu adet
   electricChargingRatio Decimal? @db.Decimal(5, 4)
 
   @@unique([regionPackageVersionId, ruleKey])
@@ -232,22 +232,22 @@ model CoreRule {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:348 — asansör zorunluluk eşiği (kat/yükseklik)
+  /// @own P @src etut-veri-modeli.md§12 — asansör zorunluluk eşiği (kat/yükseklik)
   elevatorRequiredFloorThreshold  Int?
   elevatorRequiredHeightThreshold Decimal? @db.Decimal(6, 2)
-  /// @own P @src etut-veri-modeli.md:348 — minimum asansör adedi
+  /// @own P @src etut-veri-modeli.md§12 — minimum asansör adedi
   minElevatorCount                Int?
-  /// @own P @src etut-veri-modeli.md:348 — sedye asansörü zorunluluğu ve minimum kabin ölçüsü
+  /// @own P @src etut-veri-modeli.md§12 — sedye asansörü zorunluluğu ve minimum kabin ölçüsü
   stretcherElevatorRequired       Boolean?
   minStretcherCabinWidth          Decimal? @db.Decimal(6, 2)
   minStretcherCabinDepth          Decimal? @db.Decimal(6, 2)
-  /// @own P @src etut-veri-modeli.md:348 — yangın asansörü eşiği
+  /// @own P @src etut-veri-modeli.md§12 — yangın asansörü eşiği
   fireElevatorHeightThreshold     Decimal? @db.Decimal(6, 2)
-  /// @own P @src etut-veri-modeli.md:586 — merdiven genişlikleri
+  /// @own P @src etut-veri-modeli.md§12 — merdiven genişlikleri
   minStairWidth                   Decimal? @db.Decimal(6, 2)
-  /// @own P @src etut-veri-modeli.md:586 — kaçış mesafeleri
+  /// @own P @src etut-veri-modeli.md§12 — kaçış mesafeleri
   maxEscapeDistance               Decimal? @db.Decimal(6, 2)
-  /// @own P @src etut-veri-modeli.md:332 — asansör kapasitesi kg/kişi katsayısı
+  /// @own P @src etut-veri-modeli.md§12 — asansör kapasitesi kg/kişi katsayısı
   /// (doküman ":332 ≈ kişi × 75" diyor; 75 KODA GÖMÜLEMEZ — ilke 1)
   elevatorKgPerPerson             Decimal? @db.Decimal(6, 2)
 
@@ -263,17 +263,17 @@ model FireSafetyRule {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:416 — yangın pompası bina yüksekliği eşiği
+  /// @own P @src etut-veri-modeli.md§12 — yangın pompası bina yüksekliği eşiği
   firePumpHeightThreshold   Decimal? @db.Decimal(6, 2)
-  /// @own P @src etut-veri-modeli.md:416 — sprinkler zorunluluk eşiği
+  /// @own P @src etut-veri-modeli.md§12 — sprinkler zorunluluk eşiği
   sprinklerAreaThreshold    Decimal? @db.Decimal(12, 2)
-  /// @own P @src etut-veri-modeli.md:416 — dedektör kapsama alanı (m²/dedektör)
+  /// @own P @src etut-veri-modeli.md§7 — dedektör kapsama alanı (m²/dedektör)
   detectorCoverageArea      Decimal? @db.Decimal(8, 2)
-  /// @own P @src etut-veri-modeli.md:587 — basınçlandırma eşiği
+  /// @own P @src etut-veri-modeli.md§12 — basınçlandırma eşiği
   pressurizationThreshold   Decimal? @db.Decimal(6, 2)
-  /// @own P @src etut-veri-modeli.md:412 — yangın rezerv hacmi
+  /// @own P @src etut-veri-modeli.md§7 — yangın rezerv hacmi
   fireReserveVolume         Decimal? @db.Decimal(10, 2)
-  /// @own P @src etut-veri-modeli.md:587 — yangın merdiveni şartları (tarif, alan adı yok)
+  /// @own P @src etut-veri-modeli.md§12 — yangın merdiveni şartları (tarif, alan adı yok)
   fireStairRequirements     Json?
 
   @@unique([regionPackageVersionId, ruleKey])
@@ -289,17 +289,17 @@ model CostItemCatalog {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:588
+  /// @own P @src etut-veri-modeli.md§10
   costItemCode            String
-  /// @own P @src etut-veri-modeli.md:588
+  /// @own P @src etut-veri-modeli.md§3
   name                    String
-  /// @own P @src etut-veri-modeli.md:588
+  /// @own P @src etut-veri-modeli.md§2
   unit                    String
-  /// @own P @src etut-veri-modeli.md:588 — CostCategoryTree.ruleKey'e mantıksal referans
+  /// @own P @src etut-veri-modeli.md§4 — CostCategoryTree.ruleKey'e mantıksal referans
   category                String
-  /// @own P @src etut-veri-modeli.md:588, kural tanımı :517-522
+  /// @own P @src etut-veri-modeli.md§10, kural tanımı :517-522
   openingDeductionRule    OpeningDeductionRule @default(none)
-  /// @own P @src etut-veri-modeli.md:521 — above_threshold kuralının eşiği (ör. 0,5 m²).
+  /// @own P @src etut-veri-modeli.md§12 — above_threshold kuralının eşiği (ör. 0,5 m²).
   /// Doküman eşiğe alan adı vermiyor; KODA GÖMÜLEMEZ olduğu için burada.
   openingDeductionThreshold Decimal?           @db.Decimal(8, 3)
 
@@ -316,9 +316,9 @@ model CostCategoryTree {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:589
+  /// @own P @src etut-veri-modeli.md§3
   name           String
-  /// @own P @src etut-veri-modeli.md:589 — ağaç yapısı için üst kategori ruleKey'i
+  /// @own P @src etut-veri-modeli.md§12 — ağaç yapısı için üst kategori ruleKey'i
   parentRuleKey  String?
   sortOrder      Int     @default(0)
 
@@ -334,9 +334,9 @@ model ProjectExpenseTemplate {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:590 — gider kalemi adı
+  /// @own P @src etut-veri-modeli.md§3 — gider kalemi adı
   name    String
-  /// @own P @src etut-veri-modeli.md:590 — hesaplama formülü (sabit tutar değil)
+  /// @own P @src etut-veri-modeli.md§10 — hesaplama formülü (sabit tutar değil)
   formula String
 
   @@unique([regionPackageVersionId, ruleKey])
@@ -351,11 +351,11 @@ model SpecificationPackage {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:544
+  /// @own P @src etut-veri-modeli.md§3
   level    SpecificationLevel
-  /// @own P @src etut-veri-modeli.md:548-560 — kapsam (zemin kaplamaları, doğrama, kapılar…)
+  /// @own P @src etut-veri-modeli.md§7-560 — kapsam (zemin kaplamaları, doğrama, kapılar…)
   scope    String
-  /// @own P @src etut-veri-modeli.md:550-560 — mekan tipine göre varsayılanlar.
+  /// @own P @src etut-veri-modeli.md§11-560 — mekan tipine göre varsayılanlar.
   /// Doküman 11 kapsamı tablo olarak veriyor ama alan adı vermiyor.
   defaults Json
 
@@ -371,9 +371,9 @@ model ProcessTemplate {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:592
+  /// @own P @src etut-veri-modeli.md§3
   name         String
-  /// @own P @src etut-veri-modeli.md:592 — aşama/adım ağacı, süreler, bağımlılıklar
+  /// @own P @src etut-veri-modeli.md§12 — aşama/adım ağacı, süreler, bağımlılıklar
   stages       Json
   /// @own P @src etut-veri-modeli.md — süre bağlı gider tanımları (ilke 9)
   timeDependentCosts Json?
@@ -390,7 +390,7 @@ model IncentiveProgram {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:593
+  /// @own P @src etut-veri-modeli.md§3
   name                String
   eligibilityCondition Json
   calculationRule      String
@@ -411,19 +411,19 @@ model StructuralCoefficientSet {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:528 — ayrışma anahtarı: kat adedi aralığı
+  /// @own P @src etut-veri-modeli.md§3 — ayrışma anahtarı: kat adedi aralığı
   floorCountMin          Int?
   floorCountMax          Int?
-  /// @own P @src etut-veri-modeli.md:528 — ayrışma anahtarı: temel tipi
+  /// @own P @src etut-veri-modeli.md§3 — ayrışma anahtarı: temel tipi
   foundationType         FoundationType?
 
-  /// @own P @src etut-veri-modeli.md:528 — m³/m² (kalibrasyon referansı ~0,46)
+  /// @own P @src etut-veri-modeli.md§10 — m³/m² (kalibrasyon referansı ~0,46)
   concreteVolumePerArea  Decimal @db.Decimal(10, 4)
-  /// @own P @src etut-veri-modeli.md:528 — kg/m³ (kalibrasyon referansı ~85)
+  /// @own P @src etut-veri-modeli.md§10 — kg/m³ (kalibrasyon referansı ~85)
   rebarWeightPerVolume   Decimal @db.Decimal(10, 4)
-  /// @own P @src etut-veri-modeli.md:528 — m²/m³ (kalibrasyon referansı ~3,1)
+  /// @own P @src etut-veri-modeli.md§10 — m²/m³ (kalibrasyon referansı ~3,1)
   formworkAreaPerVolume  Decimal @db.Decimal(10, 4)
-  /// @own P @src etut-veri-modeli.md:528 — kalıp işçiliği oranı (referans ~%41)
+  /// @own P @src etut-veri-modeli.md§10 — kalıp işçiliği oranı (referans ~%41)
   formworkLaborRate      Decimal @db.Decimal(10, 4)
 
   @@unique([regionPackageVersionId, ruleKey])
@@ -438,11 +438,11 @@ model TaxAndIndexRule {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:595
+  /// @own P @src etut-veri-modeli.md§3
   name      String
-  /// @own P @src etut-veri-modeli.md:595 — oran (ör. KDV)
+  /// @own P @src etut-veri-modeli.md§7 — oran (ör. KDV)
   rate      Decimal? @db.Decimal(9, 6)
-  /// @own P @src etut-veri-modeli.md:595 — endeksleme serisi
+  /// @own P @src etut-veri-modeli.md§12 — endeksleme serisi
   indexSeries Json?
 
   @@unique([regionPackageVersionId, ruleKey])
@@ -465,16 +465,16 @@ model ObjectCostMapping {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:495
+  /// @own P @src etut-veri-modeli.md§10
   objectType      String
-  /// @own P @src etut-veri-modeli.md:495
+  /// @own P @src etut-veri-modeli.md§10
   objectVariant   String?
-  /// @own P @src etut-veri-modeli.md:495 — CostItemCatalog.costItemCode'a mantıksal referans
+  /// @own P @src etut-veri-modeli.md§10 — CostItemCatalog.costItemCode'a mantıksal referans
   costItemCode    String
-  /// @own P @src etut-veri-modeli.md:495 — miktar formülü.
+  /// @own P @src etut-veri-modeli.md§10 — miktar formülü.
   /// Formüldeki tüm katsayılar (0,2 dönüş payı, 0,2 torba…) BURADA yaşar, kodda değil.
   quantityFormula String
-  /// @own P @src etut-veri-modeli.md:495
+  /// @own P @src etut-veri-modeli.md§10
   conditions      Json?
 
   @@unique([regionPackageVersionId, ruleKey])
@@ -492,9 +492,9 @@ model SpaceShapeFactorRule {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:54 — hangi mekan tipi
+  /// @own P @src etut-veri-modeli.md§4 — hangi mekan tipi
   spaceType   SpaceType
-  /// @own P @src etut-veri-modeli.md:54 — k katsayısı (dikdörtgen ≈ 4,2)
+  /// @own P @src etut-veri-modeli.md§12 — k katsayısı (dikdörtgen ≈ 4,2)
   shapeFactor Decimal   @db.Decimal(8, 4)
 
   @@unique([regionPackageVersionId, ruleKey])
@@ -510,25 +510,25 @@ model UtilityCoefficientSet {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:408 — bağımsız bölüm başına talep gücü (kW)
+  /// @own P @src etut-veri-modeli.md§12 — bağımsız bölüm başına talep gücü (kW)
   demandPowerPerUnit        Decimal? @db.Decimal(10, 4)
-  /// @own P @src etut-veri-modeli.md:408 — ortak alan güç yoğunluğu (kW/m²)
+  /// @own P @src etut-veri-modeli.md§12 — ortak alan güç yoğunluğu (kW/m²)
   demandPowerPerCommonArea  Decimal? @db.Decimal(10, 6)
-  /// @own P @src etut-veri-modeli.md:408 — trafo gereklilik eşiği (kW)
+  /// @own P @src etut-veri-modeli.md§12 — trafo gereklilik eşiği (kW)
   transformerPowerThreshold Decimal? @db.Decimal(10, 2)
-  /// @own P @src etut-veri-modeli.md:412 — bağımsız bölüm başına kişi
+  /// @own P @src etut-veri-modeli.md§12 — bağımsız bölüm başına kişi
   personsPerUnit            Decimal? @db.Decimal(8, 3)
-  /// @own P @src etut-veri-modeli.md:412 — kişi başına günlük litre
+  /// @own P @src etut-veri-modeli.md§12 — kişi başına günlük litre
   litresPerPerson           Decimal? @db.Decimal(8, 2)
-  /// @own P @src etut-veri-modeli.md:420 — jeneratör boyutlandırma katsayısı
+  /// @own P @src etut-veri-modeli.md§12 — jeneratör boyutlandırma katsayısı
   generatorSizingFactor     Decimal? @db.Decimal(8, 4)
-  /// @own P @src etut-veri-modeli.md:424 — ısı kaybı katsayısı (kcal/m²)
+  /// @own P @src etut-veri-modeli.md§12 — ısı kaybı katsayısı (kcal/m²)
   heatLossPerArea           Decimal? @db.Decimal(10, 3)
-  /// @own P @src etut-veri-modeli.md:396 — sığınak: m² başına gaz sızdırmaz kapı
+  /// @own P @src etut-veri-modeli.md§12 — sığınak: m² başına gaz sızdırmaz kapı
   shelterAreaPerGasProofDoor Decimal? @db.Decimal(10, 3)
-  /// @own P @src etut-veri-modeli.md:391 — sığınak: kişi başına m²
+  /// @own P @src etut-veri-modeli.md§12 — sığınak: kişi başına m²
   shelterAreaPerPerson      Decimal? @db.Decimal(8, 3)
-  /// @own P @src etut-veri-modeli.md:390 — sığınak: bağımsız bölüm başına kapasite katsayısı
+  /// @own P @src etut-veri-modeli.md§12 — sığınak: bağımsız bölüm başına kapasite katsayısı
   shelterPersonsPerUnit     Decimal? @db.Decimal(8, 3)
 
   @@unique([regionPackageVersionId, ruleKey])
@@ -545,9 +545,9 @@ model SpecialConstraintCatalog {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:191-192 — i18n anahtarı (Türkçe metin KODA GÖMÜLMEZ)
+  /// @own P @src etut-veri-modeli.md§12-192 — i18n anahtarı (Türkçe metin KODA GÖMÜLMEZ)
   labelKey   String
-  /// @own P @src etut-veri-modeli.md:192 — projeyi bitiren bir kısıt mı
+  /// @own P @src etut-veri-modeli.md§12 — projeyi bitiren bir kısıt mı
   isBlocking Boolean @default(false)
   sortOrder  Int     @default(0)
 
@@ -571,9 +571,9 @@ model FacadeMaterialCatalog {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:479 — i18n anahtarı
+  /// @own P @src etut-veri-modeli.md§12 — i18n anahtarı
   labelKey     String
-  /// @own P @src etut-veri-modeli.md:479 — CostItemCatalog.costItemCode'a mantıksal referans
+  /// @own P @src etut-veri-modeli.md§10 — CostItemCatalog.costItemCode'a mantıksal referans
   costItemCode String?
 
   facadeMaterials FacadeMaterial[]
@@ -593,11 +593,11 @@ model SpaceTypeCategoryMap {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:221-229
+  /// @own P @src etut-veri-modeli.md§4-229
   spaceType        SpaceType
-  /// @own P @src etut-veri-modeli.md:221-229
+  /// @own P @src etut-veri-modeli.md§4-229
   category         SpaceCategory
-  /// @own H @src etut-veri-modeli.md:205 — isWetArea de tipten türer
+  /// @own H @src etut-veri-modeli.md§4 — isWetArea de tipten türer
   isWetArea        Boolean       @default(false)
   /// false = evrensel varsayılan · true = bölgenin ezmesi
   isRegionOverride Boolean       @default(false)
@@ -617,15 +617,15 @@ model ParametricLumpSumRule {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-veri-modeli.md:604 — disiplin: elektrik · sihhiTesisat · isitmaSogutma · havalandirma
+  /// @own P @src etut-veri-modeli.md§12 — disiplin: elektrik · sihhiTesisat · isitmaSogutma · havalandirma
   discipline     String
-  /// @own P @src etut-veri-modeli.md:604 — sürücü değişken (ör. brüt alan, bağımsız bölüm sayısı)
+  /// @own P @src etut-veri-modeli.md§12 — sürücü değişken (ör. brüt alan, bağımsız bölüm sayısı)
   driverVariable String
-  /// @own P @src etut-veri-modeli.md:604 — formül; sabit tutar YASAK
+  /// @own P @src etut-veri-modeli.md§10 — formül; sabit tutar YASAK
   formula        String
-  /// @own P @src etut-veri-modeli.md:604 — kalibre edilebilir katsayı
+  /// @own P @src etut-veri-modeli.md§10 — kalibre edilebilir katsayı
   coefficient    Decimal @db.Decimal(14, 6)
-  /// @own P @src etut-veri-modeli.md:588 — CostItemCatalog.costItemCode'a mantıksal referans
+  /// @own P @src etut-veri-modeli.md§10 — CostItemCatalog.costItemCode'a mantıksal referans
   costItemCode   String?
 
   @@unique([regionPackageVersionId, ruleKey])
@@ -674,7 +674,7 @@ model StakeholderConsentRule {
   ruleKey                String
   rowHash                String?
 
-  /// @own P @src etut-surec-modeli.md:147 — karar çoğunluğu eşiği (oran, ör. 0,6667)
+  /// @own P @src etut-surec-modeli.md§A4 — karar çoğunluğu eşiği (oran, ör. 0,6667)
   majorityThreshold   Decimal @db.Decimal(6, 4)
   /// @own P — itiraz süresi (gün). Doküman "itiraz süreleri" diyor, birim vermiyor.
   objectionPeriodDays Int?

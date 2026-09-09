@@ -8,20 +8,20 @@ model Project {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  /// @tier K1 @own M @src etut-veri-modeli.md:107
+  /// @tier K1 @own M @src etut-veri-modeli.md§3
   name        String
-  /// @tier K1 @own M @src etut-veri-modeli.md:108
+  /// @tier K1 @own M @src etut-veri-modeli.md§3
   projectType ProjectType
-  /// @tier K1 @own M @src etut-veri-modeli.md:109
+  /// @tier K1 @own M @src etut-veri-modeli.md§3
   status      ProjectStatus @default(taslak)
 
-  /// @tier K1 @own M @src etut-veri-modeli.md:110
+  /// @tier K1 @own M @src etut-veri-modeli.md§3
   /// @default YOK — süreç modeli :351 sihirbazın ilk ekranında kademeyi
   /// AÇIKÇA sorduruyor ("ad, tip, kademe seçimi"). Varsayılan koymak,
   /// dokümanın vermediği bir kararı uydurmak olurdu.
   tier Tier
 
-  /// @tier K1 @own M @src etut-veri-modeli.md:111 — DONDURULMUŞ SÜRÜM (ilke 2).
+  /// @tier K1 @own M @src etut-veri-modeli.md§3 — DONDURULMUŞ SÜRÜM (ilke 2).
   /// SET-ONCE: null→değer serbest; değer→değer YALNIZCA aynı transaction'da
   /// `applied` bir ProjectPackageMigration varsa. Trigger ile zorlanır.
   /// Nullable, çünkü "bitti sayılır" ölçütü üç ayrı adım: proje açılır,
@@ -29,7 +29,7 @@ model Project {
   regionPackageVersionId String?
   regionPackageVersion   RegionPackageVersion? @relation(fields: [regionPackageVersionId], references: [id], onDelete: Restrict)
 
-  /// @tier K1 @own P @src etut-veri-modeli.md:112 — "paketten gelir, ezilebilir".
+  /// @tier K1 @own P @src etut-veri-modeli.md§3 — "paketten gelir, ezilebilir".
   /// Paket varsayılanı bağlanma anında currencyComputedValue'ya materyalize edilir.
   currencyComputedValue  String?
   currencyOverrideValue  String?
@@ -37,7 +37,7 @@ model Project {
   /// GENERATED ALWAYS AS (COALESCE(currencyOverrideValue, currencyComputedValue)) STORED
   currency               String?
 
-  /// @tier K1 @own M @src etut-veri-modeli.md:113 — fiyatların referans tarihi.
+  /// @tier K1 @own M @src etut-veri-modeli.md§3 — fiyatların referans tarihi.
   /// İP-6'da priceListVersionId ile DEĞİŞTİRİLECEK. Bir tarih sürüm dondurmaz:
   /// geri tarihli bir fiyat satırı eklenirse bu projenin fiyatı değişir —
   /// :28'in yasakladığı şey. Alan şimdilik korunuyor (doküman tanımlıyor).
@@ -49,7 +49,7 @@ model Project {
   priceListVersionId String?
   priceListVersion   PriceListVersion? @relation(fields: [priceListVersionId], references: [id], onDelete: Restrict)
 
-  /// @tier — @own M @src etut-veri-modeli.md:114 (Kademe hücresi literal "—")
+  /// @tier — @own M @src etut-veri-modeli.md§3 (Kademe hücresi literal "—")
   notes String?
 
   parcel            Parcel?
@@ -81,24 +81,24 @@ model Parcel {
   projectId String  @unique
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  /// @tier K1 @own M @src etut-veri-modeli.md:120
+  /// @tier K1 @own M @src etut-veri-modeli.md§3
   province     String?
-  /// @tier K1 @own M @src etut-veri-modeli.md:120
+  /// @tier K1 @own M @src etut-veri-modeli.md§3
   district     String?
-  /// @tier K1 @own M @src etut-veri-modeli.md:120
+  /// @tier K1 @own M @src etut-veri-modeli.md§3
   neighborhood String?
 
-  /// @tier K1 @own M @src etut-veri-modeli.md:121 — ada
+  /// @tier K1 @own M @src etut-veri-modeli.md§3 — ada
   block     String?
-  /// @tier K1 @own M @src etut-veri-modeli.md:121
+  /// @tier K1 @own M @src etut-veri-modeli.md§3
   parcelNo  String?
-  /// @tier K1 @own M @src etut-veri-modeli.md:121 — pafta
+  /// @tier K1 @own M @src etut-veri-modeli.md§3 — pafta
   sheetNo   String?
 
-  /// @tier K1 @own M/B @src etut-veri-modeli.md:154
+  /// @tier K1 @own M/B @src etut-veri-modeli.md§3
   area     Decimal? @db.Decimal(12, 2)
 
-  /// @tier K2 @own B @src etut-veri-modeli.md:155 — sınır poligonu.
+  /// @tier K2 @own B @src etut-veri-modeli.md§3 — sınır poligonu.
   ///
   /// GeoJSON ŞEKLİNDE ama içeriği YEREL METRİK koordinattır: origin parselin
   /// ağırlık merkezi, birim metre, eksen kaynak projeksiyonun grid ekseni.
@@ -119,30 +119,30 @@ model Parcel {
   /// yerel eksen kaynak grid'e hizalıdır. Döndürme İP-4'te anlam kazanır.
   rotation        Decimal? @db.Decimal(8, 5)
 
-  /// @tier K1 @own M @src etut-veri-modeli.md:124
+  /// @tier K1 @own M @src etut-veri-modeli.md§3
   ownershipType OwnershipType?
-  /// @tier K1 @own M @src etut-veri-modeli.md:125
+  /// @tier K1 @own M @src etut-veri-modeli.md§3
   ownerCount    Int?
 
-  /// @tier K2 @own M/B @src etut-veri-modeli.md:126 — şerh, ipotek, haciz, irtifak.
+  /// @tier K2 @own M/B @src etut-veri-modeli.md§3 — şerh, ipotek, haciz, irtifak.
   /// Her kayıt: tip + açıklama + engel mi.
   encumbrances Json?
 
-  /// @tier K1 @own M @src etut-veri-modeli.md:127
+  /// @tier K1 @own M @src etut-veri-modeli.md§3
   hasExistingBuilding Boolean @default(false)
 
-  /// @tier K1 @own M @src etut-veri-modeli.md:128
+  /// @tier K1 @own M @src etut-veri-modeli.md§3
   /// BELİRSİZLİK: doküman "existingBuildingAge / floors / unitCount" yazıyor.
   /// Ortak önek "existingBuilding" olarak okundu; doküman netleştirilirse düzeltilir.
   existingBuildingAge       Int?
   existingBuildingFloors    Int?
   existingBuildingUnitCount Int?
 
-  /// @tier K2 @own M @src etut-veri-modeli.md:129
+  /// @tier K2 @own M @src etut-veri-modeli.md§3
   existingTotalArea Decimal? @db.Decimal(12, 2)
-  /// @tier K1 @own M @src etut-veri-modeli.md:130
+  /// @tier K1 @own M @src etut-veri-modeli.md§3
   demolitionRequired Boolean @default(false)
-  /// @tier K2 @own M @src etut-veri-modeli.md:131
+  /// @tier K2 @own M @src etut-veri-modeli.md§3
   structuralAssessmentStatus StructuralAssessmentStatus?
 
   zoningData ZoningData?
@@ -161,53 +161,53 @@ model ZoningData {
   parcelId String @unique
   parcel   Parcel @relation(fields: [parcelId], references: [id], onDelete: Cascade)
 
-  /// @tier K2 @own B @src etut-veri-modeli.md:137 — imar durum belgesi
+  /// @tier K2 @own B @src etut-veri-modeli.md§3 — imar durum belgesi
   documentFile String?
-  /// @tier K2 @own B/M @src etut-veri-modeli.md:138
+  /// @tier K2 @own B/M @src etut-veri-modeli.md§3
   planNotes    String?
 
-  /// @tier K1 @own M @src etut-veri-modeli.md:139
+  /// @tier K1 @own M @src etut-veri-modeli.md§3
   buildingOrder BuildingOrder?
-  /// @tier K1 @own M @src etut-veri-modeli.md:140 — taban alanı katsayısı (TAKS)
+  /// @tier K1 @own M @src etut-veri-modeli.md§3 — taban alanı katsayısı (TAKS)
   groundCoverageRatio Decimal? @db.Decimal(6, 4)
-  /// @tier K1 @own M @src etut-veri-modeli.md:141 — emsal (KAKS)
+  /// @tier K1 @own M @src etut-veri-modeli.md§3 — emsal (KAKS)
   floorAreaRatio      Decimal? @db.Decimal(6, 4)
-  /// @tier K1 @own P @src etut-veri-modeli.md:142 — paketten (ZoningRuleSet)
+  /// @tier K1 @own P @src etut-veri-modeli.md§3 — paketten (ZoningRuleSet)
   farCalculationBasis FarCalculationBasis?
 
-  /// @tier K1 @own M @src etut-veri-modeli.md:143 — çekme mesafeleri
+  /// @tier K1 @own M @src etut-veri-modeli.md§3 — çekme mesafeleri
   setbackFront Decimal? @db.Decimal(6, 2)
   setbackSide  Decimal? @db.Decimal(6, 2)
   setbackRear  Decimal? @db.Decimal(6, 2)
 
-  /// @tier K1 @own M @src etut-veri-modeli.md:144
+  /// @tier K1 @own M @src etut-veri-modeli.md§3
   maxFloorCount Int?
-  /// @tier K1 @own M @src etut-veri-modeli.md:145
+  /// @tier K1 @own M @src etut-veri-modeli.md§3
   maxHeight     Decimal? @db.Decimal(6, 2)
-  /// @tier K2 @own P @src etut-veri-modeli.md:178 — paketten (ZoningRuleSet).
+  /// @tier K2 @own P @src etut-veri-modeli.md§3 — paketten (ZoningRuleSet).
   /// 1.2: kod enum'undan HeightReferenceCatalog anahtarına döndü (ilke 1).
   heightReferenceRuleKey String?
 
-  /// @tier K2 @own M @src etut-veri-modeli.md:179 — kenar indeksi, rol, yol adı, genişlik.
+  /// @tier K2 @own M @src etut-veri-modeli.md§3 — kenar indeksi, rol, yol adı, genişlik.
   /// L0 ötelemesinin DOĞRUDAN girdisi: setbackFront/Side/Rear üç ayrı değerdir ve
   /// hangi poligon kenarının hangi rolü taşıdığını söyleyen tek yer burasıdır.
   /// Şekil: [{ edgeIndex, role: "front"|"side"|"rear", roadName?, width? }]
   /// Rol verilmemiş kenarlar "side" sayılır ve bu bir UYARI üretir (ilke 7).
   roadFrontages Json?
-  /// @tier K2 @own M @src etut-veri-modeli.md:148 — referans kot
+  /// @tier K2 @own M @src etut-veri-modeli.md§3 — referans kot
   referenceLevel Decimal? @db.Decimal(8, 3)
-  /// @tier K3 @own M/E @src etut-veri-modeli.md:149 — köşe kotları
+  /// @tier K3 @own M/E @src etut-veri-modeli.md§3 — köşe kotları
   cornerLevels   Json?
-  /// @tier K2 @own M @src etut-veri-modeli.md:150
+  /// @tier K2 @own M @src etut-veri-modeli.md§3
   levelDataSource LevelDataSource?
 
-  /// @tier K2 @own M @src etut-veri-modeli.md:151 — kullanıcının işaretlediği kısıtlar.
+  /// @tier K2 @own M @src etut-veri-modeli.md§3 — kullanıcının işaretlediği kısıtlar.
   /// Kontrol listesinin TANIMI SpecialConstraintCatalog'da (paket verisi, ilke 1).
   specialConstraints Json?
 
   // --- Hesaplananlar (:158) ---
 
-  /// @own H @src etut-veri-modeli.md:158 — azami taban alanı.
+  /// @own H @src etut-veri-modeli.md§3 — azami taban alanı.
   /// Türetme: parsel alanı × groundCoverageRatio, çekme mesafesi ötelemesiyle sınırlı.
   maxFootprintComputedValue  Decimal? @db.Decimal(14, 3)
   maxFootprintOverrideValue  Decimal? @db.Decimal(14, 3)
@@ -215,7 +215,7 @@ model ZoningData {
   /// GENERATED
   maxFootprint               Decimal? @db.Decimal(14, 3)
 
-  /// @own H @src etut-veri-modeli.md:158 — azami toplam inşaat alanı.
+  /// @own H @src etut-veri-modeli.md§3 — azami toplam inşaat alanı.
   /// Türetme: parsel alanı × floorAreaRatio; farCalculationBasis'e göre brüt/net.
   maxTotalFloorAreaComputedValue  Decimal? @db.Decimal(14, 3)
   maxTotalFloorAreaOverrideValue  Decimal? @db.Decimal(14, 3)
@@ -223,7 +223,7 @@ model ZoningData {
   /// GENERATED
   maxTotalFloorArea               Decimal? @db.Decimal(14, 3)
 
-  /// @own H @src etut-veri-modeli.md:158 — yapılaşabilir zarf (GeoJSON poligon).
+  /// @own H @src etut-veri-modeli.md§3 — yapılaşabilir zarf (GeoJSON poligon).
   /// Türetme: parsel poligonu → çekme mesafesi ötelemesi → kat adedi.
   /// Hesaplanan bir GEOMETRİDİR, sayı değil — üçlü mekanizması bunu da taşır.
   buildableEnvelopeComputedValue  Json?
@@ -232,7 +232,7 @@ model ZoningData {
   /// GENERATED
   buildableEnvelope               Json?
 
-  /// @own H @src etut-veri-modeli.md:158 — kot farkına göre kazanılabilir bodrum.
+  /// @own H @src etut-veri-modeli.md§3 — kot farkına göre kazanılabilir bodrum.
   basementGainFromLevelDifferenceComputedValue  Decimal? @db.Decimal(14, 3)
   basementGainFromLevelDifferenceOverrideValue  Decimal? @db.Decimal(14, 3)
   basementGainFromLevelDifferenceOverrideReason String?
@@ -251,33 +251,38 @@ model SoilData {
   parcelId String @unique
   parcel   Parcel @relation(fields: [parcelId], references: [id], onDelete: Cascade)
 
-  /// @tier K3 @own B @src etut-veri-modeli.md:164
+  /// @tier K3 @own B @src etut-veri-modeli.md§3
   reportFile        String?
-  /// @tier K2 @own M @src etut-veri-modeli.md:165
+  /// @tier K2 @own M @src etut-veri-modeli.md§3
   soilClass         String?
-  /// @tier K3 @own M @src etut-veri-modeli.md:166 — zemin emniyet gerilmesi
+  /// @tier K3 @own M @src etut-veri-modeli.md§3 — zemin emniyet gerilmesi
   bearingCapacity   Decimal? @db.Decimal(10, 3)
-  /// @tier K2 @own M @src etut-veri-modeli.md:167 — yeraltı su seviyesi
+  /// @tier K2 @own M @src etut-veri-modeli.md§3 — yeraltı su seviyesi
   groundwaterLevel  Decimal? @db.Decimal(8, 3)
-  /// @tier K3 @own M @src etut-veri-modeli.md:168
+  /// @tier K3 @own M @src etut-veri-modeli.md§3
   liquefactionRisk  LiquefactionRisk?
-  /// @tier K2 @own M @src etut-veri-modeli.md:169
+  /// @tier K2 @own M @src etut-veri-modeli.md§3
   foundationType    FoundationType?
 
-  /// @tier K2-K3 @own M @src etut-veri-modeli.md:170 — Tip hücresi literal "—"
+  /// @tier K2 @own M @src etut-veri-modeli.md§3 — kazık gereksinimi.
+  /// Tip hücresi dokümanda literal "—".
   pileRequired Boolean?
+
+  /// @tier K3 @own M @src etut-veri-modeli.md§3 — kazık detayları.
+  /// v1.2: dokümandaki "K2–K3" aralığı ayrıştırıldı — gereklilik K2'de
+  /// kararlaşır, ölçüler K3'te netleşir.
   pileCount    Int?
   pileDepth    Decimal? @db.Decimal(8, 3)
   pileDiameter Decimal? @db.Decimal(8, 3)
 
-  /// @tier K2 @own M @src etut-veri-modeli.md:171 — Tip hücresi literal "—".
+  /// @tier K2 @own M @src etut-veri-modeli.md§3 — Tip hücresi literal "—".
   /// NOT: süreç modeli :126 shoringArea'yı (H) sayıyor; veri modeli K2 (manuel) diyor.
   /// Veri modeli otoriter kabul edildi.
   shoringRequired Boolean?
   shoringMethod   String?
   shoringArea     Decimal? @db.Decimal(12, 3)
 
-  /// @tier K2 @own M @src etut-veri-modeli.md:172
+  /// @tier K2 @own M @src etut-veri-modeli.md§3
   adjacentBuildingDistances Json?
 
   createdAt DateTime @default(now())
@@ -292,21 +297,21 @@ model SiteData {
   parcelId String @unique
   parcel   Parcel @relation(fields: [parcelId], references: [id], onDelete: Cascade)
 
-  /// @tier K2 @own M @src etut-veri-modeli.md:178 — topografya, kot farkı
+  /// @tier K2 @own M @src etut-veri-modeli.md§3 — topografya, kot farkı
   topographyLevelDifference Decimal? @db.Decimal(8, 3)
-  /// @tier K2 @own M @src etut-veri-modeli.md:179 — hafriyat çıkış mesafesi (km)
+  /// @tier K2 @own M @src etut-veri-modeli.md§3 — hafriyat çıkış mesafesi (km)
   excavationHaulDistance    Decimal? @db.Decimal(8, 2)
-  /// @tier K2 @own M @src etut-veri-modeli.md:180 — döküm sahası bedeli
+  /// @tier K2 @own M @src etut-veri-modeli.md§3 — döküm sahası bedeli
   disposalSiteFee           Decimal? @db.Decimal(14, 2)
-  /// @tier K2 @own M @src etut-veri-modeli.md:181
+  /// @tier K2 @own M @src etut-veri-modeli.md§3
   siteAccessRoadWidth       Decimal? @db.Decimal(6, 2)
-  /// @tier K2 @own M @src etut-veri-modeli.md:182 — vinç kurulabilirliği
+  /// @tier K2 @own M @src etut-veri-modeli.md§3 — vinç kurulabilirliği
   craneFeasible             Boolean?
-  /// @tier K3 @own M @src etut-veri-modeli.md:183 — elektrik/su/gaz/kanal: mesafe, durum
+  /// @tier K3 @own M @src etut-veri-modeli.md§3 — elektrik/su/gaz/kanal: mesafe, durum
   utilityConnections        Json?
-  /// @tier K2 @own M @src etut-veri-modeli.md:184
+  /// @tier K2 @own M @src etut-veri-modeli.md§3
   siteFencePerimeter        Decimal? @db.Decimal(10, 2)
-  /// @tier K2 @own M @src etut-veri-modeli.md:185
+  /// @tier K2 @own M @src etut-veri-modeli.md§3
   fencedSides               Int?
 
   createdAt DateTime @default(now())
@@ -322,25 +327,25 @@ model Stakeholder {
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  /// @tier K2 @own M @src etut-surec-modeli.md:142
+  /// @tier K2 @own M @src etut-surec-modeli.md§A4
   name         String
-  /// @tier K2 @own M @src etut-surec-modeli.md:142
+  /// @tier K2 @own M @src etut-surec-modeli.md§A4
   contactPhone String?
   contactEmail String?
 
-  /// @tier K2 @own M @src etut-surec-modeli.md:143 — pay oranı
+  /// @tier K2 @own M @src etut-surec-modeli.md§A4 — pay oranı
   shareRatio       Decimal? @db.Decimal(9, 6)
-  /// @tier K2 @own M @src etut-surec-modeli.md:144
+  /// @tier K2 @own M @src etut-surec-modeli.md§A4
   existingUnitArea Decimal? @db.Decimal(12, 2)
-  /// @tier K2 @own M @src etut-surec-modeli.md:145
+  /// @tier K2 @own M @src etut-surec-modeli.md§A4
   expectationNotes String?
-  /// @tier K2 @own M @src etut-surec-modeli.md:146
+  /// @tier K2 @own M @src etut-surec-modeli.md§A4
   agreementStance  AgreementStance?
 
-  /// @tier K3 @own M @src etut-surec-modeli.md:148 — geçici barınma yardımı
+  /// @tier K3 @own M @src etut-surec-modeli.md§A4 — geçici barınma yardımı
   housingAidEligible Boolean?
   housingAidMonths   Int?
-  /// @tier K3 @own M/P @src etut-surec-modeli.md:149
+  /// @tier K3 @own M/P @src etut-surec-modeli.md§A4
   incentiveProgramEligible Boolean?
 
   units Unit[]
