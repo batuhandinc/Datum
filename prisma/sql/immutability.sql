@@ -80,7 +80,10 @@ DECLARE
     'space_type_category_map',
     'parametric_lump_sum_rule',
     'height_reference_catalog',
-    'stakeholder_consent_rule'
+    'stakeholder_consent_rule',
+    -- İP-4 (sürüm 1.4) — plan motorunun kuralları
+    'unit_layout_rule',
+    'building_element_rule'
   ];
 BEGIN
   FOREACH t IN ARRAY frozen_tables LOOP

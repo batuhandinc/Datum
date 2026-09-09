@@ -8,7 +8,7 @@
  * Yalnızca KADEMESİ OLAN alanlar buradadır: hesaplanan alanlar ve altyapı
  * alanları (id, FK, zaman damgası) sihirbaz GİRDİSİ değildir.
  *
- * 142 alan, 13 modelde.
+ * 142 alan, 12 modelde.
  */
 
 export type FieldTier = "K1" | "K2" | "K3";
@@ -94,10 +94,6 @@ export const FIELD_CATALOG = {
     currencyOverrideReason: { tier: "K1", ownership: ["P"], src: null },
     priceReferenceDate: { tier: "K1", ownership: ["M"], src: null },
   },
-  Shaft: {
-    offsetX: { tier: "K3", ownership: ["M"], src: null },
-    offsetY: { tier: "K3", ownership: ["M"], src: null },
-  },
   SiteData: {
     topographyLevelDifference: { tier: "K2", ownership: ["M"], src: null },
     excavationHaulDistance: { tier: "K2", ownership: ["M"], src: null },
@@ -130,7 +126,6 @@ export const FIELD_CATALOG = {
     area: { tier: "K2", ownership: ["M"], src: null },
     width: { tier: "K2", ownership: ["M"], src: null },
     length: { tier: "K2", ownership: ["M"], src: null },
-    geometry: { tier: "K3", ownership: ["H"], src: null },
     clearHeight: { tier: "K2", ownership: ["M"], src: null },
     floorFinishId: { tier: "K2", ownership: ["P"], src: null },
     floorFinish: { tier: "K2", ownership: ["P"], src: null },
@@ -166,6 +161,9 @@ export const FIELD_CATALOG = {
     unitTypeCode: { tier: "K2", ownership: ["M"], src: null },
     usageType: { tier: "K1", ownership: ["M"], src: null },
     isDuplex: { tier: "K2", ownership: ["M"], src: null },
+    linkedUnitId: { tier: "K2", ownership: ["M"], src: null },
+    linkedUnit: { tier: "K2", ownership: ["M"], src: null },
+    linkedFrom: { tier: "K2", ownership: ["M"], src: null },
     landShareRatio: { tier: "K3", ownership: ["M"], src: null },
     assignedStakeholderId: { tier: "K3", ownership: ["M"], src: null },
     assignedStakeholder: { tier: "K3", ownership: ["M"], src: null },

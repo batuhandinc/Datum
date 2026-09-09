@@ -89,10 +89,26 @@ const view = await one(
 );
 check("OverrideLedger view var", view.n === 1);
 
+// Beklenen sayı KAYNAKTAN sayılır, elle yazılmaz — GENERATED sayacıyla aynı
+// gerekçe. Kural tablosu eklemek (22 → 24) bu satırı bayatlatmasın.
+//   · dondurulan kural tabloları: `frozen_tables` dizisi
+//   · ayrıca iki koruma trigger'ı: sürüm muhafızı + set-once
+const immutabilitySql = readFileSync(path.join(ROOT, "prisma", "sql", "immutability.sql"), "utf8");
+const frozenCount = (
+  immutabilitySql.match(/frozen_tables text\[\] := ARRAY\[([\s\S]*?)\]/)?.[1].match(/'[a-z_]+'/g) ??
+  []
+).length;
+const literalTriggerCount = (immutabilitySql.match(/^CREATE TRIGGER /gm) ?? []).length;
+const expectedTriggerTables = frozenCount + literalTriggerCount;
+
 const trg = await one(
   `select count(distinct event_object_table)::int n from information_schema.triggers where trigger_schema='public'`,
 );
-check(`trigger'lı tablo sayısı (${trg.n}, 24 bekleniyor)`, trg.n === 24);
+check(
+  `trigger'lı tablo sayısı (${trg.n}, ${expectedTriggerTables} bekleniyor: ` +
+    `${frozenCount} dondurulan kural tablosu + ${literalTriggerCount} koruma)`,
+  trg.n === expectedTriggerTables,
+);
 
 // ------------------------------------------------------------------ veri
 console.log("\nSeed ve proje CRUD…");

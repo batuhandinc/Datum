@@ -37,6 +37,9 @@ ALTER TABLE "floor" ADD COLUMN "grossArea" numeric(14,3)
   GENERATED ALWAYS AS (COALESCE("grossAreaOverrideValue", "grossAreaComputedValue")) STORED;
 
 -- Unit (unit)
+ALTER TABLE "unit" DROP COLUMN IF EXISTS "geometry";
+ALTER TABLE "unit" ADD COLUMN "geometry" jsonb
+  GENERATED ALWAYS AS (COALESCE("geometryOverrideValue", "geometryComputedValue")) STORED;
 ALTER TABLE "unit" DROP COLUMN IF EXISTS "grossArea";
 ALTER TABLE "unit" ADD COLUMN "grossArea" numeric(12,3)
   GENERATED ALWAYS AS (COALESCE("grossAreaOverrideValue", "grossAreaComputedValue")) STORED;
@@ -57,6 +60,9 @@ ALTER TABLE "unit" ADD COLUMN "wetAreaTotal" numeric(12,3)
 ALTER TABLE "space" DROP COLUMN IF EXISTS "category";
 ALTER TABLE "space" ADD COLUMN "category" "SpaceCategory"
   GENERATED ALWAYS AS (COALESCE("categoryOverrideValue", "categoryComputedValue")) STORED;
+ALTER TABLE "space" DROP COLUMN IF EXISTS "geometry";
+ALTER TABLE "space" ADD COLUMN "geometry" jsonb
+  GENERATED ALWAYS AS (COALESCE("geometryOverrideValue", "geometryComputedValue")) STORED;
 ALTER TABLE "space" DROP COLUMN IF EXISTS "perimeter";
 ALTER TABLE "space" ADD COLUMN "perimeter" numeric(12,3)
   GENERATED ALWAYS AS (COALESCE("perimeterOverrideValue", "perimeterComputedValue")) STORED;
@@ -83,6 +89,47 @@ ALTER TABLE "core" ADD COLUMN "area" numeric(12,3)
 ALTER TABLE "core" DROP COLUMN IF EXISTS "requiredElevatorCount";
 ALTER TABLE "core" ADD COLUMN "requiredElevatorCount" integer
   GENERATED ALWAYS AS (COALESCE("requiredElevatorCountOverrideValue", "requiredElevatorCountComputedValue")) STORED;
+
+-- Shaft (shaft)
+ALTER TABLE "shaft" DROP COLUMN IF EXISTS "offsetX";
+ALTER TABLE "shaft" ADD COLUMN "offsetX" numeric(8,3)
+  GENERATED ALWAYS AS (COALESCE("offsetXOverrideValue", "offsetXComputedValue")) STORED;
+ALTER TABLE "shaft" DROP COLUMN IF EXISTS "offsetY";
+ALTER TABLE "shaft" ADD COLUMN "offsetY" numeric(8,3)
+  GENERATED ALWAYS AS (COALESCE("offsetYOverrideValue", "offsetYComputedValue")) STORED;
+
+-- CommonSpace (common_space)
+ALTER TABLE "common_space" DROP COLUMN IF EXISTS "geometry";
+ALTER TABLE "common_space" ADD COLUMN "geometry" jsonb
+  GENERATED ALWAYS AS (COALESCE("geometryOverrideValue", "geometryComputedValue")) STORED;
+ALTER TABLE "common_space" DROP COLUMN IF EXISTS "area";
+ALTER TABLE "common_space" ADD COLUMN "area" numeric(12,3)
+  GENERATED ALWAYS AS (COALESCE("areaOverrideValue", "areaComputedValue")) STORED;
+ALTER TABLE "common_space" DROP COLUMN IF EXISTS "perimeter";
+ALTER TABLE "common_space" ADD COLUMN "perimeter" numeric(12,3)
+  GENERATED ALWAYS AS (COALESCE("perimeterOverrideValue", "perimeterComputedValue")) STORED;
+
+-- Wall (wall)
+ALTER TABLE "wall" DROP COLUMN IF EXISTS "geometry";
+ALTER TABLE "wall" ADD COLUMN "geometry" jsonb
+  GENERATED ALWAYS AS (COALESCE("geometryOverrideValue", "geometryComputedValue")) STORED;
+ALTER TABLE "wall" DROP COLUMN IF EXISTS "length";
+ALTER TABLE "wall" ADD COLUMN "length" numeric(10,3)
+  GENERATED ALWAYS AS (COALESCE("lengthOverrideValue", "lengthComputedValue")) STORED;
+ALTER TABLE "wall" DROP COLUMN IF EXISTS "thickness";
+ALTER TABLE "wall" ADD COLUMN "thickness" numeric(6,3)
+  GENERATED ALWAYS AS (COALESCE("thicknessOverrideValue", "thicknessComputedValue")) STORED;
+
+-- ColumnGrid (column_grid)
+ALTER TABLE "column_grid" DROP COLUMN IF EXISTS "spacingX";
+ALTER TABLE "column_grid" ADD COLUMN "spacingX" numeric(6,2)
+  GENERATED ALWAYS AS (COALESCE("spacingXOverrideValue", "spacingXComputedValue")) STORED;
+ALTER TABLE "column_grid" DROP COLUMN IF EXISTS "spacingY";
+ALTER TABLE "column_grid" ADD COLUMN "spacingY" numeric(6,2)
+  GENERATED ALWAYS AS (COALESCE("spacingYOverrideValue", "spacingYComputedValue")) STORED;
+ALTER TABLE "column_grid" DROP COLUMN IF EXISTS "columnCount";
+ALTER TABLE "column_grid" ADD COLUMN "columnCount" integer
+  GENERATED ALWAYS AS (COALESCE("columnCountOverrideValue", "columnCountComputedValue")) STORED;
 
 -- Elevator (elevator)
 ALTER TABLE "elevator" DROP COLUMN IF EXISTS "count";

@@ -61,11 +61,12 @@ describe("hesaplanan alan kayıt defteri ↔ şema uyumu", () => {
 
   // Sayaç kasıtlı olarak SABİTTİR: kayıt defterine alan eklemek bu satırı
   // kırar ve dört adımlı ritüelin (şema · registry · codegen · migration)
-  // atlanmadığını görmeye zorlar. İP-3'te 52/18/208 → 61/20/244.
-  it("61 hesaplanan alan, 20 model, 244 kolon", () => {
-    expect(allComputedFields()).toHaveLength(61);
-    expect(COMPUTED_MODELS).toHaveLength(20);
-    expect(allComputedFields().length * 4).toBe(244);
+  // atlanmadığını görmeye zorlar.
+  // İP-3'te 52/18/208 → 61/20/244 · İP-4'te 61/20/244 → 74/24/296.
+  it("74 hesaplanan alan, 24 model, 296 kolon", () => {
+    expect(allComputedFields()).toHaveLength(74);
+    expect(COMPUTED_MODELS).toHaveLength(24);
+    expect(allComputedFields().length * 4).toBe(296);
   });
 
   it("para ve alan alanları Decimal — float yok (Karar 4 / kural 1)", () => {
@@ -169,7 +170,14 @@ describe("kiracılık", () => {
     // Kök = bağımsız adreslenebilen ve kiracıya ait; Project üzerinden
     // erişilen hiçbir varlık bu alanı taşımaz.
     // PriceListVersion köktür: projeler ona işaret eder, o projeye değil.
-    expect(carriers.sort()).toEqual(["PriceListVersion", "Project", "RegionPackage"]);
+    // UnitTypeTemplate (İP-4) aynı gerekçeyle köktür — tipoloji kütüphanesi
+    // firmaya aittir, projeye değil; projeler ondan KOPYALAR.
+    expect(carriers.sort()).toEqual([
+      "PriceListVersion",
+      "Project",
+      "RegionPackage",
+      "UnitTypeTemplate",
+    ]);
   });
 
   it("kod ile şema aynı kök listesini gösteriyor", () => {

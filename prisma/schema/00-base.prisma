@@ -386,6 +386,23 @@ enum CoreStrategy {
   cift
 }
 
+/// Duvar tipi (bölüm 4, sürüm 1.4).
+///
+/// ENUM MEŞRU (bölüm 15.1): kod her tipi ayrı ayrı UYGULAR — kalınlığı farklı
+/// bir paket alanından okur, açıklık davranışı farklıdır (şaft duvarında pencere
+/// olmaz), ve metraj kalemi farklıdır. Yeni bir tip zaten yeni kod demektir.
+///
+/// Tip ÇİZİLMEZ, mekan ilişkisinden TÜRER: dış halkaya değen kenar `dis`,
+/// iki mekan arası `ic`, ıslak mekanın sınırı `islakHacim`, şaft sınırı `saft`,
+/// iki BİRİMİ ayıran `birimAyirici`.
+enum WallType {
+  dis
+  ic
+  islakHacim
+  saft
+  birimAyirici
+}
+
 /// :330 — insan · yuk · sedye · yangin
 enum ElevatorType {
   insan

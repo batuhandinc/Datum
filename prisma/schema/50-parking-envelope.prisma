@@ -109,14 +109,14 @@ model ParkingSpace {
   parkingLayout   ParkingLayout @relation(fields: [parkingLayoutId], references: [id], onDelete: Cascade)
 
   /// @src etut-veri-modeli.md§8 — paket minimumu
-  width  Decimal? @db.Decimal(6, 2)
-  length Decimal? @db.Decimal(6, 2)
+  width          Decimal? @db.Decimal(6, 2)
+  length         Decimal? @db.Decimal(6, 2)
   /// @src etut-veri-modeli.md§8
-  isAccessible Boolean @default(false)
-  isMechanical Boolean @default(false)
+  isAccessible   Boolean  @default(false)
+  isMechanical   Boolean  @default(false)
   /// @src etut-veri-modeli.md§8
   assignedUnitId String?
-  assignedUnit   Unit?   @relation(fields: [assignedUnitId], references: [id], onDelete: SetNull)
+  assignedUnit   Unit?    @relation(fields: [assignedUnitId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -161,10 +161,10 @@ model Ramp {
   footprintArea               Decimal? @db.Decimal(12, 3)
 
   /// @src etut-veri-modeli.md§8
-  isCovered     Boolean @default(false)
-  hasHeating    Boolean @default(false)
+  isCovered     Boolean      @default(false)
+  hasHeating    Boolean      @default(false)
   shutterType   ShutterType?
-  turningRadius Decimal? @db.Decimal(6, 2)
+  turningRadius Decimal?     @db.Decimal(6, 2)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -323,15 +323,15 @@ model Landscape {
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   /// @src etut-veri-modeli.md§9
-  gardenWallLength    Decimal? @db.Decimal(10, 3)
-  gardenWallHeight    Decimal? @db.Decimal(6, 3)
-  lawnArea            Decimal? @db.Decimal(12, 3)
-  plantingBudget      Decimal? @db.Decimal(14, 2)
-  irrigationSystem    String?
-  hardscapeArea       Decimal? @db.Decimal(12, 3)
+  gardenWallLength     Decimal? @db.Decimal(10, 3)
+  gardenWallHeight     Decimal? @db.Decimal(6, 3)
+  lawnArea             Decimal? @db.Decimal(12, 3)
+  plantingBudget       Decimal? @db.Decimal(14, 2)
+  irrigationSystem     String?
+  hardscapeArea        Decimal? @db.Decimal(12, 3)
   outdoorLightingCount Int?
-  playgroundArea      Decimal? @db.Decimal(12, 3)
-  fenceLength         Decimal? @db.Decimal(10, 3)
+  playgroundArea       Decimal? @db.Decimal(12, 3)
+  fenceLength          Decimal? @db.Decimal(10, 3)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -43,6 +43,9 @@ export const VERSION_SCOPED_MODELS = [
   "parametricLumpSumRule",
   "heightReferenceCatalog",
   "stakeholderConsentRule",
+  // İP-4 (sürüm 1.4) — plan motorunun kuralları.
+  "unitLayoutRule",
+  "buildingElementRule",
 ] as const;
 
 export type VersionScopedModel = (typeof VERSION_SCOPED_MODELS)[number];

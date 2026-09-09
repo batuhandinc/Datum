@@ -129,10 +129,12 @@ beforeAll(async () => {
   await prisma.elevator.create({
     data: { coreId: core.id, elevatorType: "sedye", countComputedValue: 1 },
   });
+  // Şaft konumu İP-4'te (sürüm 1.4) hesaplanan dörtlüye çevrildi: L1 ÖNERİR,
+  // kullanıcı EZER. Burada konum elle veriliyor, yani bir ezmedir → Override.
   await prisma.shaft.createMany({
     data: [
-      { coreId: core.id, shaftType: "tesisat", width: "0.60", depth: "0.60", offsetX: "0.80", offsetY: "-0.50", runsThroughFloors: [1, 2, 3, 4, 5, 6, 7, 8] },
-      { coreId: core.id, shaftType: "havalandirma", width: "0.40", depth: "0.40", offsetX: "-0.90", offsetY: "0.40", runsThroughFloors: [1, 2, 3, 4, 5, 6, 7, 8] },
+      { coreId: core.id, shaftType: "tesisat", width: "0.60", depth: "0.60", offsetXOverrideValue: "0.80", offsetYOverrideValue: "-0.50", runsThroughFloors: [1, 2, 3, 4, 5, 6, 7, 8] },
+      { coreId: core.id, shaftType: "havalandirma", width: "0.40", depth: "0.40", offsetXOverrideValue: "-0.90", offsetYOverrideValue: "0.40", runsThroughFloors: [1, 2, 3, 4, 5, 6, 7, 8] },
     ],
   });
 }, 60_000);

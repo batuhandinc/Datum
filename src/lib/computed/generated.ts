@@ -3,7 +3,7 @@
  * Kaynak: prisma/computed-fields.ts · Üretici: prisma/codegen/generate.ts
  * Yeniden üretmek için: npm run codegen
  *
- * 61 hesaplanan alan, 20 modelde.
+ * 74 hesaplanan alan, 24 modelde.
  */
 
 /** Her modelin GENERATED (yazılamaz) kolonları. */
@@ -24,6 +24,7 @@ export const GENERATED_COLUMNS = {
     "grossArea",
   ],
   Unit: [
+    "geometry",
     "grossArea",
     "netArea",
     "balconyArea",
@@ -32,6 +33,7 @@ export const GENERATED_COLUMNS = {
   ],
   Space: [
     "category",
+    "geometry",
     "perimeter",
     "isWetArea",
     "ceilingCorniceLength",
@@ -42,6 +44,25 @@ export const GENERATED_COLUMNS = {
     "geometry",
     "area",
     "requiredElevatorCount",
+  ],
+  Shaft: [
+    "offsetX",
+    "offsetY",
+  ],
+  CommonSpace: [
+    "geometry",
+    "area",
+    "perimeter",
+  ],
+  Wall: [
+    "geometry",
+    "length",
+    "thickness",
+  ],
+  ColumnGrid: [
+    "spacingX",
+    "spacingY",
+    "columnCount",
   ],
   Elevator: [
     "count",

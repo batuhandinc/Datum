@@ -37,6 +37,9 @@ const DICTIONARIES = [
   ["SpecificationLevel", $Enums.SpecificationLevel, tr.specificationLevel],
   ["ServiceSpaceType", $Enums.ServiceSpaceType, tr.serviceSpaceType],
   ["ShaftType", $Enums.ShaftType, tr.shaftType],
+
+  // --- İP-4 ---
+  ["WallType", $Enums.WallType, tr.wallType],
 ] as const;
 
 describe("enum sözlükleri", () => {

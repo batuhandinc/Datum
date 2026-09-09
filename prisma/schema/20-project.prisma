@@ -89,14 +89,14 @@ model Parcel {
   neighborhood String?
 
   /// @tier K1 @own M @src etut-veri-modeli.md§3 — ada
-  block     String?
+  block    String?
   /// @tier K1 @own M @src etut-veri-modeli.md§3
-  parcelNo  String?
+  parcelNo String?
   /// @tier K1 @own M @src etut-veri-modeli.md§3 — pafta
-  sheetNo   String?
+  sheetNo  String?
 
   /// @tier K1 @own M/B @src etut-veri-modeli.md§3
-  area     Decimal? @db.Decimal(12, 2)
+  area Decimal? @db.Decimal(12, 2)
 
   /// @tier K2 @own B @src etut-veri-modeli.md§3 — sınır poligonu.
   ///
@@ -139,9 +139,9 @@ model Parcel {
   existingBuildingUnitCount Int?
 
   /// @tier K2 @own M @src etut-veri-modeli.md§3
-  existingTotalArea Decimal? @db.Decimal(12, 2)
+  existingTotalArea          Decimal?                    @db.Decimal(12, 2)
   /// @tier K1 @own M @src etut-veri-modeli.md§3
-  demolitionRequired Boolean @default(false)
+  demolitionRequired         Boolean                     @default(false)
   /// @tier K2 @own M @src etut-veri-modeli.md§3
   structuralAssessmentStatus StructuralAssessmentStatus?
 
@@ -167,11 +167,11 @@ model ZoningData {
   planNotes    String?
 
   /// @tier K1 @own M @src etut-veri-modeli.md§3
-  buildingOrder BuildingOrder?
+  buildingOrder       BuildingOrder?
   /// @tier K1 @own M @src etut-veri-modeli.md§3 — taban alanı katsayısı (TAKS)
-  groundCoverageRatio Decimal? @db.Decimal(6, 4)
+  groundCoverageRatio Decimal?             @db.Decimal(6, 4)
   /// @tier K1 @own M @src etut-veri-modeli.md§3 — emsal (KAKS)
-  floorAreaRatio      Decimal? @db.Decimal(6, 4)
+  floorAreaRatio      Decimal?             @db.Decimal(6, 4)
   /// @tier K1 @own P @src etut-veri-modeli.md§3 — paketten (ZoningRuleSet)
   farCalculationBasis FarCalculationBasis?
 
@@ -181,9 +181,9 @@ model ZoningData {
   setbackRear  Decimal? @db.Decimal(6, 2)
 
   /// @tier K1 @own M @src etut-veri-modeli.md§3
-  maxFloorCount Int?
+  maxFloorCount          Int?
   /// @tier K1 @own M @src etut-veri-modeli.md§3
-  maxHeight     Decimal? @db.Decimal(6, 2)
+  maxHeight              Decimal? @db.Decimal(6, 2)
   /// @tier K2 @own P @src etut-veri-modeli.md§3 — paketten (ZoningRuleSet).
   /// 1.2: kod enum'undan HeightReferenceCatalog anahtarına döndü (ilke 1).
   heightReferenceRuleKey String?
@@ -193,11 +193,11 @@ model ZoningData {
   /// hangi poligon kenarının hangi rolü taşıdığını söyleyen tek yer burasıdır.
   /// Şekil: [{ edgeIndex, role: "front"|"side"|"rear", roadName?, width? }]
   /// Rol verilmemiş kenarlar "side" sayılır ve bu bir UYARI üretir (ilke 7).
-  roadFrontages Json?
+  roadFrontages   Json?
   /// @tier K2 @own M @src etut-veri-modeli.md§3 — referans kot
-  referenceLevel Decimal? @db.Decimal(8, 3)
+  referenceLevel  Decimal?         @db.Decimal(8, 3)
   /// @tier K3 @own M/E @src etut-veri-modeli.md§3 — köşe kotları
-  cornerLevels   Json?
+  cornerLevels    Json?
   /// @tier K2 @own M @src etut-veri-modeli.md§3
   levelDataSource LevelDataSource?
 
@@ -252,17 +252,17 @@ model SoilData {
   parcel   Parcel @relation(fields: [parcelId], references: [id], onDelete: Cascade)
 
   /// @tier K3 @own B @src etut-veri-modeli.md§3
-  reportFile        String?
+  reportFile       String?
   /// @tier K2 @own M @src etut-veri-modeli.md§3
-  soilClass         String?
+  soilClass        String?
   /// @tier K3 @own M @src etut-veri-modeli.md§3 — zemin emniyet gerilmesi
-  bearingCapacity   Decimal? @db.Decimal(10, 3)
+  bearingCapacity  Decimal?          @db.Decimal(10, 3)
   /// @tier K2 @own M @src etut-veri-modeli.md§3 — yeraltı su seviyesi
-  groundwaterLevel  Decimal? @db.Decimal(8, 3)
+  groundwaterLevel Decimal?          @db.Decimal(8, 3)
   /// @tier K3 @own M @src etut-veri-modeli.md§3
-  liquefactionRisk  LiquefactionRisk?
+  liquefactionRisk LiquefactionRisk?
   /// @tier K2 @own M @src etut-veri-modeli.md§3
-  foundationType    FoundationType?
+  foundationType   FoundationType?
 
   /// @tier K2 @own M @src etut-veri-modeli.md§3 — kazık gereksinimi.
   /// Tip hücresi dokümanda literal "—".
@@ -334,17 +334,17 @@ model Stakeholder {
   contactEmail String?
 
   /// @tier K2 @own M @src etut-surec-modeli.md§A4 — pay oranı
-  shareRatio       Decimal? @db.Decimal(9, 6)
+  shareRatio       Decimal?         @db.Decimal(9, 6)
   /// @tier K2 @own M @src etut-surec-modeli.md§A4
-  existingUnitArea Decimal? @db.Decimal(12, 2)
+  existingUnitArea Decimal?         @db.Decimal(12, 2)
   /// @tier K2 @own M @src etut-surec-modeli.md§A4
   expectationNotes String?
   /// @tier K2 @own M @src etut-surec-modeli.md§A4
   agreementStance  AgreementStance?
 
   /// @tier K3 @own M @src etut-surec-modeli.md§A4 — geçici barınma yardımı
-  housingAidEligible Boolean?
-  housingAidMonths   Int?
+  housingAidEligible       Boolean?
+  housingAidMonths         Int?
   /// @tier K3 @own M/P @src etut-surec-modeli.md§A4
   incentiveProgramEligible Boolean?
 

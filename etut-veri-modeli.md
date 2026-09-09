@@ -12,7 +12,7 @@
 4. Bölüm 4 — **`Wall` alan tablosu eklendi.** Bölüm 10.1 onu `objectType` olarak kullanıyordu ama hiçbir yerde tanımlı değildi. Mekan sınırlarından **türetilir**, ayrıca çizilmez
 5. Bölüm 5 — **`ColumnGrid` alan tablosu eklendi.** Kaba aks ızgarası; otopark verimi doğrulaması ve yapısal katsayı girdisi için
 6. Bölüm 5 — `CommonSpace` alan tablosu eklendi. Sirkülasyonun **semantik evi**; bir fark kümesine imalat kalemi bağlanamaz
-7. Bölüm 5 — `Floor`'a `planSource`; `grossArea`'nın hangi katlarda hesaplanabildiği yazıldı (çekme kat ve bodrumun plakası zarf değildir)
+7. Bölüm 5 — `Floor.grossArea`'nın hangi katlarda hesaplanabildiği yazıldı (çekme kat ve bodrumun plakası zarf değildir). Planın kaynağı (otomatik · manuel · tipik kat) **saklanmaz**: `isLocked` ve `geometryOverrideValue`'dan tamamen türer, saklamak bayatlama riski olurdu
 8. Bölüm 5 — `UnitType`'a `sourceTemplateId` + `sourceTemplateVersion`; `Unit`'e `linkedUnitId` (dubleks)
 9. Bölüm 13 — **`UnitTypeTemplate`** eklendi: organizasyon seviyesinde tipoloji kütüphanesi. Bölüm 13 madde 3'ün alt kararı böylece kapandı
 10. Bölüm 6 — `Shaft.offsetX/offsetY` **hesaplanan dörtlüye** çevrildi. K3 manuel alandı ve hiçbir motor yazmıyordu; bu hâliyle şaft konumu her projede bilinmiyor ve **tüm ıslak hacim kısıtları değerlendirilemez** kalıyordu
@@ -502,7 +502,6 @@ Bölüm 10.1 `Wall`'ı bir `objectType` olarak kullanıyordu ama hiçbir yerde t
 | floorType | enum | K1 — bodrum · zemin · normal · cekmeKat · catiArasi |
 | isLocked | bool | K2 — tipik kat kilidi |
 | templateFloorId | fk | K2 — kilitliyse referans |
-| planSource | enum | H — `otomatik · manuel · tipikKat` *(1.4)* |
 | grossHeight / clearHeight | decimal | K1 |
 | grossArea | decimal | H — aşağıdaki nota bakınız *(1.4)* |
 | hasCommercial | bool | K1 |

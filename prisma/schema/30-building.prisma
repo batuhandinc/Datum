@@ -31,10 +31,11 @@ model Block {
   /// GENERATED
   buildingHeight               Decimal? @db.Decimal(8, 2)
 
-  floors  Floor[]
-  core    Core?
-  facades Facade[]
-  roof    Roof?
+  floors     Floor[]
+  core       Core?
+  columnGrid ColumnGrid?
+  facades    Facade[]
+  roof       Roof?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -82,6 +83,7 @@ model Floor {
   units         Unit[]
   commonSpaces  CommonSpace[]
   serviceSpaces ServiceSpace[]
+  walls         Wall[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -102,10 +104,14 @@ model FloorTemplate {
   @@map("floor_template")
 }
 
-/// Tipoloji şablonu (:303). Yalnızca DÜZ METİN olarak tanımlı, alan tablosu YOK.
-/// Metnin sabitlediği: bir kod taşır ("3+1 A"), mekan listesi taşır, örneklenince kopyalanır.
-/// AÇIK KARAR: proje kapsamlı mı, organizasyon tipoloji kütüphanesi mi (bölüm 13, madde 3).
-/// İP-1'de proje kapsamlı varsayıldı.
+/// Tipoloji şablonu (:303). Bir kod taşır ("3+1 A"), mekan listesi taşır,
+/// örneklenince kopyalanır.
+///
+/// KAPSAM KARARA BAĞLANDI (sürüm 1.4, bölüm 13 madde 3): İKİSİ BİRDEN.
+/// `UnitType` PROJE kapsamlı kalır; onu besleyen `UnitTypeTemplate` ORGANİZASYON
+/// seviyesinde bir kütüphanedir ve kullanıldığında buraya KOPYALANIR.
+/// Kopya olmasının sebebi: kütüphanedeki şablonu iyileştirmek BİTEN BİR PROJEYİ
+/// geriye dönük değiştirmemelidir (ilke 2'nin ruhu).
 model UnitType {
   id        String  @id @default(cuid())
   projectId String
@@ -115,6 +121,19 @@ model UnitType {
   unitTypeCode String
   /// Şablonun taşıdığı mekan listesi. Örneklenince Space[] olarak kopyalanır.
   spaceList    Json?
+
+  /// @src etut-veri-modeli.md§5 — hangi kütüphane şablonundan KOPYALANDI (sürüm 1.4).
+  /// Kütüphanedeki şablonu iyileştirmek biten projeyi geriye dönük DEĞİŞTİRMEZ;
+  /// bağ yalnızca izlenebilirlik içindir, canlı bir referans değildir.
+  sourceTemplateId      String?
+  sourceTemplate        UnitTypeTemplate? @relation(fields: [sourceTemplateId], references: [id], onDelete: SetNull)
+  /// @src etut-veri-modeli.md§5 — kopyalama anındaki kütüphane sürümü
+  sourceTemplateVersion String?
+
+  /// @src etut-veri-modeli.md§13 — BÖLME REÇETESİ, kopyalanır ve projede donar
+  layoutRecipe       Json?
+  /// @src etut-veri-modeli.md§13 — ilişki iddiaları; KONTROL EDİLİR, ZORLANMAZ
+  relationAssertions Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -139,6 +158,26 @@ model Unit {
   usageType    UsageType?
   /// @tier K2 @own M @src etut-veri-modeli.md§5
   isDuplex     Boolean    @default(false)
+
+  /// @tier K2 @own M @src etut-veri-modeli.md§5 — dublekste DİĞER KATTAKİ yarısı (sürüm 1.4).
+  ///
+  /// Dubleks İKİ Unit satırıdır: tek satır + iki kat, `floorId`'yi çoğullaştırmayı
+  /// gerektirir ve `Floor → Unit → Space` ağacını kırardı. Bağlantıyı `icMerdiven`
+  /// mekanı taşır.
+  linkedUnitId String? @unique
+  linkedUnit   Unit?   @relation("DuplexHalves", fields: [linkedUnitId], references: [id], onDelete: SetNull)
+  linkedFrom   Unit?   @relation("DuplexHalves")
+
+  /// @own H @src etut-veri-modeli.md§5 — L2'nin çıktısı: birim poligonu (sürüm 1.4).
+  ///
+  /// Otomatik bölümleme `ComputedValue`'ya, MANUEL çizim `OverrideValue`'ya yazar.
+  /// Ezme burada yalnızca işaretleme değil TAŞIYICIDIR: kullanıcının çizdiği
+  /// bölümleme OverrideValue'da durduğu için L2 yeniden koştuğunda YOK EDİLMEZ.
+  geometryComputedValue  Json?
+  geometryOverrideValue  Json?
+  geometryOverrideReason String?
+  /// GENERATED
+  geometry               Json?
 
   /// @own H @src etut-veri-modeli.md§5 — türetme formülü dokümanda VERİLMEMİŞ
   grossAreaComputedValue  Decimal? @db.Decimal(12, 3)
@@ -213,13 +252,35 @@ model Space {
   /// GENERATED
   category               SpaceCategory?
 
-  /// @tier K2 @own M @src etut-veri-modeli.md§4 — G1 seviyesi
-  area     Decimal? @db.Decimal(12, 3)
+  /// @tier K2 @own M @src etut-veri-modeli.md§4 — G1 seviyesi, HEDEF alan.
+  ///
+  /// Plan motoru bunu YAZMAZ (sürüm 1.4). Gerçekleşen alan `geometry`'den ölçülür
+  /// ve fark bir UYARIDIR, ezme değil. Hesaplanan alana çevirmek iki şeyi kırardı:
+  /// (a) kullanıcının girdiği her hedef gerekçesiz bir ezme olur ve OverrideLedger
+  /// normal program girişinin gürültüsüne boğulurdu; (b) `divergedUnits()` ayrışmayı
+  /// `Σ Space.area` ile şablon toplamını 0,01 m² toleransla karşılaştırarak ölçüyor —
+  /// gerçek geometrik alan aynı kolona yazıldığı an HER birim "ayrışmış" görünürdü.
+  area   Decimal? @db.Decimal(12, 3)
   /// @tier K2 @own M @src etut-veri-modeli.md§4 — G2 seviyesi, OPSİYONEL (bölüm 1.5)
-  width    Decimal? @db.Decimal(8, 3)
-  length   Decimal? @db.Decimal(8, 3)
-  /// @tier K3 @own H @src etut-veri-modeli.md§4 — G3 seviyesi, GeoJSON poligon
-  geometry Json?
+  width  Decimal? @db.Decimal(8, 3)
+  length Decimal? @db.Decimal(8, 3)
+
+  /// @own H @src etut-veri-modeli.md§4 — G3 seviyesi, yerel metrik poligon.
+  /// Sürüm 1.4'te hesaplanan dörtlüye çevrildi: `@own H` işaretliydi ama üçlüsü
+  /// açılmamıştı, yani L3'ün ürettiği geometri EZİLEMİYORDU (ilke 5 ihlali).
+  geometryComputedValue  Json?
+  geometryOverrideValue  Json?
+  geometryOverrideReason String?
+  /// GENERATED
+  geometry               Json?
+
+  /// @own H @src etut-veri-modeli.md§4 — ŞABLON YAPRAK ANAHTARI (sürüm 1.4).
+  ///
+  /// Olmadan: örnek 3+1'de `yatak1` ve `yatak2` İKİSİ DE `yatakOdasi` tipindedir;
+  /// L3 yeniden koştuğunda hücreleri satırlara tip+sıra ile eşlemek zorunda kalır
+  /// ve iki yatak odasının geometrisi, çevresi, kaplaması SESSİZCE yer değiştirir.
+  /// Ayrıca `QuantityLine.sourceObjectId` bağı her çözümde çürür (ilke 10).
+  layoutKey String?
 
   /// @own H @src etut-veri-modeli.md§4 — G1/G2/G3'e göre.
   /// G1: k × √area (k = SpaceShapeFactorRule'dan, KODDA DEĞİL) · G2: 2×(width+length) · G3: gerçek çevre
@@ -240,16 +301,16 @@ model Space {
   isWetArea               Boolean?
 
   /// @tier K2 @own P @src etut-veri-modeli.md§4 — kalite paketinden ön-dolar
-  floorFinishId String?
-  floorFinish   SurfaceFinish? @relation("FloorFinish", fields: [floorFinishId], references: [id], onDelete: SetNull)
+  floorFinishId      String?
+  floorFinish        SurfaceFinish? @relation("FloorFinish", fields: [floorFinishId], references: [id], onDelete: SetNull)
   /// @tier K3 @own M @src etut-veri-modeli.md§4
-  skirtingType   SkirtingType?
-  skirtingHeight Decimal?      @db.Decimal(6, 3)
+  skirtingType       SkirtingType?
+  skirtingHeight     Decimal?       @db.Decimal(6, 3)
   /// @tier K2 @own P @src etut-veri-modeli.md§4
-  wallFinishId  String?
-  wallFinish    SurfaceFinish? @relation("WallFinish", fields: [wallFinishId], references: [id], onDelete: SetNull)
+  wallFinishId       String?
+  wallFinish         SurfaceFinish? @relation("WallFinish", fields: [wallFinishId], references: [id], onDelete: SetNull)
   /// @tier K2 @own M @src etut-veri-modeli.md§4 — ıslak hacimde seramik yüksekliği
-  wallCladdingHeight Decimal? @db.Decimal(6, 3)
+  wallCladdingHeight Decimal?       @db.Decimal(6, 3)
 
   /// @tier K2 @own M @src etut-veri-modeli.md§4
   ceilingType CeilingType?
@@ -262,7 +323,7 @@ model Space {
   ceilingCorniceLength               Decimal? @db.Decimal(12, 3)
 
   /// @tier K2 @own M @src etut-veri-modeli.md§4
-  waterproofing  Boolean @default(false)
+  waterproofing  Boolean         @default(false)
   /// @tier K2 @own M @src etut-veri-modeli.md§4
   heatingElement HeatingElement?
 
@@ -274,7 +335,7 @@ model Space {
   heatingElementSize               Decimal? @db.Decimal(12, 3)
 
   /// @tier K2 @own M @src etut-veri-modeli.md§4
-  hasAirConditioner Boolean @default(false)
+  hasAirConditioner Boolean          @default(false)
   /// @tier K3 @own M @src etut-veri-modeli.md§4
   ventilationType   VentilationType?
 
@@ -283,13 +344,16 @@ model Space {
   /// bir kural anahtarı olarak tutuldu; uydurma bir model açılmadı.
   electricalPresetId String?
 
-  openings Opening[]         @relation("SpaceOpenings")
+  openings         Opening[] @relation("SpaceOpenings")
   adjacentOpenings Opening[] @relation("AdjacentSpaceOpenings")
-  fixtures Fixture[]
+  fixtures         Fixture[]
+  wallsAsA         Wall[]    @relation("WallSpaceA")
+  wallsAsB         Wall[]    @relation("WallSpaceB")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([unitId, layoutKey])
   @@index([unitId])
   @@index([spaceType])
   @@map("space")
@@ -311,8 +375,18 @@ model Opening {
   adjacentSpaceId String?
   adjacentSpace   Space?  @relation("AdjacentSpaceOpenings", fields: [adjacentSpaceId], references: [id], onDelete: SetNull)
 
+  /// @src etut-veri-modeli.md§4 — hangi DUVARDA (sürüm 1.4).
+  ///
+  /// NEDEN FK, KENAR İNDEKSİ DEĞİL: açıklığın hangi duvara ait olduğu bir KİMLİK
+  /// sorusudur. Halkanın kaçıncı kenarı olduğuyla tutmak kombinatorik bir
+  /// tutamaçtır — kullanıcı poligonu yeniden çizdiğinde veya L3 farklı bir
+  /// oturtma seçtiğinde köşe sırası değişir ve açıklık SESSİZCE başka duvara
+  /// taşınır. `Wall.wallKey` kararlı olduğu için FK kararlıdır.
+  hostWallId String?
+  hostWall   Wall?   @relation(fields: [hostWallId], references: [id], onDelete: SetNull)
+
   /// @src etut-veri-modeli.md§4 — cepheye mi bakıyor
-  isExterior Boolean @default(false)
+  isExterior Boolean  @default(false)
   /// @src etut-veri-modeli.md§4
   width      Decimal? @db.Decimal(8, 3)
   height     Decimal? @db.Decimal(8, 3)
@@ -320,19 +394,19 @@ model Opening {
   count      Int      @default(1)
 
   /// @src etut-veri-modeli.md§4
-  frameMaterial  FrameMaterial?
+  frameMaterial FrameMaterial?
   /// @src etut-veri-modeli.md§4
-  frameType      FrameType?
+  frameType     FrameType?
   /// @src etut-veri-modeli.md§4
-  glazingType    GlazingType?
+  glazingType   GlazingType?
   /// @src etut-veri-modeli.md§4 — denizlik
-  hasSill        Boolean  @default(false)
+  hasSill       Boolean        @default(false)
   /// @src etut-veri-modeli.md§4 — pervaz
-  hasArchitrave  Boolean  @default(false)
+  hasArchitrave Boolean        @default(false)
   /// @src etut-veri-modeli.md§4
-  shutterType    ShutterType?
+  shutterType   ShutterType?
   /// @src etut-veri-modeli.md§4
-  doorType       DoorType?
+  doorType      DoorType?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -350,16 +424,16 @@ model Fixture {
   space   Space  @relation(fields: [spaceId], references: [id], onDelete: Cascade)
 
   /// @src etut-veri-modeli.md§4
-  fixtureType FixtureType
+  fixtureType  FixtureType
   /// @src etut-veri-modeli.md§4
-  count       Int      @default(1)
+  count        Int                 @default(1)
   /// @src etut-veri-modeli.md§4 — mutfak dolabı/tezgah için
-  lengthMeters Decimal? @db.Decimal(8, 3)
+  lengthMeters Decimal?            @db.Decimal(8, 3)
   /// @src etut-veri-modeli.md§4 — kalite paketinden
-  specLevel   SpecificationLevel?
+  specLevel    SpecificationLevel?
   /// @src etut-veri-modeli.md§4 — marka/model (opsiyonel).
   /// HEDEF VARLIK DOKÜMANDA TANIMLI DEĞİL; uydurma model açılmadı.
-  productRef  String?
+  productRef   String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -385,16 +459,159 @@ model SurfaceFinish {
   @@map("surface_finish")
 }
 
-/// Ortak alan mekanı (:86). Bölüm 2'de adı geçiyor, alan tablosu YOK → minimal stub.
-/// Space'in ortak alan tipleriyle (katHolu, merdivenHolu, binaGirisi) ilişkisi belirsiz.
+/// Ortak alan mekanı — SİRKÜLASYONUN SEMANTİK EVİ (bölüm 5, sürüm 1.4).
+///
+/// NEDEN BİR NESNE, TÜRETİLMİŞ BİR FARK KÜMESİ DEĞİL: İP-4'ün bitiş ölçütü
+/// "SEMANTİK OLARAK EKSİKSİZ bir tipik kat planı" ve ilke 4 "her nesne semantik
+/// kalır". `ObjectCostMapping` bir `objectType`'a bağlanır; `plaka ∖ çekirdek ∖
+/// ⋃birim` ifadesine bağlanamaz. Katın en büyük ortak alanı nesnesiz kalırsa
+/// koridorun zemin kaplaması, duvar yüzeyi ve kapıları İP-5'te TÜRETİLEMEZ.
+///
+/// `spaceType` için ayrı bir enum AÇILMADI: katHolu · merdivenHolu · koridor ·
+/// binaGirisi zaten `SpaceType`'ın "Ortak" kategorisinde tanımlı.
 model CommonSpace {
   id      String @id @default(cuid())
   floorId String
   floor   Floor  @relation(fields: [floorId], references: [id], onDelete: Cascade)
+
+  /// @own H @src etut-veri-modeli.md§5 — katHolu · merdivenHolu · koridor · binaGirisi
+  spaceType SpaceType?
+
+  /// @own H @src etut-veri-modeli.md§5 — L2 üretir, yerel metrik poligon
+  geometryComputedValue  Json?
+  geometryOverrideValue  Json?
+  geometryOverrideReason String?
+  /// GENERATED
+  geometry               Json?
+
+  /// @own H @src etut-veri-modeli.md§5 — geometriden
+  areaComputedValue  Decimal? @db.Decimal(12, 3)
+  areaOverrideValue  Decimal? @db.Decimal(12, 3)
+  areaOverrideReason String?
+  /// GENERATED
+  area               Decimal? @db.Decimal(12, 3)
+
+  /// @own H @src etut-veri-modeli.md§5 — geometriden
+  perimeterComputedValue  Decimal? @db.Decimal(12, 3)
+  perimeterOverrideValue  Decimal? @db.Decimal(12, 3)
+  perimeterOverrideReason String?
+  /// GENERATED
+  perimeter               Decimal? @db.Decimal(12, 3)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([floorId])
   @@map("common_space")
+}
+
+/// Duvar (bölüm 4, sürüm 1.4). IFC: IfcWall.
+///
+/// Bölüm 10.1 `Wall`'ı bir `objectType` olarak kullanıyordu ama hiçbir yerde
+/// tanımlamıyordu. İP-4'ün L4 katmanı kalınlık atadığı ve İP-5 metrajı duvar
+/// alanı ve hacmi istediği için tanım gerekti.
+///
+/// DUVAR TÜRETİLİR, AYRICA ÇİZİLMEZ. Kullanıcı duvar çizmez; iki mekanın
+/// paylaştığı sınır duvara dönüşür. Tek doğruluk kaynağı geometri kalır —
+/// duvar ayrıca çizilebilseydi mekan sınırı ile duvar ekseni birbirinden
+/// bağımsız iki gerçek olurdu ve hangisinin doğru olduğu TANIMSIZ kalırdı.
+///
+/// Ebeveyn `Floor`'dur, `Space` değil: bir duvar İKİ BİRİMİ ayırabilir.
+model Wall {
+  id      String @id @default(cuid())
+  floorId String
+  floor   Floor  @relation(fields: [floorId], references: [id], onDelete: Cascade)
+
+  /// @own H @src etut-veri-modeli.md§4 — KARARLI KİMLİK.
+  ///
+  /// BİRİM AYRIMI TAŞIMALIDIR: mekan anahtarı ŞABLON içinde tekildir, kat içinde
+  /// değil. Aynı katta aynı tipten dört birim varsa dördü de `salon|hol#0`
+  /// üretirdi. Kimlik kararlı olmazsa her yeniden çözümde
+  /// `QuantityLine.sourceObjectId` bağı çürür ve rapor izi kopar (ilke 10).
+  wallKey String
+
+  /// @own H @src etut-veri-modeli.md§4 — MEKAN İLİŞKİSİNDEN türer, çizilmez
+  wallType WallType?
+
+  /// @own H @src etut-veri-modeli.md§4 — duvar EKSENİ (yerel metrik polyline)
+  geometryComputedValue  Json?
+  geometryOverrideValue  Json?
+  geometryOverrideReason String?
+  /// GENERATED
+  geometry               Json?
+
+  /// @own H @src etut-veri-modeli.md§4 — eksenden
+  lengthComputedValue  Decimal? @db.Decimal(10, 3)
+  lengthOverrideValue  Decimal? @db.Decimal(10, 3)
+  lengthOverrideReason String?
+  /// GENERATED
+  length               Decimal? @db.Decimal(10, 3)
+
+  /// @own H @src etut-veri-modeli.md§4 — BuildingElementRule'dan tipe göre.
+  /// Kural yoksa duvar ÜRETİLMEZ + uyarı; koda gömülü varsayılan yoktur (ilke 1).
+  thicknessComputedValue  Decimal? @db.Decimal(6, 3)
+  thicknessOverrideValue  Decimal? @db.Decimal(6, 3)
+  thicknessOverrideReason String?
+  /// GENERATED
+  thickness               Decimal? @db.Decimal(6, 3)
+
+  /// @own H @src etut-veri-modeli.md§4 — hangi iki mekanı ayırıyor; dış duvarda B boştur
+  spaceAId String?
+  spaceA   Space?  @relation("WallSpaceA", fields: [spaceAId], references: [id], onDelete: SetNull)
+  spaceBId String?
+  spaceB   Space?  @relation("WallSpaceB", fields: [spaceBId], references: [id], onDelete: SetNull)
+
+  openings Opening[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// `netArea` ve `volume` SAKLANMAZ: açıklık düşümü KALEM BAZINDA merkezî
+  /// tanımlıdır (ilke 6) ve duvarın net yüzeyi kaleme göre değişir. İP-5 hesaplar.
+  @@unique([floorId, wallKey])
+  @@index([floorId])
+  @@map("wall")
+}
+
+/// Kolon aks ızgarası (bölüm 5, sürüm 1.4).
+///
+/// KABADIR. Amacı otopark verimi doğrulaması ve yapısal ampirik katsayıya girdi
+/// vermektir; GERÇEK STATİK HESAP DEĞİLDİR ve KOLON KESİTİ HESAPLANMAZ.
+///
+/// İP-3'ten devreden söz burada ödenir (`ParkingRule.areaPerSpace` notu):
+/// aks ızgarasından ölçülen bodrum kapasitesi katsayıdan belirgin saparsa
+/// UYARI üretilir. Otorite KATSAYIDA kalır — geometri onu doğrular, değiştirmez.
+model ColumnGrid {
+  id      String @id @default(cuid())
+  blockId String @unique
+  block   Block  @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  /// @own H @src etut-veri-modeli.md§5 — BuildingElementRule'dan; kural yoksa üretilmez
+  spacingXComputedValue  Decimal? @db.Decimal(6, 2)
+  spacingXOverrideValue  Decimal? @db.Decimal(6, 2)
+  spacingXOverrideReason String?
+  /// GENERATED
+  spacingX               Decimal? @db.Decimal(6, 2)
+
+  /// @own H @src etut-veri-modeli.md§5
+  spacingYComputedValue  Decimal? @db.Decimal(6, 2)
+  spacingYOverrideValue  Decimal? @db.Decimal(6, 2)
+  spacingYOverrideReason String?
+  /// GENERATED
+  spacingY               Decimal? @db.Decimal(6, 2)
+
+  /// @own H @src etut-veri-modeli.md§5 — aks çizgileri (yerel metrik)
+  axes Json?
+
+  /// @own H @src etut-veri-modeli.md§5 — ızgara ile plakanın kesişiminden
+  columnCountComputedValue  Int?
+  columnCountOverrideValue  Int?
+  columnCountOverrideReason String?
+  /// GENERATED
+  columnCount               Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("column_grid")
 }

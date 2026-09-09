@@ -107,6 +107,9 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
     joins: 'JOIN "floor" f ON f."id" = t."floorId" JOIN "block" b ON b."id" = f."blockId"',
     projectIdExpr: 'b."projectId"',
     fields: [
+      // L2'nin çıktısı. Otomatik bölümleme ComputedValue'ya, MANUEL çizim
+      // OverrideValue'ya yazar — ezme burada taşıyıcıdır, yalnızca işaret değil.
+      { field: "geometry", sqlType: "jsonb", kind: "json", src: "etut-veri-modeli.md§5", derivationStated: true },
       { field: "grossArea", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§5", derivationStated: false },
       { field: "netArea", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§5", derivationStated: true },
       { field: "balconyArea", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§5", derivationStated: false },
@@ -122,6 +125,9 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
     projectIdExpr: 'b."projectId"',
     fields: [
       { field: "category", sqlType: '"SpaceCategory"', kind: "enum", src: "etut-veri-modeli.md§4", derivationStated: true },
+      // G3 seviyesi. 1.3'te `@own H` işaretliydi ama üçlüsü açılmamıştı —
+      // yani L3'ün ürettiği geometri EZİLEMİYORDU (ilke 5 ihlali).
+      { field: "geometry", sqlType: "jsonb", kind: "json", src: "etut-veri-modeli.md§4", derivationStated: true },
       { field: "perimeter", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§4", derivationStated: true },
       { field: "isWetArea", sqlType: "boolean", kind: "boolean", src: "etut-veri-modeli.md§4", derivationStated: true },
       { field: "ceilingCorniceLength", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§4", derivationStated: true },
@@ -139,6 +145,57 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
       { field: "geometry", sqlType: "jsonb", kind: "json", src: "etut-veri-modeli.md§6", derivationStated: true },
       { field: "area", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§6", derivationStated: true },
       { field: "requiredElevatorCount", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§6", derivationStated: true },
+    ],
+  },
+  {
+    // Şaft konumu çekirdeğe GÖRELİDİR; mutlak yer türetilir (düşey süreklilik
+    // yapısal garanti). 1.3'te K3 manuel alandı ve HİÇBİR MOTOR YAZMIYORDU —
+    // bu yüzden ıslak hacim kısıtlarının tamamı her projede değerlendirilemez
+    // kalıyordu. L1 artık öneriyor, kullanıcı eziyor.
+    model: "Shaft",
+    table: "shaft",
+    joins: 'JOIN "core" c ON c."id" = t."coreId" JOIN "block" b ON b."id" = c."blockId"',
+    projectIdExpr: 'b."projectId"',
+    fields: [
+      { field: "offsetX", sqlType: D(8, 3), kind: "decimal", src: "etut-veri-modeli.md§6", derivationStated: true },
+      { field: "offsetY", sqlType: D(8, 3), kind: "decimal", src: "etut-veri-modeli.md§6", derivationStated: true },
+    ],
+  },
+  {
+    // Sirkülasyonun SEMANTİK evi. Fark kümesine imalat kalemi bağlanamaz.
+    model: "CommonSpace",
+    table: "common_space",
+    joins: 'JOIN "floor" f ON f."id" = t."floorId" JOIN "block" b ON b."id" = f."blockId"',
+    projectIdExpr: 'b."projectId"',
+    fields: [
+      { field: "geometry", sqlType: "jsonb", kind: "json", src: "etut-veri-modeli.md§5", derivationStated: true },
+      { field: "area", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§5", derivationStated: true },
+      { field: "perimeter", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§5", derivationStated: true },
+    ],
+  },
+  {
+    // Duvar TÜRETİLİR: iki mekanın paylaştığı sınır duvara dönüşür.
+    // netArea ve volume SAKLANMAZ — açıklık düşümü kalem bazındadır (ilke 6).
+    model: "Wall",
+    table: "wall",
+    joins: 'JOIN "floor" f ON f."id" = t."floorId" JOIN "block" b ON b."id" = f."blockId"',
+    projectIdExpr: 'b."projectId"',
+    fields: [
+      { field: "geometry", sqlType: "jsonb", kind: "json", src: "etut-veri-modeli.md§4", derivationStated: true },
+      { field: "length", sqlType: D(10, 3), kind: "decimal", src: "etut-veri-modeli.md§4", derivationStated: true },
+      { field: "thickness", sqlType: D(6, 3), kind: "decimal", src: "etut-veri-modeli.md§4", derivationStated: true },
+    ],
+  },
+  {
+    // KABA aks ızgarası. Kolon kesiti hesaplanmaz; otorite areaPerSpace'te kalır.
+    model: "ColumnGrid",
+    table: "column_grid",
+    joins: 'JOIN "block" b ON b."id" = t."blockId"',
+    projectIdExpr: 'b."projectId"',
+    fields: [
+      { field: "spacingX", sqlType: D(6, 2), kind: "decimal", src: "etut-veri-modeli.md§5", derivationStated: true },
+      { field: "spacingY", sqlType: D(6, 2), kind: "decimal", src: "etut-veri-modeli.md§5", derivationStated: true },
+      { field: "columnCount", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§5", derivationStated: true },
     ],
   },
   {

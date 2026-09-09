@@ -347,6 +347,15 @@ export const tr = {
     duman: "Duman tahliye",
   },
 
+  /** İP-4 — duvar tipi mekan ilişkisinden TÜRER, kullanıcı seçmez. */
+  wallType: {
+    dis: "Dış duvar",
+    ic: "İç duvar",
+    islakHacim: "Islak hacim duvarı",
+    saft: "Şaft duvarı",
+    birimAyirici: "Birim ayırıcı",
+  },
+
   serviceSpace: {
     title: "Servis mekanları",
     empty: "Bölge paketinde zorunlu mekan kuralı yok.",
