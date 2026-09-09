@@ -1,3 +1,5 @@
+import Link from "next/link";
+import type { Route } from "next";
 import { notFound } from "next/navigation";
 import type { Tier } from "@prisma/client";
 import { loadWizardData, computeMajority } from "@/lib/parcel/repository";
@@ -165,6 +167,23 @@ export default async function WizardPage({ params }: { params: Promise<{ id: str
           {project.regionPackageVersionId ? tr.project.bound : tr.project.unbound}
         </p>
         <p style={{ color: "#a1a1aa", fontSize: 12, marginTop: 0 }}>{tr.wizard.tierHint}</p>
+
+        <p style={{ margin: "0 0 1rem" }}>
+          <Link
+            href={`/projects/${id}/program` as Route}
+            style={{
+              display: "inline-block",
+              padding: "0.45rem 1rem",
+              borderRadius: 6,
+              background: "#18181b",
+              color: "#fff",
+              textDecoration: "none",
+              fontSize: 13,
+            }}
+          >
+            {tr.program.open} →
+          </Link>
+        </p>
 
         <WizardSection
           title={tr.parcel.title}

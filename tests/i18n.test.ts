@@ -26,6 +26,17 @@ const DICTIONARIES = [
   ["AgreementStance", $Enums.AgreementStance, tr.agreementStance],
   ["OffsetJoinType", $Enums.OffsetJoinType, tr.offsetJoinType],
   ["RegionPackageVersionStatus", $Enums.RegionPackageVersionStatus, tr.regionPackage.status],
+
+  // --- İP-3 ---
+  ["CoreStrategy", $Enums.CoreStrategy, tr.coreStrategy],
+  ["FloorType", $Enums.FloorType, tr.floorType],
+  ["UsageType", $Enums.UsageType, tr.usageType],
+  ["HeatingSystemType", $Enums.HeatingSystemType, tr.heatingSystemType],
+  ["GeneratorScope", $Enums.GeneratorScope, tr.generatorScope],
+  ["RoofType", $Enums.RoofType, tr.roofType],
+  ["SpecificationLevel", $Enums.SpecificationLevel, tr.specificationLevel],
+  ["ServiceSpaceType", $Enums.ServiceSpaceType, tr.serviceSpaceType],
+  ["ShaftType", $Enums.ShaftType, tr.shaftType],
 ] as const;
 
 describe("enum sözlükleri", () => {

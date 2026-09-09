@@ -187,6 +187,198 @@ export const tr = {
     },
   },
 
+  /** A5 program tanımı — İP-3. */
+  program: {
+    title: "Program ve kütle (A5)",
+    open: "Programı aç",
+    back: "Sihirbaza dön",
+    floors: {
+      title: "Katlar",
+      empty: "Henüz kat girilmedi.",
+      add: "Kat ekle",
+      floorNo: "Kat no",
+      floorNoHint: "Bodrum için negatif",
+      floorType: "Kat tipi",
+      grossHeight: "Brüt yükseklik (m)",
+      hasCommercial: "Zemin katta ticari",
+      unitCount: "Birim",
+      locked: "Kilitli",
+      lockedTo: "Şablon",
+      lock: "Kilitle",
+      unlock: "Kilidi aç",
+      lockHint: "Kilitli kat şablona referans verir; kilit açılınca bağımsızlaşır ve önceki veriler korunur.",
+      delete: "Sil",
+    },
+    unitTypes: {
+      title: "Tipolojiler",
+      empty: "Henüz tipoloji tanımlanmadı.",
+      code: "Tipoloji kodu",
+      codeHint: "Örnek: 3+1 A",
+      spaces: "Mekanlar",
+      spacesHint: "Her satır: mekanTipi alan — örnek “salon 33.5”",
+      totalArea: "Toplam hedef alan",
+      save: "Tipolojiyi kaydet",
+      instantiate: "Örnekle",
+      instantiateCount: "Adet",
+      targetFloor: "Kat",
+    },
+    divergence: {
+      title: "Şablondan ayrışan birimler",
+      none: "Hiçbir birim şablonundan ayrışmıyor.",
+      unit: "Birim",
+      template: "Şablon",
+      actual: "Gerçekleşen",
+      difference: "Fark",
+      note: "Ayrışma hata değildir; yalnızca görünür olmalıdır.",
+    },
+    mix: {
+      title: "Birim karması",
+      note: "Karmayı kullanıcı belirler; sistem önermez.",
+      total: "Toplam bağımsız bölüm",
+    },
+  },
+
+  /** Proje başlangıç sihirbazı — 8 soru. */
+  startup: {
+    title: "Proje başlangıcı (8 soru)",
+    note: "Kural katmanı cevapları ön-doldurur; değiştirebilirsiniz.",
+    save: "Cevapları kaydet",
+    source: {
+      prefilled: "Paketten",
+      userOverride: "Değiştirildi",
+      empty: "Boş",
+    },
+    noPackageSource: "Bu soru için bölge paketinde ön-dolum kaynağı yok.",
+    questions: {
+      targetParkingCount: "Hedeflenen otopark yeri sayısı",
+      heatingSystemType: "Isıtma sistemi",
+      hasCommercialGroundFloor: "Zemin katta ticari kullanım var mı",
+      hasUnitStorages: "Bağımsız bölüm depoları yapılacak mı",
+      elevatorCount: "Asansör sayısı",
+      roofType: "Çatı tipi",
+      generatorScope: "Yedek güç kapsamı",
+      specificationLevel: "Kalite / donanım seviyesi",
+    },
+    unsupported: "Bu cevabın saklanacağı alan veri modelinde henüz tanımlı değil.",
+  },
+
+  /** L1 çekirdek, servis mekanları, otopark — İP-3 sonuç panelleri. */
+  core: {
+    title: "Çekirdek (L1)",
+    strategy: "Yerleşim stratejisi",
+    area: "Çekirdek alanı (m²)",
+    requiredElevatorCount: "Gereken asansör adedi",
+    escapeDistance: "En uzak nokta mesafesi (m)",
+    notPlaced: "Çekirdek henüz yerleştirilmedi.",
+    recompute: "Çekirdeği yeniden hesapla",
+    shafts: "Şaftlar",
+    shaftOffset: "Çekirdeğe göreli konum",
+    continuityNote:
+      "Şaft konumları çekirdeğe görelidir; çekirdek taşınınca tüm katlarda birlikte taşınır.",
+  },
+
+  coreStrategy: {
+    merkezi: "Merkezî",
+    kenar: "Kenar",
+    cift: "Çift çekirdek",
+  },
+
+  floorType: {
+    bodrum: "Bodrum",
+    zemin: "Zemin",
+    normal: "Normal kat",
+    cekmeKat: "Çekme kat",
+    catiArasi: "Çatı arası",
+  },
+
+  usageType: {
+    konut: "Konut",
+    ticari: "Ticari",
+    ofis: "Ofis",
+    depo: "Depo",
+  },
+
+  heatingSystemType: {
+    merkezi: "Merkezî",
+    bireysel: "Bireysel",
+    bolgesel: "Bölgesel",
+  },
+
+  generatorScope: {
+    yok: "Yok",
+    ortakAlan: "Yalnızca ortak alan",
+    tamYedekleme: "Tam yedekleme",
+  },
+
+  roofType: {
+    kirma: "Kırma çatı",
+    duz: "Düz çatı",
+    teras: "Teras çatı",
+    celikKarkas: "Çelik karkas",
+  },
+
+  specificationLevel: {
+    ekonomik: "Ekonomik",
+    standart: "Standart",
+    ustSegment: "Üst segment",
+    luks: "Lüks",
+  },
+
+  serviceSpaceType: {
+    shelter: "Sığınak",
+    electricalRoom: "Elektrik odası / trafo",
+    waterTank: "Su deposu ve hidrofor",
+    fireSystem: "Yangın sistemi",
+    generator: "Jeneratör",
+    heatingCenter: "Isı merkezi",
+    janitorApartment: "Görevli dairesi",
+    wasteRoom: "Çöp odası",
+    bicycleParking: "Bisiklet park alanı",
+    cleaningRoom: "Temizlik odası",
+    managementOffice: "Yönetim odası",
+    socialArea: "Sosyal alan",
+  },
+
+  shaftType: {
+    tesisat: "Tesisat",
+    havalandirma: "Havalandırma",
+    cop: "Çöp",
+    asansor: "Asansör",
+    duman: "Duman tahliye",
+  },
+
+  serviceSpace: {
+    title: "Servis mekanları",
+    empty: "Bölge paketinde zorunlu mekan kuralı yok.",
+    mandatory: "Zorunlu",
+    optional: "Tercihe bağlı",
+    undetermined: "Belirlenemedi",
+    requiredArea: "Asgari alan (m²)",
+    driver: "Ölçü",
+    threshold: "Eşik",
+    total: "Zorunlu alan toplamı (m²)",
+  },
+
+  parking: {
+    title: "Otopark senaryoları",
+    empty: "Senaryo üretilemedi.",
+    note: "Sistem senaryo üretir, karar vermez. Seçim sizindir.",
+    basementFloorCount: "Bodrum kat",
+    plannedCount: "Sığan araç",
+    requiredCount: "Yönetmelik ihtiyacı",
+    deficitCount: "Eksik",
+    usableArea: "Kullanılabilir alan (m²)",
+    meets: "İhtiyacı karşılıyor",
+    deficitRisk: "İzin riski",
+    choose: "Bu senaryoyu seç",
+    chosen: "Seçildi",
+    acceptedDeficit: "Kabul edilen eksik",
+    reason: "Seçim gerekçesi",
+    ramp: "Rampa",
+    rampLength: "Rampa uzunluğu (m)",
+    rampFootprint: "Rampa ayak izi (m²)",
+  },
+
   // ============================== enum sözlükleri ==============================
 
   tier: {
@@ -296,6 +488,15 @@ export const tr = {
     DATUM_TENANT_SCOPE: "Kayıt bu organizasyonda bulunamadı.",
     DATUM_GENERATED_COLUMN: "Bu alan hesaplanır ve doğrudan yazılamaz.",
     DATUM_ALREADY_PUBLISHED: "Bu sürüm zaten yayımlanmış.",
+    DATUM_FLOOR_INCOMPLETE: "Kat no ve kat tipi zorunludur.",
+    DATUM_UNIT_TYPE_CODE_REQUIRED: "Tipoloji kodu zorunludur.",
+    DATUM_INSTANCE_COUNT_INVALID: "Adet sıfırdan büyük olmalıdır.",
+    DATUM_SCENARIO_INVALID: "Senaryo okunamadı.",
+    DATUM_SPACE_LINE_INVALID: "Mekan satırı okunamadı — biçim: “mekanTipi alan”.",
+    DATUM_UNKNOWN_SPACE_TYPE: "Tanınmayan mekan tipi.",
+    DATUM_TEMPLATE_REQUIRED: "Kilitli kat bir şablona referans vermelidir.",
+    DATUM_TEMPLATE_SELF: "Bir kat kendi şablonu olamaz.",
+    DATUM_TEMPLATE_CHAIN: "Şablon olarak kilitli bir kat seçilemez.",
     DATUM_INVALID_FORMULA:
       "Bölge paketinde geçersiz bir kural formülü var; sürüm yayımlanamadı.",
     unknown: "Beklenmeyen bir hata oluştu.",
