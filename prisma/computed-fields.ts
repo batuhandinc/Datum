@@ -31,7 +31,13 @@ export interface ComputedFieldDef {
   /** Generated kolonun Postgres tipi. Üçlünün üç kolonu da AYNI tipte olmalı. */
   sqlType: string;
   kind: ComputedFieldKind;
-  /** Dokümandaki kaynak satır. */
+  /**
+   * Dokümandaki kaynak BÖLÜM — satır değil.
+   *
+   * Satır numarası kırılgandır: dokümana bir paragraf eklemek tüm referansları
+   * birden bozar. v1.1, v1.2 ve v1.3'te tam olarak bu oldu. Şema dosyalarındaki
+   * `@src` v1.2'de bölüm çapasına geçmişti; burası atlanmıştı.
+   */
   src: string;
   /** Türetme dokümanda tanımlı mı? false ise bu bir BOŞLUKTUR, tasarım değil. */
   derivationStated: boolean;
@@ -60,7 +66,7 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
     fields: [
       // "paketten gelir, ezilebilir" — paket varsayılanı bağlanma anında
       // computedValue'ya materyalize edilir.
-      { field: "currency", sqlType: "text", kind: "text", src: ":112", derivationStated: true },
+      { field: "currency", sqlType: "text", kind: "text", src: "etut-veri-modeli.md§3", derivationStated: true },
     ],
   },
   {
@@ -69,10 +75,10 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
     joins: 'JOIN "parcel" pc ON pc."id" = t."parcelId"',
     projectIdExpr: 'pc."projectId"',
     fields: [
-      { field: "maxFootprint", sqlType: D(14, 3), kind: "decimal", src: ":158", derivationStated: true },
-      { field: "maxTotalFloorArea", sqlType: D(14, 3), kind: "decimal", src: ":158", derivationStated: true },
-      { field: "buildableEnvelope", sqlType: "jsonb", kind: "json", src: ":158", derivationStated: true },
-      { field: "basementGainFromLevelDifference", sqlType: D(14, 3), kind: "decimal", src: ":158", derivationStated: true },
+      { field: "maxFootprint", sqlType: D(14, 3), kind: "decimal", src: "etut-veri-modeli.md§3", derivationStated: true },
+      { field: "maxTotalFloorArea", sqlType: D(14, 3), kind: "decimal", src: "etut-veri-modeli.md§3", derivationStated: true },
+      { field: "buildableEnvelope", sqlType: "jsonb", kind: "json", src: "etut-veri-modeli.md§3", derivationStated: true },
+      { field: "basementGainFromLevelDifference", sqlType: D(14, 3), kind: "decimal", src: "etut-veri-modeli.md§3", derivationStated: true },
     ],
   },
   {
@@ -81,7 +87,7 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
     joins: 'JOIN "block" b ON b."id" = t."blockId"',
     projectIdExpr: 'b."projectId"',
     fields: [
-      { field: "grossArea", sqlType: D(14, 3), kind: "decimal", src: ":314", derivationStated: false },
+      { field: "grossArea", sqlType: D(14, 3), kind: "decimal", src: "etut-veri-modeli.md§5", derivationStated: false },
     ],
   },
   {
@@ -90,11 +96,11 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
     joins: 'JOIN "floor" f ON f."id" = t."floorId" JOIN "block" b ON b."id" = f."blockId"',
     projectIdExpr: 'b."projectId"',
     fields: [
-      { field: "grossArea", sqlType: D(12, 3), kind: "decimal", src: ":294", derivationStated: false },
-      { field: "netArea", sqlType: D(12, 3), kind: "decimal", src: ":295", derivationStated: true },
-      { field: "balconyArea", sqlType: D(12, 3), kind: "decimal", src: ":296", derivationStated: false },
-      { field: "commonAreaShare", sqlType: D(12, 3), kind: "decimal", src: ":297", derivationStated: false },
-      { field: "wetAreaTotal", sqlType: D(12, 3), kind: "decimal", src: ":298", derivationStated: true },
+      { field: "grossArea", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§5", derivationStated: false },
+      { field: "netArea", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§5", derivationStated: true },
+      { field: "balconyArea", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§5", derivationStated: false },
+      { field: "commonAreaShare", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§5", derivationStated: false },
+      { field: "wetAreaTotal", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§5", derivationStated: true },
     ],
   },
   {
@@ -104,11 +110,11 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
       'JOIN "unit" u ON u."id" = t."unitId" JOIN "floor" f ON f."id" = u."floorId" JOIN "block" b ON b."id" = f."blockId"',
     projectIdExpr: 'b."projectId"',
     fields: [
-      { field: "category", sqlType: '"SpaceCategory"', kind: "enum", src: ":199", derivationStated: true },
-      { field: "perimeter", sqlType: D(12, 3), kind: "decimal", src: ":203", derivationStated: true },
-      { field: "isWetArea", sqlType: "boolean", kind: "boolean", src: ":205", derivationStated: true },
-      { field: "ceilingCorniceLength", sqlType: D(12, 3), kind: "decimal", src: ":211", derivationStated: true },
-      { field: "heatingElementSize", sqlType: D(12, 3), kind: "decimal", src: ":214", derivationStated: true },
+      { field: "category", sqlType: '"SpaceCategory"', kind: "enum", src: "etut-veri-modeli.md§4", derivationStated: true },
+      { field: "perimeter", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§4", derivationStated: true },
+      { field: "isWetArea", sqlType: "boolean", kind: "boolean", src: "etut-veri-modeli.md§4", derivationStated: true },
+      { field: "ceilingCorniceLength", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§4", derivationStated: true },
+      { field: "heatingElementSize", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§4", derivationStated: true },
     ],
   },
   {
@@ -117,9 +123,9 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
     joins: 'JOIN "core" c ON c."id" = t."coreId" JOIN "block" b ON b."id" = c."blockId"',
     projectIdExpr: 'b."projectId"',
     fields: [
-      { field: "capacityKg", sqlType: "integer", kind: "int", src: ":332", derivationStated: true },
-      { field: "stopCount", sqlType: "integer", kind: "int", src: ":334", derivationStated: true },
-      { field: "travelHeight", sqlType: D(8, 3), kind: "decimal", src: ":335", derivationStated: false },
+      { field: "capacityKg", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§6", derivationStated: true },
+      { field: "stopCount", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§6", derivationStated: true },
+      { field: "travelHeight", sqlType: D(8, 3), kind: "decimal", src: "etut-veri-modeli.md§6", derivationStated: false },
     ],
   },
   {
@@ -128,9 +134,9 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
     joins: 'JOIN "core" c ON c."id" = t."coreId" JOIN "block" b ON b."id" = c."blockId"',
     projectIdExpr: 'b."projectId"',
     fields: [
-      { field: "totalStepCount", sqlType: "integer", kind: "int", src: ":359", derivationStated: false },
+      { field: "totalStepCount", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§6", derivationStated: false },
       // SAPMA: doküman :361'de bu alana AD VERMİYOR ("enum + length (H)").
-      { field: "railingLength", sqlType: D(10, 3), kind: "decimal", src: ":361", derivationStated: false },
+      { field: "railingLength", sqlType: D(10, 3), kind: "decimal", src: "etut-veri-modeli.md§6", derivationStated: false },
     ],
   },
   {
@@ -139,7 +145,7 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
     joins: 'JOIN "floor" f ON f."id" = t."floorId" JOIN "block" b ON b."id" = f."blockId"',
     projectIdExpr: 'b."projectId"',
     fields: [
-      { field: "isMandatory", sqlType: "boolean", kind: "boolean", src: ":383", derivationStated: true },
+      { field: "isMandatory", sqlType: "boolean", kind: "boolean", src: "etut-veri-modeli.md§7", derivationStated: true },
     ],
   },
   {
@@ -149,10 +155,10 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
       'JOIN "service_space" ss ON ss."id" = t."serviceSpaceId" JOIN "floor" f ON f."id" = ss."floorId" JOIN "block" b ON b."id" = f."blockId"',
     projectIdExpr: 'b."projectId"',
     fields: [
-      { field: "isRequired", sqlType: "boolean", kind: "boolean", src: ":389", derivationStated: true },
-      { field: "requiredCapacityPersons", sqlType: "integer", kind: "int", src: ":390", derivationStated: true },
-      { field: "totalArea", sqlType: D(12, 3), kind: "decimal", src: ":392", derivationStated: true },
-      { field: "gasProofDoorCount", sqlType: "integer", kind: "int", src: ":396", derivationStated: true },
+      { field: "isRequired", sqlType: "boolean", kind: "boolean", src: "etut-veri-modeli.md§7", derivationStated: true },
+      { field: "requiredCapacityPersons", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§7", derivationStated: true },
+      { field: "totalArea", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§7", derivationStated: true },
+      { field: "gasProofDoorCount", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§7", derivationStated: true },
     ],
   },
   {
@@ -163,8 +169,8 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
     projectIdExpr: 'b."projectId"',
     fields: [
       // Dokümanda H işareti YOK ama açıkça türüyor ("talep gücünden").
-      { field: "isTransformerRequired", sqlType: "boolean", kind: "boolean", src: ":408", derivationStated: true },
-      { field: "demandPowerKW", sqlType: D(12, 3), kind: "decimal", src: ":408", derivationStated: true },
+      { field: "isTransformerRequired", sqlType: "boolean", kind: "boolean", src: "etut-veri-modeli.md§7", derivationStated: true },
+      { field: "demandPowerKW", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§7", derivationStated: true },
     ],
   },
   {
@@ -174,8 +180,8 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
       'JOIN "service_space" ss ON ss."id" = t."serviceSpaceId" JOIN "floor" f ON f."id" = ss."floorId" JOIN "block" b ON b."id" = f."blockId"',
     projectIdExpr: 'b."projectId"',
     fields: [
-      { field: "domesticWaterVolume", sqlType: D(12, 3), kind: "decimal", src: ":412", derivationStated: true },
-      { field: "waterproofingArea", sqlType: D(12, 3), kind: "decimal", src: ":412", derivationStated: false },
+      { field: "domesticWaterVolume", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§7", derivationStated: true },
+      { field: "waterproofingArea", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§7", derivationStated: false },
     ],
   },
   {
@@ -185,9 +191,9 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
       'JOIN "service_space" ss ON ss."id" = t."serviceSpaceId" JOIN "floor" f ON f."id" = ss."floorId" JOIN "block" b ON b."id" = f."blockId"',
     projectIdExpr: 'b."projectId"',
     fields: [
-      { field: "isFirePumpRequired", sqlType: "boolean", kind: "boolean", src: ":416", derivationStated: true },
-      { field: "sprinklerRequired", sqlType: "boolean", kind: "boolean", src: ":416", derivationStated: false },
-      { field: "detectorCount", sqlType: "integer", kind: "int", src: ":416", derivationStated: true },
+      { field: "isFirePumpRequired", sqlType: "boolean", kind: "boolean", src: "etut-veri-modeli.md§7", derivationStated: true },
+      { field: "sprinklerRequired", sqlType: "boolean", kind: "boolean", src: "etut-veri-modeli.md§7", derivationStated: false },
+      { field: "detectorCount", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§7", derivationStated: true },
     ],
   },
   {
@@ -197,7 +203,7 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
       'JOIN "service_space" ss ON ss."id" = t."serviceSpaceId" JOIN "floor" f ON f."id" = ss."floorId" JOIN "block" b ON b."id" = f."blockId"',
     projectIdExpr: 'b."projectId"',
     fields: [
-      { field: "capacityKVA", sqlType: D(12, 2), kind: "decimal", src: ":420", derivationStated: false },
+      { field: "capacityKVA", sqlType: D(12, 2), kind: "decimal", src: "etut-veri-modeli.md§7", derivationStated: false },
     ],
   },
   {
@@ -207,8 +213,8 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
       'JOIN "service_space" ss ON ss."id" = t."serviceSpaceId" JOIN "floor" f ON f."id" = ss."floorId" JOIN "block" b ON b."id" = f."blockId"',
     projectIdExpr: 'b."projectId"',
     fields: [
-      { field: "boilerCapacityKcal", sqlType: D(14, 2), kind: "decimal", src: ":424", derivationStated: true },
-      { field: "heatMeterCount", sqlType: "integer", kind: "int", src: ":424", derivationStated: true },
+      { field: "boilerCapacityKcal", sqlType: D(14, 2), kind: "decimal", src: "etut-veri-modeli.md§7", derivationStated: true },
+      { field: "heatMeterCount", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§7", derivationStated: true },
     ],
   },
   {
@@ -217,14 +223,14 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
     joins: "",
     projectIdExpr: 't."projectId"',
     fields: [
-      { field: "requiredCount", sqlType: "integer", kind: "int", src: ":438", derivationStated: true },
-      { field: "plannedCount", sqlType: "integer", kind: "int", src: ":440", derivationStated: true },
-      { field: "deficitCount", sqlType: "integer", kind: "int", src: ":441", derivationStated: true },
+      { field: "requiredCount", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§8", derivationStated: true },
+      { field: "plannedCount", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§8", derivationStated: true },
+      { field: "deficitCount", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§8", derivationStated: true },
       // H/M — hesaplanan AMA kullanıcının doğrudan yazabildiği. Üçlü bunu zaten karşılar.
-      { field: "basementFloorCount", sqlType: "integer", kind: "int", src: ":443", derivationStated: true },
-      { field: "accessibleSpaceCount", sqlType: "integer", kind: "int", src: ":444", derivationStated: true },
-      { field: "bicycleSpaceCount", sqlType: "integer", kind: "int", src: ":446", derivationStated: true },
-      { field: "markingLength", sqlType: D(12, 3), kind: "decimal", src: ":448", derivationStated: false },
+      { field: "basementFloorCount", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§8", derivationStated: true },
+      { field: "accessibleSpaceCount", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§8", derivationStated: true },
+      { field: "bicycleSpaceCount", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§8", derivationStated: true },
+      { field: "markingLength", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§8", derivationStated: false },
     ],
   },
   {
@@ -233,7 +239,7 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
     joins: 'JOIN "parking_layout" pl ON pl."id" = t."parkingLayoutId"',
     projectIdExpr: 'pl."projectId"',
     fields: [
-      { field: "length", sqlType: D(10, 3), kind: "decimal", src: ":454", derivationStated: true },
+      { field: "length", sqlType: D(10, 3), kind: "decimal", src: "etut-veri-modeli.md§8", derivationStated: true },
     ],
   },
   {
@@ -242,12 +248,12 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
     joins: 'JOIN "block" b ON b."id" = t."blockId"',
     projectIdExpr: 'b."projectId"',
     fields: [
-      { field: "width", sqlType: D(10, 3), kind: "decimal", src: ":470", derivationStated: true },
-      { field: "height", sqlType: D(10, 3), kind: "decimal", src: ":471", derivationStated: false },
-      { field: "grossArea", sqlType: D(12, 3), kind: "decimal", src: ":472", derivationStated: false },
-      { field: "openingArea", sqlType: D(12, 3), kind: "decimal", src: ":473", derivationStated: true },
-      { field: "netArea", sqlType: D(12, 3), kind: "decimal", src: ":474", derivationStated: false },
-      { field: "insulationArea", sqlType: D(12, 3), kind: "decimal", src: ":476", derivationStated: true },
+      { field: "width", sqlType: D(10, 3), kind: "decimal", src: "etut-veri-modeli.md§9", derivationStated: true },
+      { field: "height", sqlType: D(10, 3), kind: "decimal", src: "etut-veri-modeli.md§9", derivationStated: false },
+      { field: "grossArea", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§9", derivationStated: false },
+      { field: "openingArea", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§9", derivationStated: true },
+      { field: "netArea", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§9", derivationStated: false },
+      { field: "insulationArea", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§9", derivationStated: true },
     ],
   },
   {
@@ -256,8 +262,8 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
     joins: 'JOIN "block" b ON b."id" = t."blockId"',
     projectIdExpr: 'b."projectId"',
     fields: [
-      { field: "structureWeight", sqlType: D(14, 3), kind: "decimal", src: ":483", derivationStated: false },
-      { field: "coveringArea", sqlType: D(12, 3), kind: "decimal", src: ":483", derivationStated: false },
+      { field: "structureWeight", sqlType: D(14, 3), kind: "decimal", src: "etut-veri-modeli.md§9", derivationStated: false },
+      { field: "coveringArea", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§9", derivationStated: false },
     ],
   },
 ];
