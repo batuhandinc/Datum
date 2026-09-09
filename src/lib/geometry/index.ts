@@ -65,6 +65,16 @@ export {
   translatePolygon,
 } from "./transform";
 
+export {
+  aspectRatio,
+  convexHull,
+  minAreaRectangle,
+  minWidth,
+  principalAxis,
+  rectangularity,
+  type OrientedRectangle,
+} from "./hull";
+
 export { MITER_LIMIT, SCALE, booleanOp, simplifyPolygon } from "./clipper";
 
 export { offsetByEdge, offsetUniform, type EdgeOffsetInput } from "./offset";
