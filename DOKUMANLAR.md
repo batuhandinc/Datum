@@ -6,7 +6,7 @@
 | `etut-veri-modeli.md` | Şema, varlıklar, alanlar. Kodla birlikte güncellenir. |
 | `etut-portali-proje-dokumani.md` | Mimari ilkeler, maliyet motoru, standartlar |
 | `etut-surec-modeli.md` | Etüt aşamaları A1–A13, sihirbaz akışı |
-| `kat-plani-uretim-mimarisi.md` | İP-4'e gelince eklenecek |
+| `kat-plani-uretim-mimarisi.md` | **Plan üretim katmanları L0–L4**, algoritma tercihi, düzenleme modeli |
 
 Kural: bu dokümanlar spesifikasyondur, öneri değil.
 Eksik veya çelişkili bir yer varsa uydurma — sor.

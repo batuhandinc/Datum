@@ -1,8 +1,23 @@
 # Etüt Veri Modeli ve Detay Spesifikasyonu
 
-**Sürüm:** 1.3
-**Tarih:** 9 Eylül 2026 (1.2: 9 Eylül · 1.1: 8 Eylül · 1.0: 7 Eylül 2026)
+**Sürüm:** 1.4
+**Tarih:** 10 Eylül 2026 (1.3: 9 Eylül · 1.2: 9 Eylül · 1.1: 8 Eylül · 1.0: 7 Eylül 2026)
 **Amaç:** Kat planı üretimi ve gerçek metraj için gereken veri derinliğini tanımlamak. Claude Code devir paketinin şema tarafıdır.
+
+**Sürüm 1.4 değişiklikleri** — İP-4 (plan motoru: L2 bölümleme, L3 tipoloji, L4 detay) yazılmadan önce:
+
+1. Bölüm 5 — `Unit`'e `geometry` eklendi. L2'nin çıktısının şemada evi yoktu; birim poligonu saklanamıyordu
+2. Bölüm 4 — `Space.geometry` **hesaplanan dörtlüye** çevrildi. `@own H` işaretliydi ama üçlüsü açılmamıştı, yani plan motorunun ürettiği geometri **ezilemiyordu** (ilke 5 ihlali)
+3. Bölüm 4 — `Space`'e `layoutKey` eklendi. Şablon yaprağını mekan satırına bağlayan **kararlı anahtar**; olmadan aynı tipten iki yatak odasının geometrisi yeniden çözümde sessizce yer değiştirir
+4. Bölüm 4 — **`Wall` alan tablosu eklendi.** Bölüm 10.1 onu `objectType` olarak kullanıyordu ama hiçbir yerde tanımlı değildi. Mekan sınırlarından **türetilir**, ayrıca çizilmez
+5. Bölüm 5 — **`ColumnGrid` alan tablosu eklendi.** Kaba aks ızgarası; otopark verimi doğrulaması ve yapısal katsayı girdisi için
+6. Bölüm 5 — `CommonSpace` alan tablosu eklendi. Sirkülasyonun **semantik evi**; bir fark kümesine imalat kalemi bağlanamaz
+7. Bölüm 5 — `Floor`'a `planSource`; `grossArea`'nın hangi katlarda hesaplanabildiği yazıldı (çekme kat ve bodrumun plakası zarf değildir)
+8. Bölüm 5 — `UnitType`'a `sourceTemplateId` + `sourceTemplateVersion`; `Unit`'e `linkedUnitId` (dubleks)
+9. Bölüm 13 — **`UnitTypeTemplate`** eklendi: organizasyon seviyesinde tipoloji kütüphanesi. Bölüm 13 madde 3'ün alt kararı böylece kapandı
+10. Bölüm 6 — `Shaft.offsetX/offsetY` **hesaplanan dörtlüye** çevrildi. K3 manuel alandı ve hiçbir motor yazmıyordu; bu hâliyle şaft konumu her projede bilinmiyor ve **tüm ıslak hacim kısıtları değerlendirilemez** kalıyordu
+11. Bölüm 12.6 — `UnitLayoutRule` ve `BuildingElementRule` eklendi. Plan motorunun okuduğu yedi değerin hiçbirinin pakette evi yoktu
+12. Bölüm 15.4 — L2–L4 zinciri eklendi (L0 ve L1'in devamı)
 
 **Sürüm 1.3 değişiklikleri** — İP-3 (program, çekirdek, servis mekanları, otopark) yazılmadan önce:
 
@@ -110,6 +125,7 @@ Organization
 ├── RegionPackage ──────── soy (ad, ülke, idari birim)
 │   └── RegionPackageVersion ── sürüm · geçerlilik tarihi · durum
 │       └── kural tabloları (bkz. bölüm 12)
+├── UnitTypeTemplate[] ─── tipoloji kütüphanesi (1.4) — projeye KOPYALANIR
 └── Project
     ├── Parcel ──────────── ZoningData, SoilData, SiteData
     ├── Stakeholder[] ───── hak sahipleri, paylar
@@ -122,8 +138,10 @@ Organization
     │   │   │       ├── SurfaceFinish (zemin/duvar/tavan)
     │   │   │       └── Fixture[] (donanım)
     │   │   ├── CommonSpace[] (ortak alan mekanları)
+    │   │   ├── Wall[] (duvar — mekan sınırlarından TÜRER, 1.4)
     │   │   └── ServiceSpace[] (sığınak, trafo, hidrofor…)
     │   ├── Core ────────── Elevator[], Stair[], Shaft[]
+    │   ├── ColumnGrid ──── kaba aks ızgarası (1.4)
     │   ├── Facade[] ────── FacadeMaterial[]
     │   └── Roof
     ├── ParkingLayout ───── ParkingSpace[], Ramp[]
@@ -326,9 +344,10 @@ Metrajın kalitesi buradan çıkar. Her bağımsız bölüm mekanlardan oluşur;
 | name | text | K2 | "Salon", "Ebeveyn Banyo" |
 | spaceType | enum | K2 | aşağıdaki tipoloji |
 | category | enum | H | tipten türer |
-| area | decimal (m²) | K2 | |
+| area | decimal (m²) | K2 | **hedef alan.** Kullanıcı girer; plan motoru **ezmez** — bkz. aşağıdaki not *(1.4)* |
 | width / length | decimal (m) | K2 | G2 seviyesi — **opsiyonel** (bkz. bölüm 1.5) |
-| geometry | polygon | K3 | G3 seviyesi |
+| geometry | polygon | H | G3 seviyesi. **Hesaplanan dörtlü** *(1.4)* — L3 üretir, kullanıcı ezer |
+| layoutKey | text | H | şablon yaprak anahtarı *(1.4)* — `(unitId, layoutKey)` tekil |
 | perimeter | decimal (m) | H | G1/G2/G3'e göre |
 | clearHeight | decimal (m) | K2 | net tavan yüksekliği |
 | isWetArea | bool | H | tipten türer, ezilebilir |
@@ -376,6 +395,32 @@ Metrajın kalitesi buradan çıkar. Her bağımsız bölüm mekanlardan oluşur;
 >
 > **Düzeltme (sürüm 1.1):** Bu paragraf önceki sürümde "en × boy girişi (G2) zorunlu tutulmalı" diyordu ve bölüm 1.5 satır 66 ile çelişiyordu. Karara bağlandı: **G2 opsiyoneldir** (bkz. bölüm 13, madde 1). `width`/`length` nullable kalır; `perimeter` dolu olan en yüksek geometri seviyesinden türer.
 
+#### `area` HEDEFTİR, gerçekleşen alan geometriden türer *(1.4)*
+
+`Space.area` kullanıcının A5'te girdiği **hedeftir** ve K2/M kalır. Plan motoru onu **yazmaz**. Gerçekleşen alan `geometry`'den ölçülür (bölüm 1.5: "hangisi doluysa o kullanılır") ve ikisi arasındaki fark bir **uyarıdır, ezme değildir.**
+
+**Neden:** `area`'yı hesaplanan alana çevirmek iki şeyi birden kırardı. (a) Kullanıcının girdiği her hedef bir *ezme* olurdu; 10 birim × 9 mekan = 90 gerekçesiz ezme satırı ve "bu projedeki tüm ezmeler tek sorgudur" diye kurulan `OverrideLedger` normal program girişinin gürültüsüne boğulurdu (ilke 10 aşınması). (b) Ayrışma göstergesi ölürdü: örneklenen birimin ayrışması `Σ Space.area` ile şablon toplamı karşılaştırılarak, 0,01 m² toleransla ölçülüyor; gerçek geometrik alan aynı kolona yazıldığı an **her birim** kalıcı olarak "ayrışmış" görünürdü.
+
+### Wall (duvar) *(1.4)*
+
+Bölüm 10.1 `Wall`'ı bir `objectType` olarak kullanıyordu ama hiçbir yerde tanımlamıyordu; İP-4'ün L4 katmanı duvar kalınlıklarını atadığı ve İP-5 metrajı duvar alanı ve hacmi istediği için tanım gerekti.
+
+**Duvar TÜRETİLİR, ayrıca çizilmez.** Kullanıcı duvar çizmez; iki mekanın paylaştığı sınır duvara dönüşür. Tek doğruluk kaynağı geometri kalır — duvar ayrıca çizilebilseydi mekan sınırı ile duvar ekseni birbirinden bağımsız iki gerçek olurdu ve hangisinin doğru olduğu tanımsız kalırdı.
+
+| Alan | Tip | Kademe | Not |
+|---|---|---|---|
+| floorId | fk | — | duvar iki **birimi** ayırabilir, bu yüzden ebeveyn `Floor` |
+| wallKey | text | H | kararlı kimlik; `(floorId, wallKey)` tekil. Birim ayrımı taşır |
+| wallType | enum | H | `dis · ic · islakHacim · saft · birimAyirici` — **mekan ilişkisinden** türer |
+| geometry | polyline | H | duvar **ekseni** (yerel metrik) |
+| length | decimal (m) | H | eksenden |
+| thickness | decimal (m) | H | `BuildingElementRule`'dan tipe göre; kural yoksa **üretilmez + uyarı** |
+| spaceAId / spaceBId | fk | H | hangi iki mekanı ayırıyor; dış duvarda B boştur |
+
+**`netArea` ve `volume` SAKLANMAZ.** Açıklık düşümü kalem bazında merkezî tanımlıdır (ilke 6, bölüm 10.2); duvarın net yüzeyi kaleme göre değişir ve tek bir sayıya indirilemez. İP-5 hesaplar.
+
+**Doğan metraj:** duvar bloğu · harç · sıva (iki yüz) · yalıtım · boya — hepsi `ObjectCostMapping`'in `Wall` satırlarından.
+
 ### Opening (açıklık)
 
 | Alan | Tip | Not |
@@ -383,6 +428,7 @@ Metrajın kalitesi buradan çıkar. Her bağımsız bölüm mekanlardan oluşur;
 | openingType | enum | pencere · kapi · balkonKapisi · vitrin · garajKapisi |
 | spaceId | fk | hangi mekanda |
 | adjacentSpaceId | fk | iç kapılarda karşı mekan |
+| hostWallId | fk | hangi duvarda *(1.4)* — aşağıdaki nota bakınız |
 | isExterior | bool | cepheye mi bakıyor |
 | width / height | decimal (m) | |
 | count | int | aynı tipten kaç adet |
@@ -397,6 +443,8 @@ Metrajın kalitesi buradan çıkar. Her bağımsız bölüm mekanlardan oluşur;
 **Doğan metraj:** doğrama profil mtül · cam alanı · aksesuar adedi · denizlik mtül · pervaz mtül · silikon · kapı adedi (tipe göre)
 
 **Ayrıca:** açıklık alanları duvar metrajından düşülür — kural kalem bazında tanımlı (bkz. bölüm 10.2).
+
+**`hostWallId` neden bir FK, kenar indeksi değil** *(1.4)*: açıklığın hangi duvara ait olduğu bir **kimlik** sorusudur. Halkanın kaçıncı kenarı olduğuyla tutmak kombinatorik bir tutamaçtır — kullanıcı poligonu yeniden çizdiğinde veya L3 farklı bir oturtma seçtiğinde köşe sırası değişir ve açıklık **sessizce başka duvara taşınır**. `Wall.wallKey` kararlı olduğu için FK kararlıdır.
 
 ### Fixture (donanım)
 
@@ -422,6 +470,8 @@ Metrajın kalitesi buradan çıkar. Her bağımsız bölüm mekanlardan oluşur;
 | floorId | fk | K2 |
 | usageType | enum | K1 — konut · ticari · ofis · depo |
 | isDuplex | bool | K2 |
+| linkedUnitId | fk | K2 — dublekste diğer kattaki yarısı *(1.4)* |
+| geometry | polygon | H — **L2'nin çıktısı** *(1.4)*, yerel metrik |
 | grossArea | decimal | H |
 | netArea | decimal | H — mekan alanları toplamı |
 | balconyArea | decimal | H |
@@ -433,6 +483,17 @@ Metrajın kalitesi buradan çıkar. Her bağımsız bölüm mekanlardan oluşur;
 
 **UnitType (tipoloji şablonu):** Aynı tip birden çok kez tekrarlanır. Şablon mekan listesini taşır, örneklenince kopyalanır. Örnek: "3+1 A tipi" → salon 33,5 · mutfak 15,6 · oda 23 · oda 18 · oda 4 · banyo 6 · banyo 5 · hol 9 · balkon 5 = 119 m². Bu şablon 10 kez örneklenir.
 
+`UnitType` **proje kapsamlıdır.** Organizasyon seviyesindeki kütüphaneden (`UnitTypeTemplate`, bölüm 13) kopyalanır ve kopyalama izlenebilir kalır *(1.4)*:
+
+| Alan | Tip | Not |
+|---|---|---|
+| sourceTemplateId | fk | hangi kütüphane şablonundan türedi |
+| sourceTemplateVersion | text | kopyalama anındaki sürümü |
+| layoutRecipe | json | bölme reçetesi — kopyalanır, projede dondurulur |
+| relationAssertions | json | ilişki iddiaları — kontrol edilir, zorlanmaz |
+
+**Dubleks** *(1.4)*: iki kata yayılan birim **iki `Unit` satırıdır** (alt kat + üst kat), `isDuplex: true` ve `linkedUnitId` ile bağlanır; bağlantıyı `icMerdiven` mekanı taşır. Tek satırla iki kat, `Unit.floorId`'yi çoğullaştırmayı gerektirir ve `Floor → Unit → Space` ağacını kırardı.
+
 ### Floor
 
 | Alan | Tip | Kademe |
@@ -441,9 +502,38 @@ Metrajın kalitesi buradan çıkar. Her bağımsız bölüm mekanlardan oluşur;
 | floorType | enum | K1 — bodrum · zemin · normal · cekmeKat · catiArasi |
 | isLocked | bool | K2 — tipik kat kilidi |
 | templateFloorId | fk | K2 — kilitliyse referans |
+| planSource | enum | H — `otomatik · manuel · tipikKat` *(1.4)* |
 | grossHeight / clearHeight | decimal | K1 |
-| grossArea | decimal | H |
+| grossArea | decimal | H — aşağıdaki nota bakınız *(1.4)* |
 | hasCommercial | bool | K1 |
+
+**`grossArea` her katta hesaplanamaz** *(1.4)*: türetme `plaka poligonunun alanı`dır, ama **kat başına plaka modellenmiyor** — elimizdeki tek poligon `ZoningData.buildableEnvelope`, yani proje başına tektir. `cekmeKat` tanımı gereği daha küçük, `bodrum` genellikle daha büyüktür. Plakası gerçekten zarf olan katlara (`zemin`, `normal`) yazılır; diğerlerinde **null kalır ve uyarı üretilir**. Bilinen yanlış bir sayıyı hesaplanan kolona yazmak, emsal kullanımını ve İP-5 metrajını sessizce bozardı.
+
+### CommonSpace (ortak alan) *(1.4)*
+
+Kat holü, koridor, merdiven holü, bina girişi. **Sirkülasyonun semantik evidir.**
+
+| Alan | Tip | Kademe |
+|---|---|---|
+| floorId | fk | — |
+| spaceType | enum | H — `katHolu · merdivenHolu · koridor · binaGirisi` |
+| geometry | polygon | H — L2 üretir |
+| area / perimeter | decimal | H — geometriden |
+
+**Neden bir nesne, türetilmiş bir fark kümesi değil:** İP-4'ün bitiş ölçütü "**semantik olarak eksiksiz** bir tipik kat planı" ve ilke 4 "her nesne semantik kalır". `ObjectCostMapping` bir `objectType`'a bağlanır; `plaka ∖ çekirdek ∖ ⋃birim` ifadesine bağlanamaz. Katın en büyük ortak alanı nesnesiz kalırsa koridorun zemin kaplaması, duvar yüzeyi ve kapıları İP-5'te türetilemez.
+
+### ColumnGrid (kolon aks ızgarası) *(1.4)*
+
+| Alan | Tip | Kademe |
+|---|---|---|
+| blockId | fk | — |
+| spacingX / spacingY | decimal (m) | H — `BuildingElementRule`'dan |
+| axes | json | H — aks çizgileri (yerel metrik) |
+| columnCount | int | H — ızgara ile plakanın kesişiminden |
+
+**KABADIR.** Amacı otopark verimi doğrulaması ve yapısal ampirik katsayıya girdi vermektir; **gerçek statik hesap değildir** ve **kolon kesiti hesaplanmaz**. Aks aralığı paketten gelir; kural yoksa ızgara üretilmez + uyarı.
+
+> **İP-3'ten devreden söz burada ödenir.** `ParkingRule.areaPerSpace` notu (bölüm 12.5): *"İP-4'te kolon aksları geldiğinde geometrik yerleşim bu katsayıyı **değiştirmez, doğrular**."* Aks ızgarasından ölçülen bodrum kapasitesi katsayıdan belirgin saparsa **uyarı** üretilir. **Otorite katsayıda kalır.**
 
 ### Block
 
@@ -531,9 +621,11 @@ Merdiven, asansör(ler), hol ve şaftların oluşturduğu mekânsal gruplama. **
 | shaftType | enum: tesisat · havalandirma · cop · asansor · duman |
 | width / depth | decimal |
 | runsThroughFloors | int[] — `Floor.floorNo` değerleri *(1.3)* |
-| offsetX / offsetY | decimal (m) — **çekirdek orijinine göreli** konum *(1.3)* |
+| offsetX / offsetY | decimal (m) — **çekirdek orijinine göreli** konum *(1.3)*, **hesaplanan dörtlü** *(1.4)* |
 
 **Şaft konumu neden göreli** *(1.3)*: şaftlar tüm katlarda **aynı** konumda olmak zorundadır (düşey süreklilik). Mutlak konum saklansaydı çekirdek taşınınca her katta ayrı ayrı güncellenmesi gerekir, biri unutulduğunda süreklilik sessizce kırılırdı. Göreli konumda mutlak yer `çekirdek + offset` ile **türetilir** — süreklilik korunması gereken bir kural değil, **yapısal bir sonuçtur**.
+
+**Konum neden hesaplanan alana çevrildi** *(1.4)*: 1.3'te `offsetX/offsetY` K3 manuel alanlardı ve **hiçbir motor onları yazmıyordu.** Sonuç: her projede şaft konumu bilinmiyor, dolayısıyla L3'ün *"banyo şafta bitişik"* iddiası dahil **bütün ıslak hacim kısıtları "değerlendirilemedi" çıkıyordu** — sistem ıslak hacimleri topladığını sanırken hiçbir şey onları toplamıyordu. L1 çekirdek poligonunu zaten üretiyor; şaftları onun içine **önerir**, kullanıcı ezer.
 
 ---
 
@@ -856,14 +948,60 @@ Otopark formülünün gördüğü değişkenlerle alan formülününki **aynı d
 
 **Determinizm:** tarih, saat ve rastgelelik erişimi yoktur — aynı girdi her zaman aynı sonucu verir (ilke 2'nin gereği: dondurulmuş paket dondurulmuş sonuç üretmeli).
 
+### 12.6 Sürüm 1.4'te eklenenler — plan motorunun kuralları
+
+Plan motorunun okuduğu yedi değerin hiçbirinin 22 kural tablosunda evi yoktu. İlke 1 gereği hiçbiri koda gömülemez: birim alan toleransı bir kabul eşiğidir, asgari oda genişliği ve pencere oranı yerel mevzuattır, duvar kalınlığı iklim bölgesine ve yapı geleneğine bağlıdır, aks aralığı yapısal alışkanlıktır.
+
+**Sınır iki tablo arasında ÖLÇEKtedir:** biri birim ölçeğinde bölümlemeyi (L2), diğeri yapı elemanı ölçeğinde detayı (L3/L4) yönetir.
+
+#### `UnitLayoutRule` — birim ölçeği
+
+| Alan | Birim | Not |
+|---|---|---|
+| `grossToNetFactor` | — | brüt birim alanı ÷ net mekan alanları toplamı |
+| `areaTolerance` | oran | hedeften kabul edilen sapma (bölüm 9'un açık kararı burada kapanır) |
+| `minUnitFacadeLength` | m | pencere alabilmesi için asgari cephe teması |
+| `maxUnitAspectRatio` | — | "aşırı uzun dar birim olmasın" |
+
+**`grossToNetFactor` neden zorunlu:** kullanıcının hedefi NET'tir (mekan alanları toplamı), plaka BRÜT'tür. Aradaki farkı duvar kalınlıkları, birim içi sirkülasyon payı ve ölçü alışkanlığı belirler. Bu katsayı **bölmeyle uydurulamaz**: `plaka ÷ Σhedef` yazmak, programın plakayı tam doldurduğunu **varsaymak** demektir ve program plakanın %60'ıysa bütün daireleri sessizce %66 şişirir. Kural yoksa **L2 hesaplamaz + uyarı** — `offsetJoinType` ile aynı sertlik.
+
+#### `BuildingElementRule` — yapı elemanı ölçeği
+
+| Alan | Birim | Not |
+|---|---|---|
+| `spaceType` | enum | hangi mekan tipi için |
+| `minArea` | m² | asgari oda alanı |
+| `minClearWidth` | m | asgari net genişlik |
+| `daylightRatio` | oran | pencere alanı ÷ taban alanı |
+| `wallThickness` | m | `wallType`'a göre (dis · ic · islakHacim · saft · birimAyirici) |
+| `minDoorWidth` | m | kapı ölçüsü — yangın ve erişilebilirlik mevzuatı |
+| `columnSpanX` / `columnSpanY` | m | kaba aks aralığı |
+
+**Adı neden `SpaceDimension` değil:** duvar kalınlığı ve aks aralığı bir **mekan** ölçüsü değil, bir **yapı elemanı** ölçüsüdür; "mekan boyutu" başlığı altında durmaları yanıltıcı olurdu.
+
+Her ikisi de sürüme bağlanır ve yayımdan sonra değişmezlik trigger'ı kapsamındadır. **Kural tablosu sayısı 22 → 24.**
+
 ---
 
 ## 13. Açık Kararlar
 
 1. **Mekan geometri seviyesi zorunluluğu** — ✅ *Karara bağlandı:* G2 (en × boy) **opsiyoneldir.** Plan motoru MVP'de olduğu için normal akışta gerçek geometri G3'ten gelir; G2 yalnızca plan üretilmeden hızlı maliyet istendiğinde veya üretilmiş bir mekanın boyutu elle ezilirken kullanılır. `width`/`length` nullable kalır. Bölüm 4'teki çelişkili paragraf düzeltildi.
 2. **Çok bloklu proje MVP'de olsun mu?** — ✅ *Karara bağlandı:* veri modelinde var, arayüzde gizli. Tek bloklu projede otomatik tek blok oluşur (bkz. bölüm 5). `Core`, `Facade[]` ve `Roof` bu yüzden `Block` altındadır.
-3. **UnitType şablonu ne kadar katı?** Örneklenen bir bağımsız bölüm şablondan ayrışabilsin mi? Öneri: evet, ayrışma işaretlensin. *(İP-4)*
-   - **Alt karar, hâlâ açık:** `UnitType` proje kapsamlı mı, yoksa organizasyon seviyesinde tekrar kullanılabilir bir tipoloji kütüphanesi mi? İP-1'de proje kapsamlı varsayıldı.
+3. **UnitType şablonu ne kadar katı?** — ✅ *Karara bağlandı (1.4):* örneklenen bağımsız bölüm şablondan **ayrışabilir** ve ayrışma işaretlenir (İP-3'te uygulandı).
+   - **Alt karar** — ✅ *Karara bağlandı (1.4):* **ikisi birden.** `UnitType` proje kapsamlı kalır; onu besleyen **`UnitTypeTemplate`** organizasyon seviyesinde bir kütüphanedir ve kullanıldığında projeye **kopyalanır** (`sourceTemplateId` + `sourceTemplateVersion` ile izlenebilir).
+
+   **Neden pakette değil:** bir tipoloji şablonu mevzuat değil, **firma alışkanlığıdır** — bölgeye değil, tasarımı yapana aittir. Pakete konsaydı "salonu 2 m² büyüttük" yeni bir paket **sürümü** gerektirirdi ve ilke 2, yönetmelik değişimiyle mimari tercihi aynı kefeye koyardı.
+
+   **Neden kopyalanır, referans verilmez:** kütüphanedeki şablonu iyileştirmek **biten bir projeyi geriye dönük değiştirmemelidir** — ilke 2'nin ruhu, mevzuata değil mimari alışkanlığa uygulanmış hâli.
+
+   **Kütüphane boşsa L3 çalışmaz + uyarı.** Sistem tipoloji uydurmaz; ilke 1'in şablon tarafındaki karşılığıdır.
+
+   | `UnitTypeTemplate` alanı | Tip | Not |
+   |---|---|---|
+   | organizationId | fk | **kök varlıktır** — kiracıya aittir |
+   | templateCode / version | text | "3+1 A", "2.0" |
+   | layoutRecipe | json | bölme reçetesi: düğüm = kesme, yaprak = mekan |
+   | relationAssertions | json | "salon cephe alır", "banyo şafta bitişik" — **kontrol edilir, zorlanmaz** |
 4. **Elektrik ve mekanik metraj seviyesi** — ✅ *Karara bağlandı:* MVP'de **parametrik götürü** (sürücü değişkenlere bağlı formül, sabit tutar değil). Kalem seviyesi Faz 3. Bkz. ana doküman 10.8.
 5. **Mekan geometri sırası** — ✅ *Karara bağlandı:* Program tanımında hedef alan (G1), plan motorundan gerçek geometri (G3). G2 yedek yol.
 6. **Ampirik katsayılar** — kalibrasyon için geçmiş proje verisi var mı?
@@ -964,3 +1102,62 @@ kaçış mesafesi yerel mevzuattır, uydurulamaz.
 
 **Kaçış mesafesi aşımı engellemez, uyarır** (ilke 7). Ölçüm İP-3'te kuş uçuşudur; koridor boyu
 ölçüm gerçek plan geometrisi gerektirir ve İP-4'e aittir.
+
+### 15.4 L2–L4 zinciri — plan üretimi *(1.4)*
+
+L1 sabit noktayı verir; L2 kalan alanı bölümler, L3 birimin içini doldurur, L4 detaylandırır.
+Otoriter tanım `kat-plani-uretim-mimarisi.md` bölüm 2'dedir.
+
+```
+çekirdek → sirkülasyon → kalan alan → birim poligonları (L2)
+        → tipoloji şablonu esnetilir → mekan poligonları (L3)
+        → mekan sınırları duvara döner → açıklıklar → aks ızgarası (L4)
+```
+
+| Adım | Girdi | Çıktı |
+|---|---|---|
+| 1 | `buildableEnvelope`'un en büyük parçası + `Core.geometry` | plaka, çekirdek düşülmüş |
+| 2 | `CoreRule.minCirculationWidth` + strateji | `CommonSpace.geometry` (sirkülasyon) |
+| 3 | `Σ Space.area` × `UnitLayoutRule.grossToNetFactor` | birim hedefleri (brüt) |
+| 4 | kalan alan + hedefler | `Unit.geometry` |
+| 5 | `UnitType.layoutRecipe` + birim poligonu | `Space.geometry`, `Space.layoutKey` |
+| 6 | mekan sınırları + `BuildingElementRule.wallThickness` | `Wall` satırları |
+| 7 | ilişki iddiaları + `daylightRatio` | `Opening` satırları (`hostWallId` ile) |
+| 8 | `columnSpanX/Y` | `ColumnGrid` → otopark katsayısı **doğrulanır** |
+
+**Sistem programı ÖLÇEKLEMEZ.** Her birim kendi hedefine kesilir. Program plakaya sığmıyorsa
+kuyruktaki birimler yerleşmez ve satırları uyarıyla kalır; plakayı doldurmuyorsa fark
+**artık alan** olarak raporlanır. `etut-portali-proje-dokumani.md` bölüm 5 katman 4:
+*"bağımsız bölüm karmasını **kullanıcı belirler**, sistem önermez… sistem programı zarfa
+**yerleştirir**"* — yerleştirmek ölçeklemek değildir. Ölçeklendiği anda birim alan toleransı
+ölçülemez hâle gelir, çünkü sapma daima sıfır çıkar.
+
+**Kuralsız bilinen olgu ile eşik gerektiren hüküm ayrıdır.** "Bu birim çekirdeğe değiyor mu" ve
+"cepheye değiyor mu" saf topolojidir, paket satırı gerektirmez ve paket boşken bile **ihlal**
+üretebilir. "Yeterince mi değiyor" bir hükümdür ve eşik ister; eşik yoksa sonuç
+**"değerlendirilemedi"**dir — *"sağlandı" değildir.* Eksik bir kuralın sessizce yeşil ışık
+yakması, sistemdeki en pahalı hata biçimidir.
+
+**Eşikler geometriyi YÖNLENDİRMEZ, yalnızca uyarı üretir.** Bir kod sabiti kesme yönünü
+seçseydi, sabiti değiştirmek paket sürümü **dondurulmuş** eski bir projeye farklı bir plan —
+dolayısıyla farklı bir metraj ve farklı bir maliyet — üretirdi. Bu doğrudan ilke 2 ihlalidir.
+L1'deki en-boy oranı sezgiseli emsal değildir: orada çıktı kullanıcının hemen gözden geçirdiği,
+ezilebilir bir **öneriydi**.
+
+**L2 çekirdeği asla oynatmaz.** `kat-plani` bölüm 2 L2 adım 4 *"kısıt ihlali kalırsa alternatif
+çekirdek konumuyla yeniden denenir"* diyor; bölüm 6 ise çekirdeğin proje geneli sabit olduğunu
+ve taşınması için onay gerektiğini söylüyor. İkisi bağdaşmaz. L2 ihlallerin çekirdeğin hangi
+yüzünde kümelendiğini **raporlar**; aday konum üretip skorlamak `kat-plani` bölüm 8'de
+**Faz 3**'tür (optimizasyon katmanı), onay akışı **İP-8**'dir.
+
+**Manuel ve otomatik mod aynı satırları üretir.** İkisi de aynı yazma yolundan ve aynı
+doğrulayıcıdan geçer; fark yalnızca **hangi kaynak kolonun dolduğudur**: otomatik
+`geometryComputedValue`, manuel `geometryOverrideValue` + gerekçe. `Unit.geometry` her iki
+durumda aynı kolondur ve L3, L4 ile metraj hangisinden geldiğini bilmez. Ezme burada yalnızca
+işaretleme değil, **taşıyıcıdır**: kullanıcının çizdiği bölümleme `OverrideValue`'da durduğu
+için L2 yeniden koştuğunda yok edilmez.
+
+**Şablona sığmayan mekan G1'e düşer** (bölüm 1.5). Birim başına değil, **mekan başına**:
+geçerli hücre alamayan mekan hedef alanıyla kalır, `geometry` null olur ve `perimeter`
+`k × √alan` ile `SpaceShapeFactorRule`'dan türer. Metraj yine çıkar, rapor hangi mekanların
+G1'de kaldığını gösterir.
