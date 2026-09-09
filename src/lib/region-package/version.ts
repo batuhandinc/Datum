@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { Prisma, PrismaClient, Project, RegionPackageVersion } from "@prisma/client";
 import { prisma } from "@/lib/db/client";
 import { currentOrganizationId } from "@/lib/db/tenant";
+import { FORMULA_SLOTS, validateFormula, type FormulaSlot } from "@/lib/formula";
 
 /**
  * BÖLGE PAKETİ SÜRÜM DONDURMA — İP-1 teslimatı 4.
@@ -64,6 +65,34 @@ export function semanticRowHash(row: object): string {
 }
 
 /**
+ * Bir kural satırındaki formülü sözleşmesine karşı doğrular; geçersizse fırlatır.
+ *
+ * Hata metni TANIMLAYICI taşır, Türkçe cümle değil (konvansiyon): hangi tablo,
+ * hangi ruleKey, hangi kolon, hangi hata kodu, kaçıncı karakter.
+ */
+function assertValidFormula(slot: FormulaSlot, row: Record<string, unknown>): void {
+  const raw = row[slot.field];
+  const where = `${slot.model}.${String(row.ruleKey)}.${slot.field}`;
+
+  if (raw === null || raw === undefined || String(raw).trim() === "") {
+    if (slot.optional) return;
+    throw new Error(`DATUM_INVALID_FORMULA: ${where} — EMPTY`);
+  }
+
+  if (typeof raw !== "string") {
+    throw new Error(`DATUM_INVALID_FORMULA: ${where} — NOT_A_STRING`);
+  }
+
+  const result = validateFormula(raw, slot.contract);
+  if (result.ok) return;
+
+  const { code, at, token } = result.error;
+  throw new Error(
+    `DATUM_INVALID_FORMULA: ${where} — ${code}@${at}${token ? ` (${token})` : ""}`,
+  );
+}
+
+/**
  * Bir draft sürümü YAYIMLAR.
  *
  * Tek transaction içinde:
@@ -74,8 +103,12 @@ export function semanticRowHash(row: object): string {
  *
  * Sıra önemlidir: status önce çevrilseydi, hash yazımı kendi trigger'ına takılırdı.
  */
-export async function publishVersion(versionId: string): Promise<RegionPackageVersion> {
-  return prisma.$transaction(async (tx) => {
+export async function publishVersion(
+  versionId: string,
+  /** Test ve fixture için enjekte edilebilir — diğer modüllerdeki desenin aynısı. */
+  client: PrismaClient = prisma,
+): Promise<RegionPackageVersion> {
+  return client.$transaction(async (tx) => {
     const version = await tx.regionPackageVersion.findUnique({ where: { id: versionId } });
     if (!version) throw new Error(`DATUM_NOT_FOUND: sürüm bulunamadı: ${versionId}`);
     if (version.status !== "draft") {
@@ -96,6 +129,19 @@ export async function publishVersion(versionId: string): Promise<RegionPackageVe
         where: { regionPackageVersionId: versionId },
         orderBy: { ruleKey: "asc" },
       });
+
+      // FORMÜL KAPISI: bozuk bir formül YAYIMI REDDEDER.
+      //
+      // Doğrulama okuma anında değil BURADA yapılır. Okuma anında yapılsaydı
+      // bozuk formül ancak birisi o projeyi açtığında fark edilirdi — ve o an
+      // paket zaten dondurulmuş, düzeltmek için yeni sürüm gerekiyor olurdu.
+      // Burada yakalanınca sürüm `draft` kalır ve paket sahibi düzeltir.
+      for (const slot of FORMULA_SLOTS) {
+        if (slot.model !== model) continue;
+        for (const row of rows) {
+          assertValidFormula(slot, row);
+        }
+      }
 
       const hashes: string[] = [];
       for (const row of rows) {

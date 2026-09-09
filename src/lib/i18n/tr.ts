@@ -296,6 +296,8 @@ export const tr = {
     DATUM_TENANT_SCOPE: "Kayıt bu organizasyonda bulunamadı.",
     DATUM_GENERATED_COLUMN: "Bu alan hesaplanır ve doğrudan yazılamaz.",
     DATUM_ALREADY_PUBLISHED: "Bu sürüm zaten yayımlanmış.",
+    DATUM_INVALID_FORMULA:
+      "Bölge paketinde geçersiz bir kural formülü var; sürüm yayımlanamadı.",
     unknown: "Beklenmeyen bir hata oluştu.",
   },
 
@@ -343,6 +345,13 @@ export const tr = {
     SHARES_DO_NOT_SUM: "Pay oranları toplamı %{total} — %100 etmiyor.",
     MAJORITY_NOT_REACHED:
       "Karar çoğunluğu sağlanmadı: %{agreed}, eşik %{threshold}.",
+
+    FORMULA_INPUT_MISSING:
+      "Kural formülü “{variable}” değerini okuyor ama bu ölçü henüz girilmedi — hesaplanmadı.",
+    FORMULA_DIVISION_BY_ZERO:
+      "Kural formülünde sıfıra bölme oluştu — sonuç hesaplanmadı.",
+    FORMULA_RESULT_BELOW_MINIMUM:
+      "Kural formülü {value} üretti; en az {minimum} olmalıydı — sonuç kullanılmadı.",
   } satisfies Record<WarningCode, string>,
 } as const;
 

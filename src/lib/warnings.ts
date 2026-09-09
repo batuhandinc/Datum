@@ -69,6 +69,16 @@ export const WARNING_CODES = [
   "SHARES_DO_NOT_SUM",
   /** Karar çoğunluğu eşiğine ulaşılmadı. */
   "MAJORITY_NOT_REACHED",
+
+  // --- formül motoru (İP-3) ---
+  // SÖZDİZİMİ hataları burada YOKTUR: onlar yayım anında yakalanır ve yayımı
+  // reddeder. Buradakiler yalnızca ÇALIŞMA ZAMANI sorunlarıdır.
+  /** Formülün okuduğu bir ölçü henüz girilmemiş. */
+  "FORMULA_INPUT_MISSING",
+  /** Sıfıra bölme — sonuç hesaplanmadı (Infinity yayılmasın diye). */
+  "FORMULA_DIVISION_BY_ZERO",
+  /** Sonuç sözleşmenin alt sınırının altına düştü. */
+  "FORMULA_RESULT_BELOW_MINIMUM",
 ] as const;
 
 export type WarningCode = (typeof WARNING_CODES)[number];
