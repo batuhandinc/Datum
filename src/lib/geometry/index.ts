@@ -33,6 +33,9 @@ export {
 } from "./types";
 
 export {
+  boundingBox,
+  distancePointToSegment,
+  distanceToRing,
   edgeAt,
   edgeCount,
   isCounterClockwise,
@@ -41,6 +44,8 @@ export {
   normalizeRing,
   orientRing,
   partCount,
+  pointInPolygon,
+  pointInRing,
   polygonArea,
   polygonPerimeter,
   ringArea,
@@ -48,7 +53,17 @@ export {
   ringPerimeter,
   signedRingArea,
   vertexCount,
+  type BoundingBox,
 } from "./measure";
+
+export {
+  containsPolygon,
+  intersects,
+  lShape,
+  rectangle,
+  rotatePolygon,
+  translatePolygon,
+} from "./transform";
 
 export { MITER_LIMIT, SCALE, booleanOp, simplifyPolygon } from "./clipper";
 

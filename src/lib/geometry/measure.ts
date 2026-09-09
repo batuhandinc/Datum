@@ -204,3 +204,105 @@ function segmentsProperlyIntersect(
 
   return false;
 }
+
+// ============================================================================
+// İP-3 eklemeleri — çekirdek yerleşimi için gereken ilkeller.
+// ============================================================================
+
+export interface BoundingBox {
+  readonly minX: number;
+  readonly minY: number;
+  readonly maxX: number;
+  readonly maxY: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+/**
+ * Eksen hizalı sınırlayıcı kutu. Boş poligonda tüm alanlar 0.
+ *
+ * DÖNÜK minimum dikdörtgen DEĞİLDİR: plaka en-boy oranını kabaca ölçmek için
+ * yeterli ve L1 strateji önerisi zaten bir öneridir, optimizasyon değil.
+ */
+export function boundingBox(poly: LocalPolygon): BoundingBox {
+  const outer = normalizeRing(poly.coordinates[0] ?? []);
+  if (outer.length === 0) {
+    return { minX: 0, minY: 0, maxX: 0, maxY: 0, width: 0, height: 0 };
+  }
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const [x, y] of outer) {
+    if (x < minX) minX = x;
+    if (y < minY) minY = y;
+    if (x > maxX) maxX = x;
+    if (y > maxY) maxY = y;
+  }
+  return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY };
+}
+
+/**
+ * Nokta halkanın içinde mi? Işın atma (ray casting), tek halka.
+ *
+ * SINIR DAHİLDİR: kenarın üzerindeki nokta "içeride" sayılır. Çekirdek
+ * köşesi zarfın kenarına tam oturduğunda dışarıda saymak, geçerli bir
+ * yerleşimi reddetmek olurdu.
+ */
+export function pointInRing(point: LocalPoint, ring: LocalRing): boolean {
+  const r = normalizeRing(ring);
+  if (r.length < 4) return false;
+
+  // Önce sınır kontrolü — ray casting sınırda kararsızdır.
+  for (let i = 0; i < r.length - 1; i++) {
+    const a = r[i]!;
+    const b = r[i + 1]!;
+    if (orientation(a, b, point) === 0 && onSegment(a, b, point)) return true;
+  }
+
+  let inside = false;
+  for (let i = 0, j = r.length - 2; i < r.length - 1; j = i++) {
+    const [xi, yi] = r[i]!;
+    const [xj, yj] = r[j]!;
+    if (yi > point[1] !== yj > point[1]) {
+      const x = ((xj - xi) * (point[1] - yi)) / (yj - yi) + xi;
+      if (point[0] < x) inside = !inside;
+    }
+  }
+  return inside;
+}
+
+/** Nokta poligonun içinde mi? Delikler DIŞARIDIR. */
+export function pointInPolygon(point: LocalPoint, poly: LocalPolygon): boolean {
+  const [outer, ...holes] = poly.coordinates;
+  if (!outer || !pointInRing(point, outer)) return false;
+  for (const hole of holes) {
+    if (pointInRing(point, hole)) return false;
+  }
+  return true;
+}
+
+/** Noktanın bir DOĞRU PARÇASINA (doğruya değil) uzaklığı. */
+export function distancePointToSegment(p: LocalPoint, a: LocalPoint, b: LocalPoint): number {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const lengthSquared = dx * dx + dy * dy;
+  if (lengthSquared === 0) return Math.hypot(p[0] - a[0], p[1] - a[1]);
+
+  // Parçaya izdüşüm [0,1] aralığına KIRPILIR — doğruya değil parçaya uzaklık.
+  let t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / lengthSquared;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p[0] - (a[0] + t * dx), p[1] - (a[1] + t * dy));
+}
+
+/** Noktanın halkanın SINIRINA uzaklığı. İçeride olsa bile pozitiftir. */
+export function distanceToRing(p: LocalPoint, ring: LocalRing): number {
+  const r = normalizeRing(ring);
+  if (r.length < 2) return Infinity;
+  let best = Infinity;
+  for (let i = 0; i < r.length - 1; i++) {
+    const d = distancePointToSegment(p, r[i]!, r[i + 1]!);
+    if (d < best) best = d;
+  }
+  return best;
+}
