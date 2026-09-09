@@ -250,6 +250,20 @@ describe("SIRA: servis mekanları önce, kalan alan otoparka", () => {
     expect(r.scenarios).toHaveLength(0);
     expect(r.warnings.map((w) => w.code)).toContain("PARKING_SERVICE_AREA_UNKNOWN");
   });
+
+  it("rampa ayak izi BİLİNMİYORSA senaryo üretilmiyor", () => {
+    // Aynı gerekçe: bilinmeyeni 0 saymak havuzu şişirir ve senaryoyu
+    // iyimser yapardı. 0 "rampa yok" demektir, "bilmiyorum" değil.
+    const r = computeParkingScenarios(parkingInput({ rampFootprintArea: null }));
+    expect(r.scenarios).toHaveLength(0);
+    expect(r.warnings.map((w) => w.code)).toContain("PARKING_RAMP_AREA_UNKNOWN");
+  });
+
+  it("rampa ayak izi SIFIR ise senaryo üretiliyor", () => {
+    const r = computeParkingScenarios(parkingInput({ rampFootprintArea: 0 }));
+    expect(r.scenarios.length).toBeGreaterThan(0);
+    expect(r.warnings.map((w) => w.code)).not.toContain("PARKING_RAMP_AREA_UNKNOWN");
+  });
 });
 
 describe("kural yoksa sayım yapılmıyor (ilke 1)", () => {

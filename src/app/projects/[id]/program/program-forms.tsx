@@ -320,3 +320,51 @@ export function ChooseScenarioForm({
     </form>
   );
 }
+
+/** Rampa genişliği formu — ayak izi otopark havuzundan düşülür. */
+export function RampForm({
+  projectId,
+  action,
+  width,
+  length,
+  footprintArea,
+}: {
+  projectId: string;
+  action: (prev: ActionResult | null, fd: FormData) => Promise<ActionResult>;
+  width: string | null;
+  length: string;
+  footprintArea: string;
+}) {
+  const [state, formAction, pending] = useActionState<ActionResult | null, FormData>(action, null);
+  return (
+    <form action={formAction} style={{ marginTop: "0.5rem" }}>
+      <input type="hidden" name="projectId" value={projectId} />
+      <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
+        <label style={{ display: "grid", gap: 3, fontSize: 12, color: "#52525b" }}>
+          {tr.parking.rampWidth}
+          <input
+            name="width"
+            inputMode="decimal"
+            defaultValue={width ?? ""}
+            style={{ ...input, width: 120 }}
+          />
+        </label>
+        <span style={{ fontSize: 13 }}>
+          {tr.parking.rampLength}: <strong>{length}</strong>
+        </span>
+        <span style={{ fontSize: 13 }}>
+          {tr.parking.rampFootprint}: <strong>{footprintArea}</strong>
+        </span>
+        <button
+          type="submit"
+          disabled={pending}
+          style={{ ...button, fontSize: 12, padding: "0.3rem 0.8rem", cursor: pending ? "wait" : "pointer" }}
+        >
+          {tr.parking.rampSave}
+        </button>
+      </div>
+      <p style={{ color: "#a1a1aa", fontSize: 11, marginBottom: 0 }}>{tr.parking.rampHint}</p>
+      <Feedback state={state} />
+    </form>
+  );
+}

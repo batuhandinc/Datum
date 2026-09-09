@@ -48,7 +48,13 @@ export interface ParkingSolverInput {
   readonly serviceSpaceArea: number | null;
   /** Çekirdeğin ayak izi — her bodrum katında yer kaplar. */
   readonly coreArea: number | null;
-  /** Rampanın ayak izi. Yalnızca EN ÜST bodrum katından düşülür. */
+  /**
+   * Rampanın ayak izi. Yalnızca bir kez düşülür (giriş katında).
+   *
+   * `0` = rampa YOK. `null` = rampa var ama ayak izi BİLİNMİYOR — bu durumda
+   * senaryo üretilmez. Bilinmeyeni 0 saymak havuzu şişirir ve senaryoyu
+   * iyimser yapardı; servis alanında da aynı kararı verdik.
+   */
   readonly rampFootprintArea: number | null;
 
   readonly rule: ParkingRuleInput | null;
@@ -129,6 +135,12 @@ export function computeParkingScenarios(input: ParkingSolverInput): ParkingSolve
     return { requiredCount, targetCount: input.targetCount, scenarios: [], warnings: w.all };
   }
 
+  if (input.rampFootprintArea === null) {
+    // Aynı gerekçe: bilinmeyen ayak izini 0 saymak iyimser senaryo üretir.
+    w.addOnce("PARKING_RAMP_AREA_UNKNOWN");
+    return { requiredCount, targetCount: input.targetCount, scenarios: [], warnings: w.all };
+  }
+
   const maxFloors = input.maxBasementFloors ?? DEFAULT_MAX_BASEMENT_FLOORS;
   const scenarios: ParkingScenario[] = [];
 
@@ -141,7 +153,7 @@ export function computeParkingScenarios(input: ParkingSolverInput): ParkingSolve
       gross -
       input.serviceSpaceArea -
       (input.coreArea ?? 0) * floors -
-      (input.rampFootprintArea ?? 0);
+      input.rampFootprintArea;
 
     if (usable <= 0) continue;
 

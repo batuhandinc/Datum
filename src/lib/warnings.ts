@@ -116,6 +116,8 @@ export const WARNING_CODES = [
   "PARKING_BASEMENT_AREA_MISSING",
   /** Servis mekanı alanı bilinmiyor; 0 saymak havuzu şişirirdi. */
   "PARKING_SERVICE_AREA_UNKNOWN",
+  /** Rampa ayak izi bilinmiyor; aynı gerekçeyle 0 sayılmıyor. */
+  "PARKING_RAMP_AREA_UNKNOWN",
   /** Hiçbir bodrum sayısında kullanılabilir alan kalmadı. */
   "PARKING_NO_SCENARIO",
   /** Korkuluğa çarpıldı: ihtiyaç hiçbir senaryoda karşılanmadı. */

@@ -86,7 +86,9 @@ Her ezilebilir değer **dört** kolon taşır. Adlandırma **mekanik**:
 - `OverrideLedger` view'ı registry'den **üretilir** — elle yazılmadığı için bayatlayamaz.
   "Bu projedeki tüm ezmeler" tek sorgudur.
 
-Şu an **52 hesaplanan alan, 18 model, 208 kolon**. Bir test dördünün de varlığını doğrular.
+Şu an **61 hesaplanan alan, 20 model, 244 kolon**. Bir test dördünün de varlığını doğrular.
+Sayaç kasıtlı olarak SABİTTİR: alan eklemek testi kırar ve dört adımlı ritüelin
+atlanmadığını görmeye zorlar.
 
 ---
 
@@ -191,6 +193,49 @@ src/lib/fields/      ÜRETİLMİŞ kademe kataloğu (şemadaki @tier'lardan)
 
 ---
 
+## 6c. İP-3 katmanları
+
+```
+src/lib/formula/        SAF — kendi ayrıştırıcımız; eval/Function YOK
+  ast · parser · validate · evaluate · contracts
+src/lib/core/           l1.ts (saf) + service.ts — L0 desenini birebir taklit eder
+src/lib/service-space/  engine.ts — eşik hesabı, alan formülü
+src/lib/parking/        solver.ts — senaryolar + rampa
+src/lib/program/        A5 repository ve tipoloji şablonu şeması
+src/lib/startup/        8 soru + yazma katmanı
+```
+
+**Formül dili** (`etut-veri-modeli.md` §12.5):
+- `eval`/`Function` **YOK**. Paket verisi kullanıcı girdisidir; onu çalıştırılabilir
+  koda çevirmek paket yazan herkese sunucuda kod çalıştırma yetkisi vermek olurdu.
+- Değişken beyaz listesi **kural tipine özel** — otopark formülü `demandPowerKW`
+  göremez. Ortak liste anlamsız ama sessizce geçerli formüllere izin verirdi.
+- **Doğrulama YAYIM anında**, okuma anında değil. Bozuk formül `publishVersion`'ı
+  reddeder ve sürüm `draft` kalır. Okuma anında yakalansaydı paket çoktan
+  dondurulmuş olurdu. Yeni formül kolonu eklerken `FORMULA_SLOTS`'a da ekle.
+- Çalışma zamanı sorunları (sıfıra bölme, eksik girdi) **uyarı**, sonuç `null`.
+  **Sessiz NaN yayılımı yok.**
+
+**BİLİNMEYEN ≠ SIFIR.** Otopark çözücüsünde servis alanı veya rampa ayak izi
+`null` ise senaryo **üretilmez**; 0 saymak havuzu şişirir ve senaryoyu iyimser
+yapardı. `0` "yok" demektir, "bilmiyorum" değil.
+
+**Şaft düşey sürekliliği yapısaldır, kural değil.** `Shaft.offsetX/offsetY`
+çekirdeğe **görelidir**; mutlak konum `shaftAbsolutePosition()` ile türer.
+Mutlak saklansaydı çekirdek taşınınca her kat ayrı güncellenmeli olurdu ve
+biri unutulduğunda süreklilik sessizce kırılırdı.
+
+**Otopark sayımı KATSAYIYA dayanır**, geometrik paketlemeye değil.
+`spaceWidth × spaceLength` park yerinin kendi alanıdır; gerçek verimi kolon
+kayıpları ve dönüş yarıçapları belirler. Otorite `ParkingRule.areaPerSpace`'tedir;
+İP-4'te gelecek geometrik yerleşim onu **değiştirmez, doğrular**.
+
+**Sistem senaryo üretir, KARAR VERMEZ.** Otopark senaryoları saklanmaz, her
+okumada üretilir. Kalıcı olan yalnızca karar: `basementFloorCountOverrideValue`
++ gerekçe + `acceptedDeficitCount` (bilinçli eksik kabulü, İP-9 raporu için).
+
+---
+
 ## 7. Kapsam kilidi
 
 İş paketleri sıralıdır (`mvp-spesifikasyonu.md` §3). **Kapsamı genişletme.**
@@ -199,8 +244,8 @@ src/lib/fields/      ÜRETİLMİŞ kademe kataloğu (şemadaki @tier'lardan)
 |---|---|---|
 | İP-1 | Temel altyapı | ✅ tamam |
 | İP-2 | Sihirbaz ve kural motoru, L0 zarf | ✅ tamam |
-| İP-3 | Program, çekirdek, servis mekanları, otopark | sırada |
-| İP-4 | Plan motoru (**manuel mod otomatikten önce**) | |
+| İP-3 | Program, çekirdek, servis mekanları, otopark | ✅ tamam |
+| İP-4 | Plan motoru (**manuel mod otomatikten önce**) | sırada |
 | İP-5 | Metraj motoru | |
 | İP-6 | Maliyet ve nakit akışı | |
 | İP-7 | Gelir, paylaşım, fizibilite | |
@@ -226,16 +271,25 @@ Kod yazarken bunlardan birine dokunuyorsan **önce sor**.
 | `ObjectCostMapping` "çoklu" satırları ifade edemiyor (bir nesne → çok kalem, :508). | İP-5 |
 | `Wall` :508'de `objectType` olarak kullanılıyor ama **hiçbir yerde tanımlı değil**. | İP-5 |
 | Kalite seviyesi 4 mü 3 mü — veri modeli :544 vs süreç modeli :194. | İP-6 |
-| `UnitType` proje kapsamlı mı, organizasyon tipoloji kütüphanesi mi (§13.3). İP-1'de proje kapsamlı varsayıldı. | İP-4 |
-| `FloorTemplate` varlığı (:80) ile `Floor.templateFloorId` (:312) aynı fikir mi? Alan tablosu esas alındı. | İP-4 |
+| `UnitType` proje kapsamlı mı, organizasyon tipoloji kütüphanesi mi (§13.3). İP-3'te **proje kapsamlı** olarak uygulandı (`projectId` + `unitTypeCode`). | ✅ İP-3 |
+| `FloorTemplate` varlığı ile `Floor.templateFloorId` aynı fikir mi? İP-3 **`Floor.templateFloorId`'yi** uyguladı; `FloorTemplate` kullanılmayan stub kaldı. | ✅ İP-3 |
 | §7'nin 6 Türkçe başlıklı varlığı için İngilizce ad **önerildi**. `Elektrik Odası / Trafo` ve `Su Deposu ve Hidrofor` **ikişer nesne** adlandırıyor; tek varlıkta birleştirildi. | adlandırma |
 | `Space.electricalPresetId` ve `Fixture.productRef` — doküman "fk" diyor ama **hedef varlığı tanımlamıyor**. Uydurma model açılmadı. | İP-3/İP-5 |
 | `SurfaceFinish` katalog mu, Space'in çocuğu mu — §2 ile alan tabloları çelişiyor. Katalog varsayıldı. | İP-4 |
-| `SoilData.shoringArea` süreç modeli A3'te (H), veri modelinde K2 (manuel). Veri modeli otoriter alındı. | İP-3 |
+| `SoilData.shoringArea` süreç modeli A3'te (H), veri modelinde K2 (manuel). Veri modeli otoriter alındı; İP-3 buna dokunmadı. | İP-5 |
 | **Çoğunluk göstergesi SAKLANMIYOR**, okurken hesaplanıyor. Doküman onu "hesaplanan" sayıyor ama üçlü açılmadı — payların saf toplamı, bayatlama riski yaratmaya değmez. Rapor kalıcılık isterse geri dönülür. | İP-9 |
 | **Kot dış servisi (E sahipliği)** süreç modeli A2/A3'te var ama hiçbir iş paketinde yok; şemada `@own M`. | kapsam boşluğu |
-| **`kat-plani-uretim-mimarisi.md` repoda yok.** L0 İP-2'de yazıldı ama otoriter tanımı İP-4'e ait dokümanda olacaktı; elimizdeki tek tanım `mvp`:55. | İP-4 |
+| **`kat-plani-uretim-mimarisi.md` repoda yok.** L0 ve L1 yazıldı ama otoriter tanımları İP-4'e ait dokümanda olacaktı; elimizdeki tek tanım `mvp` §3. **İP-4'ten önce gerekli.** | İP-4 |
 | Özel kısıtların dokuzunda `effectTarget/effectKind` = `none`. Bir kısıtın emsali mi taban alanını mı düşürdüğü yerel mevzuat sorusu — pilot paket dolduracak. | Faz 0 |
+| **Rampa "kot farkı" = bodrum derinliği** varsayıldı (v1.3 §8). Doküman hem topografyayı hem bodrumu ima ediyordu; fizik bodrumu gerektiriyor. | varsayım |
+| **Çekirdek derinlik varsayımı:** merdiven asansörlerle aynı derinlik bandına oturur. Merdivenin kendi ayak izi kol sayısı ve sahanlık derinliği ister; ikisi de tanımsız. | İP-4 |
+| **Strateji öneri eşikleri (en-boy oranı) KODDA.** Algoritma sezgiseli, yerel mevzuat değil; çıktı zaten ezilebilir bir öneri. | kabul edildi |
+| **Otopark iterasyon korkuluğu (8 bodrum) kodda.** Yönetmelik "en fazla kaç bodrum" demiyor; sonsuz döngüyü kesiyoruz ve sınıra çarpınca uyarıyoruz. | kabul edildi |
+| **Kaçış mesafesi KUŞ UÇUŞU ölçülüyor.** Koridor boyu ölçüm gerçek plan geometrisi ister; kuş uçuşu daima küçük olduğu için aşımı gizlemez, geç yakalar. | İP-4 |
+| **8 sorunun altısının pakette ön-dolum kaynağı YOK.** Dokümanın "kural katmanı ön-doldurur" ifadesi yalnızca otopark hedefi ve asansör sayısı için karşılıklı. | Faz 0 |
+| **Soru 4 "bağımsız bölüm depoları"nın hedef alanı yok.** Arayüzde soruluyor ama saklanmıyor; uydurma alan açılmadı. | açık |
+| **Soru 2 (ısıtma) ve 7 (yedek güç)** bir `ServiceSpace` satırı gerektiriyor; o satır servis mekanı onayında doğuyor. Sihirbazdan yazılmıyor. | İP-4 |
+| `Shelter.alternativeUseWhenIdle = otopark` sayılmıyor; dokümanın etkisi tanımlı değil. | Faz 0 |
 
 `etut-veri-modeli.md` **sürüm 1.1**'e güncellendi; kapatılan çelişkiler dosyanın başındaki
 değişiklik listesinde.
@@ -254,7 +308,7 @@ npm run dev
 
 npm run codegen        # hesaplanan alan altyapısını üret
 npm run codegen:check   # üretilenler güncel mi (CI)
-npm test               # 222 test
+npm test               # 393 test
 npm run typecheck
 node scripts/verify-migration.mjs   # migration'ı PGlite'ta çalıştır (Docker gerekmez)
 ```

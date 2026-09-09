@@ -107,6 +107,55 @@ export async function saveStartupAnswers(
   }
 }
 
+/**
+ * Rampa genişliğini yazar ve boy/ayak izini hesaplayıp saklar.
+ *
+ * `Ramp` `ParkingLayout`'un çocuğudur; layout yoksa açılır. Bu bir KARAR
+ * değildir — layout yalnızca kaptır, karar `basementFloorCountOverrideValue`
+ * yazılınca doğar.
+ *
+ * `length` ve `footprintArea` GENERATED kolonlardır; `*ComputedValue`'ya yazılır.
+ */
+export async function saveRamp(
+  projectId: string,
+  width: number | null,
+  computed: { length: number | null; footprintArea: number | null },
+  client: Client = prisma,
+): Promise<void> {
+  await assertProject(projectId, client);
+
+  const layout = await client.parkingLayout.upsert({
+    where: { projectId },
+    create: { projectId },
+    update: {},
+    select: { id: true },
+  });
+
+  const existing = await client.ramp.findFirst({ where: { parkingLayoutId: layout.id } });
+  const data = {
+    width,
+    lengthComputedValue: computed.length,
+    footprintAreaComputedValue: computed.footprintArea,
+  };
+
+  if (existing) {
+    await client.ramp.update({ where: { id: existing.id }, data });
+  } else {
+    await client.ramp.create({ data: { parkingLayoutId: layout.id, ...data } });
+  }
+}
+
+/** Projenin rampası — kiracı doğrulamasından sonra. */
+export async function readRamp(projectId: string, client: Client = prisma) {
+  await assertProject(projectId, client);
+  const layout = await client.parkingLayout.findUnique({
+    where: { projectId },
+    select: { id: true },
+  });
+  if (!layout) return null;
+  return client.ramp.findFirst({ where: { parkingLayoutId: layout.id } });
+}
+
 export interface ParkingChoice {
   readonly basementFloorCount: number;
   readonly plannedCount: number | null;

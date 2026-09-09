@@ -377,6 +377,10 @@ export const tr = {
     ramp: "Rampa",
     rampLength: "Rampa uzunluğu (m)",
     rampFootprint: "Rampa ayak izi (m²)",
+    rampWidth: "Rampa genişliği (m)",
+    rampSave: "Rampayı kaydet",
+    rampHint:
+      "Uzunluk bodrum derinliğinden ve paketin eğim sınırından türer; genişlik girilmeden ayak izi hesaplanamaz ve otopark senaryoları üretilemez.",
   },
 
   // ============================== enum sözlükleri ==============================
@@ -586,6 +590,8 @@ export const tr = {
       "Bodrum kat alanı bilinmiyor — otopark senaryoları üretilemedi.",
     PARKING_SERVICE_AREA_UNKNOWN:
       "Zorunlu servis mekanlarının alanı bilinmiyor — otopark senaryoları üretilemedi.",
+    PARKING_RAMP_AREA_UNKNOWN:
+      "Rampa ayak izi bilinmiyor — otopark senaryoları üretilemedi.",
     PARKING_NO_SCENARIO:
       "Servis mekanları ve rampa düşüldükten sonra otoparka alan kalmıyor.",
     PARKING_LIMIT_REACHED:

@@ -26,7 +26,8 @@ async function main() {
   console.log(`Test fixture yüklendi: sürüm ${versionId}`);
   console.log(`  adminUnit = "${FIXTURE_ADMIN_UNIT}" — gerçek mevzuat DEĞİLDİR.`);
   console.log("  Kapsam: İP-2 (imar kural seti, özel kısıt listesi, yükseklik referansı,");
-  console.log("  anlaşma kuralı). İP-3'ün tabloları bilinçli olarak boş.");
+  console.log("  anlaşma kuralı) + İP-3 (çekirdek, otopark, yangın, tesisat katsayıları,");
+  console.log("  zorunlu servis mekanları). İP-4 ve sonrasının tabloları bilinçli boş.");
 }
 
 main()

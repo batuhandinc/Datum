@@ -6,7 +6,8 @@ import { tr, warningMessage } from "@/lib/i18n/tr";
 import { divergedUnits, loadProgram } from "@/lib/program/repository";
 import { formatSpaceLines, parseTemplateSpaces, templateTotalArea } from "@/lib/program/schemas";
 import { readStartupState } from "@/lib/startup/questions";
-import { readParkingLayout } from "@/lib/startup/repository";
+import { readParkingLayout, readRamp } from "@/lib/startup/repository";
+import { computeAndStoreL0 } from "@/lib/envelope/service";
 import { computeAndStoreL1 } from "@/lib/core/service";
 import { createRuleReader } from "@/lib/rules/reader";
 import { computeServiceSpaces } from "@/lib/service-space/engine";
@@ -19,6 +20,7 @@ import {
   Badge,
   ChooseScenarioForm,
   InlineForm,
+  RampForm,
   StartupForm,
   UnitTypeForm,
   cell,
@@ -29,6 +31,7 @@ import {
   chooseParkingScenarioAction,
   deleteFloorAction,
   instantiateUnitTypeAction,
+  saveRampAction,
   saveStartupAnswersAction,
   saveUnitTypeAction,
   setFloorLockAction,
@@ -59,24 +62,30 @@ function fmt(v: number | null, digits = 2): string {
 export default async function ProgramPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  let project: Awaited<ReturnType<typeof loadProgram>>;
+  // ZİNCİR SIRASI ÖNEMLİ: L0 zarfı üretir, L1 ona yerleşir, program verisi
+  // ikisinin yazdığı hesaplanan değerleri okur. Ters sırada `buildingHeight`
+  // ve `buildableEnvelope` bir tur GERİDEN gelirdi.
+  let l1: Awaited<ReturnType<typeof computeAndStoreL1>>;
   try {
-    project = await loadProgram(id);
+    await computeAndStoreL0(id);
+    l1 = await computeAndStoreL1(id);
   } catch {
     notFound();
   }
+
+  const project = await loadProgram(id);
 
   const block = project.blocks[0] ?? null;
   const floors = block?.floors ?? [];
   const unitTypes = project.unitTypes;
   const totalUnits = floors.reduce((s, f) => s + f.units.length, 0);
 
-  const [l1, startup, divergence, reader, layout] = await Promise.all([
-    computeAndStoreL1(id),
+  const [startup, divergence, reader, layout, rampRow] = await Promise.all([
     readStartupState(id),
     divergedUnits(id),
     createRuleReader(id),
     readParkingLayout(id),
+    readRamp(id),
   ]);
 
   const [requiredSpaceRules, coefficients, parkingRule] = await Promise.all([
@@ -117,12 +126,18 @@ export default async function ProgramPage({ params }: { params: Promise<{ id: st
   const basementFloors = floors.filter((f) => f.floorType === "bodrum");
   const basementHeight = num(basementFloors[0]?.grossHeight) ?? null;
 
+  // Rampa genişliği kullanıcının girdiği `Ramp.width`'ten gelir. Girilene
+  // kadar ayak izi BİLİNMEZ ve otopark senaryosu üretilmez.
   const ramp = computeRamp({
     basementFloorCount: basementFloors.length > 0 ? basementFloors.length : null,
     basementFloorHeight: basementHeight,
     maxRampSlope: num(parkingRule?.maxRampSlope ?? null),
-    width: null,
+    width: num(rampRow?.width ?? null),
   });
+
+  // Bodrum YOKSA rampa da yoktur → ayak izi 0. Bodrum VARSA ama ayak izi
+  // hesaplanamadıysa BİLİNMİYOR (null) — 0 saymak havuzu şişirirdi.
+  const rampFootprint = basementFloors.length === 0 ? 0 : ramp.footprintArea;
 
   const parking = computeParkingScenarios({
     unitCount: totalUnits > 0 ? totalUnits : null,
@@ -132,7 +147,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ id: st
     basementFloorArea: plateArea,
     serviceSpaceArea: services.mandatoryAreaTotal,
     coreArea: l1.area,
-    rampFootprintArea: ramp.footprintArea,
+    rampFootprintArea: rampFootprint,
     rule: parkingRule
       ? {
           requirementFormula: parkingRule.requirementFormula,
@@ -449,9 +464,15 @@ export default async function ProgramPage({ params }: { params: Promise<{ id: st
 
         <p style={{ fontSize: 13 }}>
           {tr.parking.requiredCount}: <strong>{parking.requiredCount ?? tr.common.notEntered}</strong>
-          {" · "}
-          {tr.parking.rampLength}: <strong>{fmt(ramp.length)}</strong>
         </p>
+
+        <RampForm
+          projectId={id}
+          action={saveRampAction}
+          width={rampRow?.width ? String(rampRow.width) : null}
+          length={fmt(ramp.length)}
+          footprintArea={fmt(ramp.footprintArea)}
+        />
 
         {parking.scenarios.length === 0 ? (
           <p style={{ color: "#a1a1aa", fontSize: 13, margin: 0 }}>{tr.parking.empty}</p>

@@ -15,7 +15,10 @@ import {
 } from "@/lib/program/repository";
 import { computeAndStoreL1 } from "@/lib/core/service";
 import { parseSpaceLines } from "@/lib/program/schemas";
-import { chooseParkingScenario, saveStartupAnswers } from "@/lib/startup/repository";
+import { chooseParkingScenario, saveRamp, saveStartupAnswers } from "@/lib/startup/repository";
+import { computeRamp } from "@/lib/parking/solver";
+import { loadProgram } from "@/lib/program/repository";
+import { createRuleReader } from "@/lib/rules/reader";
 
 /**
  * A5 PROGRAM — sunucu eylemleri.
@@ -211,5 +214,40 @@ export async function chooseParkingScenarioAction(
       deficitCount: integer(formData, "deficitCount") ?? 0,
       reason: text(formData, "reason"),
     });
+  });
+}
+
+/**
+ * Rampa genişliğini kaydeder ve boy/ayak izini yeniden hesaplar.
+ *
+ * Boy `kot farkı ÷ eğim sınırı`; kot farkı bodrum kat sayısı × bodrum kat
+ * yüksekliğidir (etut-veri-modeli.md §8). Eğim sınırı PAKETTEN gelir; yoksa
+ * hesaplanmaz ve uyarı üretilir.
+ */
+export async function saveRampAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const projectId = String(formData.get("projectId"));
+  return run(projectId, async () => {
+    const width = decimalString(formData, "width");
+    const widthNumber = width === null ? null : Number(width);
+
+    const [project, reader] = await Promise.all([
+      loadProgram(projectId),
+      createRuleReader(projectId),
+    ]);
+    const rule = await reader.parkingRule();
+
+    const basements = (project.blocks[0]?.floors ?? []).filter((f) => f.floorType === "bodrum");
+    const result = computeRamp({
+      basementFloorCount: basements.length > 0 ? basements.length : null,
+      basementFloorHeight: basements[0]?.grossHeight ? Number(basements[0].grossHeight) : null,
+      maxRampSlope: rule?.maxRampSlope ? Number(rule.maxRampSlope) : null,
+      width: widthNumber,
+    });
+
+    await saveRamp(projectId, widthNumber, result);
+    return [...reader.warnings, ...result.warnings];
   });
 }
