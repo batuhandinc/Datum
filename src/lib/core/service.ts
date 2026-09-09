@@ -3,7 +3,7 @@ import { prisma, scopedPrisma } from "@/lib/db/client";
 import { currentOrganizationId } from "@/lib/db/tenant";
 import { createRuleReader } from "@/lib/rules/reader";
 import { parseLocalMultiPolygon } from "@/lib/geometry/schema";
-import { computeL1, type CoreRuleInput, type L1Input, type L1Output } from "./l1";
+import { computeL1, proposeShaftOffsets, type CoreRuleInput, type L1Input, type L1Output } from "./l1";
 
 /**
  * L1 SERVİS KATMANI — çekirdek hesabını veriye bağlar.
@@ -121,6 +121,27 @@ export async function computeAndStoreL1(
     },
   });
 
+  // ŞAFT KONUMU ÖNERİSİ. Kullanıcının K3'te girdiği değer `OverrideValue`'da
+  // durur ve COALESCE onu seçmeye devam eder — öneri kullanıcının işini
+  // EZMEZ, yalnızca boş kalan yeri doldurur.
+  if (result.geometry !== null) {
+    const shafts = await client.shaft.findMany({
+      where: { coreId: block.core.id },
+      orderBy: { id: "asc" },
+      select: { id: true },
+    });
+    const offsets = proposeShaftOffsets(result.geometry, shafts.length);
+    for (let i = 0; i < shafts.length; i += 1) {
+      await client.shaft.update({
+        where: { id: shafts[i]!.id },
+        data: {
+          offsetXComputedValue: round3(offsets[i]![0]),
+          offsetYComputedValue: round3(offsets[i]![1]),
+        },
+      });
+    }
+  }
+
   // Bina yüksekliği bloğun hesaplanan alanıdır; çekirdek eşiklerinin girdisi.
   await client.block.update({
     where: { id: block.id },
@@ -128,4 +149,8 @@ export async function computeAndStoreL1(
   });
 
   return { ...result, warnings, projectId, blockId: block.id, stored: true };
+}
+
+function round3(v: number): number {
+  return Math.round(v * 1000) / 1000;
 }

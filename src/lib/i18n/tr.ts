@@ -735,6 +735,25 @@ export const tr = {
     L2_DOUBLE_CORE_UNSUPPORTED:
       "Çift çekirdek stratejisi henüz uygulanamıyor (şemada blok başına tek çekirdek var) — " +
       "bölümleme yapılmadı. Tek çekirdek gibi davranmak, tanımsız bir durumu uydurmak olurdu.",
+
+    // --- L3 tipoloji şablonu (İP-4) ---
+    L3_RECIPE_MISSING:
+      "Tipoloji şablonunun yerleşim reçetesi yok veya okunamadı — mekanlar yerleştirilmedi.",
+    L3_RECIPE_INVALID: "Tipoloji şablonu geçersiz: {problems}",
+    L3_UNIT_GEOMETRY_MISSING:
+      "Bağımsız bölümün poligonu yok — önce bölümleme yapılmalı.",
+    L3_SPACE_DEGRADED:
+      "“{layoutKey}” mekanına geçerli hücre düşmedi; hedef alanıyla kaldı (G1). " +
+      "Metraj şekil faktöründen çıkar, gerçek geometriden değil.",
+    L3_SHAFT_POSITION_UNKNOWN:
+      "Şaft tanımlı değil veya konumu/ölçüsü girilmemiş — ıslak hacimlerin şafta " +
+      "bitişikliği değerlendirilemedi. Bilinmeyen bir konum “sağlandı” sayılmaz.",
+    L3_SPACE_NOT_IN_PROGRAM:
+      "Şablonda “{layoutKey}” ({spaceType}) var ama bağımsız bölümün programında yok — " +
+      "mekan üretilmedi. Programa ekleyin veya şablonu değiştirin.",
+    L3_SPACE_NOT_IN_RECIPE:
+      "“{spaceType}” programda var ama şablon reçetesinde yok — geometri üretilmedi, " +
+      "hedef alanıyla kaldı (G1).",
   } satisfies Record<WarningCode, string>,
 } as const;
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   computeL1,
+  proposeShaftOffsets,
   requiredElevatorCount,
   shaftAbsolutePosition,
   suggestStrategy,
@@ -11,7 +12,9 @@ import {
   boundingBox,
   containsPolygon,
   multiPolygon,
+  pointInPolygon,
   polygon,
+  rectangle,
   translatePolygon,
   type LocalMultiPolygon,
 } from "@/lib/geometry";
@@ -254,5 +257,44 @@ describe("şaft düşey sürekliliği — yapısal garanti", () => {
     expect(x).toBeLessThan(bb.maxX);
     expect(y).toBeGreaterThan(bb.minY);
     expect(y).toBeLessThan(bb.maxY);
+  });
+});
+
+describe("şaft konumu önerisi (sürüm 1.4)", () => {
+  it("şaftlar çekirdeğin İÇİNDE kalır", () => {
+    const core = rectangle(10, 5, 6, 3);
+    const offsets = proposeShaftOffsets(core, 3);
+    expect(offsets).toHaveLength(3);
+    for (const o of offsets) {
+      const abs = shaftAbsolutePosition(core, o[0], o[1]);
+      expect(pointInPolygon(abs, core), `şaft dışarıda: ${abs}`).toBe(true);
+    }
+  });
+
+  it("EŞİT ARALIKLI ve kenarlara yapışmıyor", () => {
+    const core = rectangle(0, 0, 8, 4);
+    const offsets = proposeShaftOffsets(core, 3);
+    const xs = offsets.map((o) => o[0]);
+    // Üç şaft: -2, 0, +2 (uzun eksen 8 → t = -0,25 / 0 / +0,25)
+    expect(xs[1]! - xs[0]!).toBeCloseTo(xs[2]! - xs[1]!, 6);
+    for (const x of xs) expect(Math.abs(x)).toBeLessThan(4);
+  });
+
+  it("ÇEKİRDEK TAŞININCA şaftlar birlikte taşınır — offset DEĞİŞMEZ", () => {
+    // Düşey sürekliliğin yapısal garantisi: offset göreli olduğu için
+    // çekirdeğin nereye gittiği önemli değildir.
+    const a = rectangle(0, 0, 6, 3);
+    const b = rectangle(50, -20, 6, 3);
+    expect(proposeShaftOffsets(a, 2)).toEqual(proposeShaftOffsets(b, 2));
+
+    const off = proposeShaftOffsets(a, 2)[0]!;
+    const posA = shaftAbsolutePosition(a, off[0], off[1]);
+    const posB = shaftAbsolutePosition(b, off[0], off[1]);
+    expect(posB[0] - posA[0]).toBeCloseTo(50, 6);
+    expect(posB[1] - posA[1]).toBeCloseTo(-20, 6);
+  });
+
+  it("şaft yoksa boş liste — sıfır konumlu şaft üretmez", () => {
+    expect(proposeShaftOffsets(rectangle(0, 0, 6, 3), 0)).toEqual([]);
   });
 });

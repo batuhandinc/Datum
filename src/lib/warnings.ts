@@ -204,6 +204,36 @@ export const WARNING_CODES = [
    * SAKLANIRDI. `offsetJoinType` ve `areaPerSpace` ile aynı sertlik.
    */
   "L2_DOUBLE_CORE_UNSUPPORTED",
+
+  // --- L3 tipoloji şablonu (İP-4) ---
+  /**
+   * Şablon reçetesi yok veya BOZUK — mekan yerleşimi yapılmadı.
+   *
+   * Bozuk Json sessizce BOŞ REÇETEYE düşmez: boş reçete "mekansız daire"
+   * demektir ve sessizce sıfır metraj üretirdi.
+   */
+  "L3_RECIPE_MISSING",
+  /** Şablon geçersiz — tekrarlanan anahtar veya var olmayan bağlantı hedefi. */
+  "L3_RECIPE_INVALID",
+  /** Birimin poligonu yok — önce L2 veya manuel bölümleme çalışmalı. */
+  "L3_UNIT_GEOMETRY_MISSING",
+  /** Mekana geçerli hücre düşmedi; G1'e düştü (hedef alan + şekil faktörü). */
+  "L3_SPACE_DEGRADED",
+  /** Şaft konumu bilinmiyor — ıslak hacim bitişikliği DEĞERLENDİRİLEMEDİ. */
+  "L3_SHAFT_POSITION_UNKNOWN",
+  /**
+   * Reçetede var ama birimin PROGRAMINDA yok — mekan üretilmedi.
+   *
+   * Sessizce atlanırsa şablon "3+1" der, ortaya 2+1 çıkar ve kimse fark etmez.
+   */
+  "L3_SPACE_NOT_IN_PROGRAM",
+  /**
+   * Programda var ama REÇETEDE yok — geometri üretilemedi, hedefiyle kaldı.
+   *
+   * Bayat geometri de temizlenir: önceki koşudan kalan poligon artık var
+   * olmayan bir yerleşimi tarif ederdi.
+   */
+  "L3_SPACE_NOT_IN_RECIPE",
 ] as const;
 
 export type WarningCode = (typeof WARNING_CODES)[number];

@@ -308,6 +308,47 @@ export function computeL1(input: L1Input): L1Output {
  * şaftlar kendiliğinden birlikte taşınır. Süreklilik korunması gereken bir
  * kural değil, yapısal bir sonuçtur.
  */
+/**
+ * ŞAFT KONUMU ÖNERİSİ — çekirdeğe göreli offset'ler.
+ *
+ * SÜRÜM 1.4'TE EKLENDİ ve gerekçesi şu: `Shaft.offsetX/offsetY` 1.3'te K3
+ * MANUEL alandı ve HİÇBİR MOTOR YAZMIYORDU. Sonuç, şaft konumunun her
+ * projede bilinmemesi ve dolayısıyla L3'ün "banyo şafta bitişik" iddiası
+ * dahil BÜTÜN ıslak hacim kısıtlarının "değerlendirilemedi" çıkmasıydı —
+ * sistem ıslak hacimleri topladığını sanırken hiçbir şey onları
+ * toplamıyordu.
+ *
+ * YERLEŞİM: şaftlar çekirdeğin ARKA kenarına (giriş holünün karşısına),
+ * uzun eksen boyunca EŞİT ARALIKLA dizilir. Bu bir mimari sezgiseldir,
+ * mevzuat değil — ve çıktı EZİLEBİLİR bir ÖNERİDİR (kullanıcı K3'te taşır).
+ * Konum kuraldan türetilemez: hiçbir doküman şaftın çekirdek içinde nereye
+ * konacağını tanımlamıyor.
+ *
+ * Dönen offset'ler çekirdek ORİJİNİNE (bbox merkezi) GÖRELİDİR; mutlak
+ * konum `shaftAbsolutePosition` ile türer ve düşey süreklilik yapısal
+ * olarak korunur.
+ */
+export function proposeShaftOffsets(
+  core: LocalPolygon,
+  count: number,
+): readonly LocalPoint[] {
+  if (count <= 0) return [];
+  const bb = boundingBox(core);
+  const horizontal = bb.width >= bb.height;
+
+  // Arka kenardan içeri, kenarın çeyreği kadar.
+  const inset = (horizontal ? bb.height : bb.width) / 4;
+  const along = horizontal ? bb.width : bb.height;
+
+  const out: LocalPoint[] = [];
+  for (let i = 0; i < count; i += 1) {
+    // Eşit aralık: [i+1] / [count+1] → kenarlara yapışmaz.
+    const t = (i + 1) / (count + 1) - 0.5;
+    out.push(horizontal ? [t * along, bb.height / 2 - inset] : [bb.width / 2 - inset, t * along]);
+  }
+  return out;
+}
+
 export function shaftAbsolutePosition(
   core: LocalPolygon,
   offsetX: number,
