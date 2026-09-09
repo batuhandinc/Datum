@@ -68,10 +68,21 @@ const tables = await one(
 );
 check(`tablolar oluştu (${tables.n})`, tables.n > 50);
 
+// Beklenen sayı ÜRETİLEN SQL'den sayılır, elle yazılmaz: kayıt defterine alan
+// eklemek bu dosyayı bayatlatmasın. (52 sabiti İP-3'te tam olarak böyle bozuldu.)
+const expectedGenerated = (
+  readFileSync(path.join(ROOT, "prisma", "sql", "computed-columns.sql"), "utf8").match(
+    /^\s*GENERATED ALWAYS AS/gm,
+  ) ?? []
+).length;
+
 const gen = await one(
   `select count(*)::int n from information_schema.columns where table_schema='public' and is_generated='ALWAYS'`,
 );
-check(`GENERATED kolonlar (${gen.n} adet, 52 bekleniyor)`, gen.n === 52);
+check(
+  `GENERATED kolonlar (${gen.n} adet, ${expectedGenerated} bekleniyor)`,
+  gen.n === expectedGenerated,
+);
 
 const view = await one(
   `select count(*)::int n from information_schema.views where table_schema='public' and table_name='OverrideLedger'`,

@@ -26,6 +26,11 @@ ALTER TABLE "zoning_data" DROP COLUMN IF EXISTS "basementGainFromLevelDifference
 ALTER TABLE "zoning_data" ADD COLUMN "basementGainFromLevelDifference" numeric(14,3)
   GENERATED ALWAYS AS (COALESCE("basementGainFromLevelDifferenceOverrideValue", "basementGainFromLevelDifferenceComputedValue")) STORED;
 
+-- Block (block)
+ALTER TABLE "block" DROP COLUMN IF EXISTS "buildingHeight";
+ALTER TABLE "block" ADD COLUMN "buildingHeight" numeric(8,2)
+  GENERATED ALWAYS AS (COALESCE("buildingHeightOverrideValue", "buildingHeightComputedValue")) STORED;
+
 -- Floor (floor)
 ALTER TABLE "floor" DROP COLUMN IF EXISTS "grossArea";
 ALTER TABLE "floor" ADD COLUMN "grossArea" numeric(14,3)
@@ -65,7 +70,24 @@ ALTER TABLE "space" DROP COLUMN IF EXISTS "heatingElementSize";
 ALTER TABLE "space" ADD COLUMN "heatingElementSize" numeric(12,3)
   GENERATED ALWAYS AS (COALESCE("heatingElementSizeOverrideValue", "heatingElementSizeComputedValue")) STORED;
 
+-- Core (core)
+ALTER TABLE "core" DROP COLUMN IF EXISTS "coreStrategy";
+ALTER TABLE "core" ADD COLUMN "coreStrategy" "CoreStrategy"
+  GENERATED ALWAYS AS (COALESCE("coreStrategyOverrideValue", "coreStrategyComputedValue")) STORED;
+ALTER TABLE "core" DROP COLUMN IF EXISTS "geometry";
+ALTER TABLE "core" ADD COLUMN "geometry" jsonb
+  GENERATED ALWAYS AS (COALESCE("geometryOverrideValue", "geometryComputedValue")) STORED;
+ALTER TABLE "core" DROP COLUMN IF EXISTS "area";
+ALTER TABLE "core" ADD COLUMN "area" numeric(12,3)
+  GENERATED ALWAYS AS (COALESCE("areaOverrideValue", "areaComputedValue")) STORED;
+ALTER TABLE "core" DROP COLUMN IF EXISTS "requiredElevatorCount";
+ALTER TABLE "core" ADD COLUMN "requiredElevatorCount" integer
+  GENERATED ALWAYS AS (COALESCE("requiredElevatorCountOverrideValue", "requiredElevatorCountComputedValue")) STORED;
+
 -- Elevator (elevator)
+ALTER TABLE "elevator" DROP COLUMN IF EXISTS "count";
+ALTER TABLE "elevator" ADD COLUMN "count" integer
+  GENERATED ALWAYS AS (COALESCE("countOverrideValue", "countComputedValue")) STORED;
 ALTER TABLE "elevator" DROP COLUMN IF EXISTS "capacityKg";
 ALTER TABLE "elevator" ADD COLUMN "capacityKg" integer
   GENERATED ALWAYS AS (COALESCE("capacityKgOverrideValue", "capacityKgComputedValue")) STORED;
@@ -88,6 +110,9 @@ ALTER TABLE "stair" ADD COLUMN "railingLength" numeric(10,3)
 ALTER TABLE "service_space" DROP COLUMN IF EXISTS "isMandatory";
 ALTER TABLE "service_space" ADD COLUMN "isMandatory" boolean
   GENERATED ALWAYS AS (COALESCE("isMandatoryOverrideValue", "isMandatoryComputedValue")) STORED;
+ALTER TABLE "service_space" DROP COLUMN IF EXISTS "requiredArea";
+ALTER TABLE "service_space" ADD COLUMN "requiredArea" numeric(12,3)
+  GENERATED ALWAYS AS (COALESCE("requiredAreaOverrideValue", "requiredAreaComputedValue")) STORED;
 
 -- Shelter (shelter)
 ALTER TABLE "shelter" DROP COLUMN IF EXISTS "isRequired";
@@ -147,6 +172,9 @@ ALTER TABLE "heating_center" ADD COLUMN "heatMeterCount" integer
 ALTER TABLE "parking_layout" DROP COLUMN IF EXISTS "requiredCount";
 ALTER TABLE "parking_layout" ADD COLUMN "requiredCount" integer
   GENERATED ALWAYS AS (COALESCE("requiredCountOverrideValue", "requiredCountComputedValue")) STORED;
+ALTER TABLE "parking_layout" DROP COLUMN IF EXISTS "targetCount";
+ALTER TABLE "parking_layout" ADD COLUMN "targetCount" integer
+  GENERATED ALWAYS AS (COALESCE("targetCountOverrideValue", "targetCountComputedValue")) STORED;
 ALTER TABLE "parking_layout" DROP COLUMN IF EXISTS "plannedCount";
 ALTER TABLE "parking_layout" ADD COLUMN "plannedCount" integer
   GENERATED ALWAYS AS (COALESCE("plannedCountOverrideValue", "plannedCountComputedValue")) STORED;
@@ -170,6 +198,9 @@ ALTER TABLE "parking_layout" ADD COLUMN "markingLength" numeric(12,3)
 ALTER TABLE "ramp" DROP COLUMN IF EXISTS "length";
 ALTER TABLE "ramp" ADD COLUMN "length" numeric(10,3)
   GENERATED ALWAYS AS (COALESCE("lengthOverrideValue", "lengthComputedValue")) STORED;
+ALTER TABLE "ramp" DROP COLUMN IF EXISTS "footprintArea";
+ALTER TABLE "ramp" ADD COLUMN "footprintArea" numeric(12,3)
+  GENERATED ALWAYS AS (COALESCE("footprintAreaOverrideValue", "footprintAreaComputedValue")) STORED;
 
 -- Facade (facade)
 ALTER TABLE "facade" DROP COLUMN IF EXISTS "width";

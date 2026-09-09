@@ -3,12 +3,44 @@
 // Sürüm 1.1: Core artık Block altında (bkz. bölüm 2 düzeltmesi).
 // =============================================================================
 
-/// Çekirdek (:88). Bölüm 2'de adı geçiyor, alan tablosu YOK → minimal stub.
+/// Çekirdek. Alan tablosu sürüm 1.3'te eklendi (İP-3).
 /// IFC: IfcZone (çekirdek mekânsal bir gruplamadır, fiziksel eleman değil).
+///
+/// ÇEKİRDEK PROJE GENELİ SABİTTİR: Block başına tekil. Konumu değişirse TÜM
+/// katlar etkilenir ve sistem onay ister. Konum bir ezmedir.
 model Core {
   id      String @id @default(cuid())
   blockId String @unique
   block   Block  @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  /// @own H @src etut-veri-modeli.md§6 — L1 ÖNERİR, kullanıcı ezer.
+  coreStrategyComputedValue  CoreStrategy?
+  coreStrategyOverrideValue  CoreStrategy?
+  coreStrategyOverrideReason String?
+  /// GENERATED
+  coreStrategy               CoreStrategy?
+
+  /// @own H @src etut-veri-modeli.md§6 — yerel metrik poligon (dikdörtgen veya L).
+  /// Optimize serbest form plan motorunun (İP-4) işidir, İP-3'ün değil.
+  geometryComputedValue  Json?
+  geometryOverrideValue  Json?
+  geometryOverrideReason String?
+  /// GENERATED
+  geometry               Json?
+
+  /// @own H @src etut-veri-modeli.md§6 — poligondan.
+  areaComputedValue  Decimal? @db.Decimal(12, 3)
+  areaOverrideValue  Decimal? @db.Decimal(12, 3)
+  areaOverrideReason String?
+  /// GENERATED
+  area               Decimal? @db.Decimal(12, 3)
+
+  /// @own H @src etut-veri-modeli.md§6 — CoreRule eşiklerinden (kat/yükseklik).
+  requiredElevatorCountComputedValue  Int?
+  requiredElevatorCountOverrideValue  Int?
+  requiredElevatorCountOverrideReason String?
+  /// GENERATED
+  requiredElevatorCount               Int?
 
   elevators Elevator[]
   stairs    Stair[]
@@ -28,8 +60,18 @@ model Elevator {
   coreId String
   core   Core   @relation(fields: [coreId], references: [id], onDelete: Cascade)
 
-  /// @tier K1 @own M @src etut-veri-modeli.md§6
-  count           Int           @default(1)
+  /// @tier K1 @own H @src etut-veri-modeli.md§6 — başlangıç sihirbazının 5. sorusu.
+  ///
+  /// ÜÇLÜYE ÇEVRİLDİ (sürüm 1.3): sihirbaz "kural katmanı ön-doldurur, kullanıcı
+  /// onaylar veya değiştirir; ön-doldurulan ile değiştirilen ayırt edilebilir
+  /// kalsın" diyor — bu tam olarak hesaplanan/ezme ayrımıdır.
+  /// `CoreRule.minElevatorCount` ön-doldurur, kullanıcı ezer.
+  /// @default(1) KALDIRILDI: adet yerel kuraldan gelir, koda gömülü olamaz (ilke 1).
+  countComputedValue  Int?
+  countOverrideValue  Int?
+  countOverrideReason String?
+  /// GENERATED
+  count               Int?
   /// @tier K2 @own M @src etut-veri-modeli.md§6
   elevatorType    ElevatorType?
   /// @tier K2 @own M @src etut-veri-modeli.md§6
@@ -153,8 +195,18 @@ model Shaft {
   /// @src etut-veri-modeli.md§6
   width     Decimal? @db.Decimal(6, 3)
   depth     Decimal? @db.Decimal(6, 3)
-  /// @src etut-veri-modeli.md§6 — hangi katlardan geçiyor
+  /// @src etut-veri-modeli.md§6 — hangi katlardan geçiyor (Floor.floorNo değerleri)
   runsThroughFloors Int[]
+
+  /// @tier K3 @own M @src etut-veri-modeli.md§6 — ÇEKİRDEK ORİJİNİNE GÖRELİ konum.
+  ///
+  /// Mutlak konum SAKLANMAZ. Şaftlar tüm katlarda aynı yerde olmak zorundadır;
+  /// mutlak saklansaydı çekirdek taşınınca her katta ayrı güncellenmesi gerekir,
+  /// biri unutulunca düşey süreklilik SESSİZCE kırılırdı. Göreli konumda mutlak
+  /// yer `çekirdek + offset` ile TÜRETİLİR — süreklilik korunacak bir kural değil,
+  /// yapısal bir sonuçtur.
+  offsetX Decimal? @db.Decimal(8, 3)
+  offsetY Decimal? @db.Decimal(8, 3)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -189,6 +241,15 @@ model ServiceSpace {
   isMandatoryOverrideReason String?
   /// GENERATED
   isMandatory               Boolean?
+
+  /// @own H @src etut-veri-modeli.md§7 — RequiredSpaceRule.areaFormula'nın sonucu.
+  /// `area` kullanıcının yerleştirdiği FİİLİ alan; `requiredArea` paketin istediği
+  /// ASGARİ alan. İkisi ayrıdır ve rapor ikisini de gösterir (sürüm 1.3).
+  requiredAreaComputedValue  Decimal? @db.Decimal(12, 3)
+  requiredAreaOverrideValue  Decimal? @db.Decimal(12, 3)
+  requiredAreaOverrideReason String?
+  /// GENERATED
+  requiredArea               Decimal? @db.Decimal(12, 3)
 
   /// @src etut-veri-modeli.md§7
   area        Decimal? @db.Decimal(12, 3)

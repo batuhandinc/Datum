@@ -375,6 +375,17 @@ enum FloorType {
 
 // ============================== Çekirdek ==============================
 
+/// Çekirdek yerleşim stratejisi (bölüm 6, sürüm 1.3).
+///
+/// ENUM MEŞRU (bölüm 15.1): kod üç yerleşimi de ayrı ayrı UYGULAR —
+/// merkezî plakanın ağırlık merkezine, kenar uzun kenara, çift iki uca.
+/// Yeni bir strateji zaten yeni kod demektir, katalog satırı değil.
+enum CoreStrategy {
+  merkezi
+  kenar
+  cift
+}
+
 /// :330 — insan · yuk · sedye · yangin
 enum ElevatorType {
   insan

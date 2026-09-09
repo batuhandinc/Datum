@@ -59,10 +59,13 @@ describe("hesaplanan alan kayıt defteri ↔ şema uyumu", () => {
     expect(reasonColumn("netArea")).toBe("netAreaOverrideReason");
   });
 
-  it("52 hesaplanan alan, 18 model, 208 kolon", () => {
-    expect(allComputedFields()).toHaveLength(52);
-    expect(COMPUTED_MODELS).toHaveLength(18);
-    expect(allComputedFields().length * 4).toBe(208);
+  // Sayaç kasıtlı olarak SABİTTİR: kayıt defterine alan eklemek bu satırı
+  // kırar ve dört adımlı ritüelin (şema · registry · codegen · migration)
+  // atlanmadığını görmeye zorlar. İP-3'te 52/18/208 → 61/20/244.
+  it("61 hesaplanan alan, 20 model, 244 kolon", () => {
+    expect(allComputedFields()).toHaveLength(61);
+    expect(COMPUTED_MODELS).toHaveLength(20);
+    expect(allComputedFields().length * 4).toBe(244);
   });
 
   it("para ve alan alanları Decimal — float yok (Karar 4 / kural 1)", () => {

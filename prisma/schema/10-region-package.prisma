@@ -220,6 +220,22 @@ model ParkingRule {
   /// @own P @src etut-veri-modeli.md§12 — elektrikli şarj noktası oranı/zorunlu adet
   electricChargingRatio Decimal? @db.Decimal(5, 4)
 
+  /// @own P @src etut-veri-modeli.md§12.5 — ARAÇ BAŞINA ALAN (m²), sürüm 1.3.
+  ///
+  /// NEDEN spaceWidth × spaceLength YETMİYOR: o çarpım park yerinin KENDİ alanıdır,
+  /// gerçek verim değil. Aradaki farkı kolon kayıpları, rampa başı ölü alanlar,
+  /// sütun aralığı ve dönüş yarıçapları belirler — hiçbiri o üç değerden
+  /// türetilemez ve türetilen sayı SİSTEMATİK OLARAK İYİMSER çıkar.
+  ///
+  /// OTORİTE BURADADIR. İP-4'te kolon aksları gelince geometrik yerleşim bu
+  /// katsayıyı DEĞİŞTİRMEZ, DOĞRULAR: fiili yerleşim belirgin saparsa uyarı üretir.
+  /// İP-10 geriye dönük doğrulamada kalibre edilecek kalemlerdendir.
+  ///
+  /// Nullable: kural yoksa sayım YAPILMAZ + uyarı. Koda gömülü varsayılan yok (ilke 1).
+  areaPerSpace           Decimal? @db.Decimal(8, 3)
+  accessibleAreaPerSpace Decimal? @db.Decimal(8, 3)
+  bicycleAreaPerSpace    Decimal? @db.Decimal(8, 3)
+
   @@unique([regionPackageVersionId, ruleKey])
   @@map("parking_rule")
 }

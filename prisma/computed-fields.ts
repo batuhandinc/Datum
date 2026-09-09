@@ -82,6 +82,17 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
     ],
   },
   {
+    model: "Block",
+    table: "block",
+    joins: "",
+    projectIdExpr: 't."projectId"',
+    fields: [
+      // Σ Floor.grossHeight. Üç kural eşiğinin (asansör, yangın asansörü,
+      // yangın pompası) girdisi; sürüm 1.3'e kadar şemada evi yoktu.
+      { field: "buildingHeight", sqlType: D(8, 2), kind: "decimal", src: "etut-veri-modeli.md§5", derivationStated: true },
+    ],
+  },
+  {
     model: "Floor",
     table: "floor",
     joins: 'JOIN "block" b ON b."id" = t."blockId"',
@@ -118,11 +129,26 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
     ],
   },
   {
+    model: "Core",
+    table: "core",
+    joins: 'JOIN "block" b ON b."id" = t."blockId"',
+    projectIdExpr: 'b."projectId"',
+    fields: [
+      // L1 ÖNERİR, kullanıcı ezer. Enum kolonun üçü de aynı tipte olmalı.
+      { field: "coreStrategy", sqlType: '"CoreStrategy"', kind: "enum", src: "etut-veri-modeli.md§6", derivationStated: true },
+      { field: "geometry", sqlType: "jsonb", kind: "json", src: "etut-veri-modeli.md§6", derivationStated: true },
+      { field: "area", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§6", derivationStated: true },
+      { field: "requiredElevatorCount", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§6", derivationStated: true },
+    ],
+  },
+  {
     model: "Elevator",
     table: "elevator",
     joins: 'JOIN "core" c ON c."id" = t."coreId" JOIN "block" b ON b."id" = c."blockId"',
     projectIdExpr: 'b."projectId"',
     fields: [
+      // Sihirbazın 5. sorusu: CoreRule.minElevatorCount ön-doldurur, kullanıcı ezer.
+      { field: "count", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§6", derivationStated: true },
       { field: "capacityKg", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§6", derivationStated: true },
       { field: "stopCount", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§6", derivationStated: true },
       { field: "travelHeight", sqlType: D(8, 3), kind: "decimal", src: "etut-veri-modeli.md§6", derivationStated: false },
@@ -146,6 +172,9 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
     projectIdExpr: 'b."projectId"',
     fields: [
       { field: "isMandatory", sqlType: "boolean", kind: "boolean", src: "etut-veri-modeli.md§7", derivationStated: true },
+      // RequiredSpaceRule.areaFormula'nın sonucu. Formül tanımlıydı, sonucu
+      // yazacak kolon yoktu (sürüm 1.3).
+      { field: "requiredArea", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§7", derivationStated: true },
     ],
   },
   {
@@ -224,6 +253,8 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
     projectIdExpr: 't."projectId"',
     fields: [
       { field: "requiredCount", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§8", derivationStated: true },
+      // Sihirbazın 1. sorusu: yönetmelik minimumu ön-doldurur, kullanıcı hedefini yazar.
+      { field: "targetCount", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§8", derivationStated: true },
       { field: "plannedCount", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§8", derivationStated: true },
       { field: "deficitCount", sqlType: "integer", kind: "int", src: "etut-veri-modeli.md§8", derivationStated: true },
       // H/M — hesaplanan AMA kullanıcının doğrudan yazabildiği. Üçlü bunu zaten karşılar.
@@ -240,6 +271,8 @@ export const COMPUTED_MODELS: ComputedModelDef[] = [
     projectIdExpr: 'pl."projectId"',
     fields: [
       { field: "length", sqlType: D(10, 3), kind: "decimal", src: "etut-veri-modeli.md§8", derivationStated: true },
+      // length × width. Otopark havuzundan düşülür (sürüm 1.3).
+      { field: "footprintArea", sqlType: D(12, 3), kind: "decimal", src: "etut-veri-modeli.md§8", derivationStated: true },
     ],
   },
   {

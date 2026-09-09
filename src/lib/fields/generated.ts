@@ -8,7 +8,7 @@
  * Yalnızca KADEMESİ OLAN alanlar buradadır: hesaplanan alanlar ve altyapı
  * alanları (id, FK, zaman damgası) sihirbaz GİRDİSİ değildir.
  *
- * 136 alan, 11 modelde.
+ * 142 alan, 13 modelde.
  */
 
 export type FieldTier = "K1" | "K2" | "K3";
@@ -22,8 +22,14 @@ export interface CatalogEntry {
 }
 
 export const FIELD_CATALOG = {
+  Block: {
+    name: { tier: "K2", ownership: ["M"], src: null },
+    sortOrder: { tier: "K2", ownership: ["M"], src: null },
+  },
   Elevator: {
-    count: { tier: "K1", ownership: ["M"], src: null },
+    countComputedValue: { tier: "K1", ownership: ["H"], src: null },
+    countOverrideValue: { tier: "K1", ownership: ["H"], src: null },
+    countOverrideReason: { tier: "K1", ownership: ["H"], src: null },
     elevatorType: { tier: "K2", ownership: ["M"], src: null },
     capacityPersons: { tier: "K2", ownership: ["M"], src: null },
     speed: { tier: "K3", ownership: ["M"], src: null },
@@ -87,6 +93,10 @@ export const FIELD_CATALOG = {
     currencyOverrideValue: { tier: "K1", ownership: ["P"], src: null },
     currencyOverrideReason: { tier: "K1", ownership: ["P"], src: null },
     priceReferenceDate: { tier: "K1", ownership: ["M"], src: null },
+  },
+  Shaft: {
+    offsetX: { tier: "K3", ownership: ["M"], src: null },
+    offsetY: { tier: "K3", ownership: ["M"], src: null },
   },
   SiteData: {
     topographyLevelDifference: { tier: "K2", ownership: ["M"], src: null },
