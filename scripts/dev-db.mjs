@@ -99,8 +99,12 @@ await server.start();
 console.log(`
   Datum yerel veritabanı hazır.
 
-    postgresql://datum:datum@127.0.0.1:${PORT}/datum?schema=public
+    postgresql://datum:datum@127.0.0.1:${PORT}/datum?schema=public&pgbouncer=true&connection_limit=1
     veri dizini: ${path.relative(ROOT, DATA_DIR)}
+
+  pgbouncer=true ZORUNLU — PGlite tek oturumdur ve bu sunucu tüm bağlantıları
+  onun üzerine çoğullar; adsız hazır ifade olmadan ikinci süreç
+  "prepared statement s0 already exists" ile patlar.
 
   Bu sunucu AÇIK KALMALI. Başka bir terminalde:
 
