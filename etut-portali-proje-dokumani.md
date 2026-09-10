@@ -282,16 +282,23 @@ Referans olarak incelediğimiz piyasa ürünü binayı kare varsayıyor ve cephe
 
 **Bizim yaklaşımımız:**
 
-| Miktar | Kaynak |
-|---|---|
-| Duvar alanı ve hacmi | Duvar nesnesinin uzunluk × yükseklik × kalınlık değerinden |
-| Cephe alanı | Gerçek cephe geometrisinden, yüzey yüzey |
-| Doğrama adedi ve alanı | Yerleştirilmiş açıklık nesnelerinden |
-| Kapı adedi | Mekan-mekan ilişkisinden |
-| Döşeme, şap, kaplama alanı | Mekan poligonlarından |
-| Sıva alanı | Duvar yüzeyi eksi açıklıklar |
-| Kazı hacmi | Bodrum çevresi × kot farkı |
-| Beton/demir/kalıp | Ampirik katsayı (etüt aşamasında meşru) — bkz. bölüm 10 |
+| Miktar | Kaynak | Sahip |
+|---|---|---|
+| Duvar **gövde** hacmi | Duvar nesnesinin uzunluk × yükseklik × kalınlık değerinden | `Wall` |
+| Cephe alanı | Gerçek cephe geometrisinden, yüzey yüzey | `Facade` |
+| Doğrama adedi ve alanı | Yerleştirilmiş açıklık nesnelerinden | `Opening` |
+| Kapı adedi | Mekan-mekan ilişkisinden | `Opening` |
+| Döşeme, şap, kaplama alanı | Mekan poligonlarından | `Space` |
+| **İç** sıva ve boya alanı | Mekanın iç yüzeyi (`çevre × net yükseklik`), açıklık düşümü kalem kuralından | `Space` |
+| **Dış** sıva, mantolama, iskele | Cephe yüzeyi | `Facade` |
+| Kazı hacmi | Bodrum plakası × kot farkı | `Floor` (bodrum) |
+| Beton/demir/kalıp | Ampirik katsayı (etüt aşamasında meşru) — bkz. bölüm 10 | `Floor` |
+
+> **SAHİPLİK KURALI.** Her fiziksel yüzeyin TEK sahibi vardır: gövde `Wall`'ın, iç yüzey
+> bitişleri `Space`'in, dış yüzey `Facade`'ın. Banyo ile yatak odası arasındaki duvarın
+> banyo yüzü seramik, yatak odası yüzü boyadır — bitiş MEKANA göre değişir; gövde ise tektir
+> ve paylaştırılamaz. Bu kural olmadan sıva ve boya iki kez metraja girerdi.
+> Ayrıntı: `etut-veri-modeli.md` bölüm 10.0.
 
 ### Boşluk düşümü kuralları — tek kaynak
 
@@ -329,12 +336,23 @@ Bölge paketinden gelir. Ulusal bir birim fiyat/poz listesi varsa iskelet olarak
 
 > **Metraj otomasyonunun kalbi bu tablo.**
 
+Satırlar **sahiplik kuralına** uymak zorundadır (bölüm 9): aynı yüzey iki nesneden tetiklenemez.
+
 | Nesne | Tetiklenen kalemler |
 |---|---|
-| Dış duvar (yalıtımlı) | Duvar malzemesi + harç + iç sıva + dış sıva + ısı yalıtım + boya |
-| Islak hacim duvarı | Duvar malzemesi + harç + su yalıtımı + kaplama + derz |
-| Döşeme | Beton + donatı + kalıp + şap + kaplama |
-| Sığınak | Özel kapı + havalandırma + donanım |
+| **Dış duvar** (`Wall`, `wallType = dis`) | Duvar malzemesi + harç — **YALNIZCA GÖVDE** |
+| **Islak hacim duvarı** (`Wall`, `wallType = islakHacim`) | Duvar malzemesi + harç — **YALNIZCA GÖVDE** |
+| **Mekan** (`Space`) | İç sıva + boya + zemin kaplaması + şap + süpürgelik + tavan |
+| **Islak mekan** (`Space`, `isWetArea`) | Yukarıdakiler + su yalıtımı + duvar seramiği + derz |
+| **Cephe** (`Facade`) | Isı yalıtımı (mantolama) + dış sıva + dış boya + denizlik + iskele |
+| **Kat** (`Floor`) | Beton + donatı + kalıp (ampirik katsayı) |
+| **Sığınak** (`ServiceSpace`) | Özel kapı + havalandırma + donanım |
+
+> **Düzeltme.** Bu tablo önceki sürümde dış duvara *"iç sıva + dış sıva + … + boya"*, ıslak
+> hacim duvarına *"kaplama"* yüklüyordu. Aynı kalemleri `etut-veri-modeli.md` bölüm 4 zaten
+> `Space`'e veriyordu — **sıva, boya ve seramik iki kez sayılıyordu** ve nesne tipleri farklı
+> olduğu için hiçbir öz-denetim bunu yakalamıyordu. Sahiplik kuralı (bölüm 9) çift sayımı
+> yapısal olarak imkânsız kılar.
 
 Tablo bir kez kurulunca, plan değiştiğinde metraj otomatik güncellenir.
 

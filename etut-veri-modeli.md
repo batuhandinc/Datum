@@ -1,8 +1,21 @@
 # Etüt Veri Modeli ve Detay Spesifikasyonu
 
-**Sürüm:** 1.4
-**Tarih:** 10 Eylül 2026 (1.3: 9 Eylül · 1.2: 9 Eylül · 1.1: 8 Eylül · 1.0: 7 Eylül 2026)
+**Sürüm:** 1.5
+**Tarih:** 10 Eylül 2026 (1.4: 10 Eylül · 1.3: 9 Eylül · 1.2: 9 Eylül · 1.1: 8 Eylül · 1.0: 7 Eylül 2026)
 **Amaç:** Kat planı üretimi ve gerçek metraj için gereken veri derinliğini tanımlamak. Claude Code devir paketinin şema tarafıdır.
+
+**Sürüm 1.5 değişiklikleri** — İP-5 (metraj motoru) yazılmadan önce:
+
+1. **Bölüm 10.0 — SAHİPLİK KURALI eklendi.** Her fiziksel yüzeyin TEK sahibi var: gövde `Wall`'ın, iç yüzey bitişleri `Space`'in, dış yüzey `Facade`'ın. Bu kural olmadan sıva ve boya **iki kez** talep ediliyordu (bölüm 10.1 `Wall` satırı ile bölüm 4 tablosu çakışıyordu)
+2. Bölüm 10.1 — `Wall` satırı düzeltildi: yalnızca gövde. Sıva/boya `Space`'e, yalıtım `Facade`'a taşındı
+3. Bölüm 4 — "Mekandan doğan metraj" tablosundan **açıklık düşümü çıkarıldı**. Düşüm formülde değil, MOTORDA uygulanır (bölüm 10.2); formülde bırakmak merkezî kuralı delerdi
+4. Bölüm 5 — `Floor`'a `plateGeometry`. Kat başına plaka modellenmiyordu; `Floor.grossArea`'nın türetmesi bu yüzden tanımsızdı ve çekme kat ile bodrumun plakası zarf DEĞİLDİR
+5. Bölüm 12 — `ZoningRuleSet`'e `basementSetback` ve `setbackFloorSetback`
+6. Bölüm 12 — `CostItemCatalog`'a doğrulama durumu (`verificationStatus` · `verificationSource` · `supersededBy`) ve `functionClass`; `unit` tiplendi
+7. Bölüm 12 — `ObjectCostMapping`'e `producedUnit` · `conversionFactor` · `conversionMode` · `surface`; `conditions`'ın ŞEKLİ tanımlandı
+8. Bölüm 10.4 — `QuantityLine` ezme şekli **karara bağlandı**: hesaplanan alan dörtlüsü. İP-1'in açıkça İP-5'e bıraktığı çelişki kapandı
+9. Bölüm 10.4 — `QuantityLine`'a izlenebilirlik alanları: `sourceObjectKey` · `surface` · uygulanan düşüm kuralı ve eşiği · uygulanan çevrim katsayısı · kalemin doğrulama durumu · miktar kaynağı · geometri seviyesi
+10. Bölüm 10.5 — **çakışma denetimi** tanımlandı: aynı fiziksel yüzeye aynı işlev sınıfından iki kalem düşemez
 
 **Sürüm 1.4 değişiklikleri** — İP-4 (plan motoru: L2 bölümleme, L3 tipoloji, L4 detay) yazılmadan önce:
 
@@ -378,18 +391,24 @@ Metrajın kalitesi buradan çıkar. Her bağımsız bölüm mekanlardan oluşur;
 
 **Mekandan doğan metraj:**
 
-| Miktar | Formül |
+**Mekan İÇ YÜZEY bitişlerinin sahibidir** (bölüm 10.0). Gövde `Wall`'ın, dış yüzey `Facade`'ındır — aşağıdaki hiçbir kalem oralardan tekrar tetiklenmez.
+
+Formüller **BRÜT** üretir; açıklık düşümü motorda, kalemin kuralına göre uygulanır (bölüm 10.2).
+
+| Miktar | Formül (brüt) |
 |---|---|
 | Zemin kaplama alanı | `area` |
 | Şap alanı | `area` |
 | Süpürgelik uzunluğu | `perimeter − kapı genişlikleri` |
 | Duvar brüt yüzeyi | `perimeter × clearHeight` |
-| Sıva/boya alanı | duvar brüt − açıklık alanları (kalem kuralına göre) |
-| Duvar seramiği alanı | `perimeter × wallCladdingHeight` − açıklıklar |
+| Sıva/boya alanı | `perimeter × clearHeight` |
+| Duvar seramiği alanı | `perimeter × wallCladdingHeight` |
 | Tavan alanı | `area` |
 | Kartonpiyer mtül | `perimeter` |
 | Su yalıtımı alanı | `area + perimeter × 0,2` (dönüş payı) |
 | Alçıpan alanı | tavan tipine göre `area` |
+
+> **Düzeltme (sürüm 1.5).** "Sıva/boya" ve "duvar seramiği" satırları önceki sürümlerde `− açıklıklar` taşıyordu. Düşüm **formülden çıkarıldı**: kalem bazında merkezî tanımlıdır (ilke 6) ve motorda tek noktada uygulanır. Süpürgelikteki `− kapı genişlikleri` KALIR — o bir UZUNLUK düşümüdür, açıklık ALANI düşümü değildir; ikisi farklı mekanizmadır.
 
 > **Kullanıcının sorduğu örnek:** "Bağımsız bölümde kaç m² banyo var" bilgisi tek başına yetmez. `area` yer seramiğini ve su yalıtımını verir; duvar seramiğini `perimeter × wallCladdingHeight` verir. Yani `perimeter` metrajın vazgeçilmez girdisidir — ama normal akışta onu **plan motoru** (G3) üretir, kullanıcı değil.
 >
@@ -502,11 +521,25 @@ Bölüm 10.1 `Wall`'ı bir `objectType` olarak kullanıyordu ama hiçbir yerde t
 | floorType | enum | K1 — bodrum · zemin · normal · cekmeKat · catiArasi |
 | isLocked | bool | K2 — tipik kat kilidi |
 | templateFloorId | fk | K2 — kilitliyse referans |
+| plateGeometry | polygon | H — **katın KENDİ plakası** *(1.5)* |
 | grossHeight / clearHeight | decimal | K1 |
-| grossArea | decimal | H — aşağıdaki nota bakınız *(1.4)* |
+| grossArea | decimal | H — `plateGeometry`'nin alanı *(1.5)* |
 | hasCommercial | bool | K1 |
 
-**`grossArea` her katta hesaplanamaz** *(1.4)*: türetme `plaka poligonunun alanı`dır, ama **kat başına plaka modellenmiyor** — elimizdeki tek poligon `ZoningData.buildableEnvelope`, yani proje başına tektir. `cekmeKat` tanımı gereği daha küçük, `bodrum` genellikle daha büyüktür. Plakası gerçekten zarf olan katlara (`zemin`, `normal`) yazılır; diğerlerinde **null kalır ve uyarı üretilir**. Bilinen yanlış bir sayıyı hesaplanan kolona yazmak, emsal kullanımını ve İP-5 metrajını sessizce bozardı.
+#### Kat başına plaka *(1.5)*
+
+1.4'e kadar kat başına plaka **modellenmiyordu**: elimizdeki tek poligon `ZoningData.buildableEnvelope` idi ve o proje başına tekti. Oysa **çekme katın plakası zarftan dar, bodrumunki genellikle geniştir** — bodrum çoğu yönetmelikte çekme mesafelerine tabi değildir. `grossArea`'nın türetmesi bu yüzden tanımsız kalmıştı ve metraj ile emsal kullanımı ona dayanacaktı.
+
+| Kat tipi | Plaka |
+|---|---|
+| `bodrum` | parsel ⊖ `basementSetback`, **parselle kesiştirilir** |
+| `cekmeKat` | zarf ⊖ `setbackFloorSetback` |
+| `zemin` · `normal` | zarf (`buildableEnvelope`'un en büyük parçası) |
+| `catiArasi` | zarf *(açık karar — kullanılabilir alan farkı tanımsız)* |
+
+**Bodrum plakası parsel sınırını AŞAMAZ.** `basementSetback = 0` **geçerli bir değerdir** ("çekme yok") ve `null` ("bilinmiyor") ile karıştırılmamalıdır.
+
+**Kural yoksa plaka `null` + uyarı, o katın metrajı HESAPLANMAZ.** `offsetJoinType` ve `areaPerSpace` emsallerinin aynısı: sıfır bir plaka üretmek metrajı sessizce sıfırlardı.
 
 ### CommonSpace (ortak alan) *(1.4)*
 
@@ -759,6 +792,22 @@ Malzeme tipleri: kompozit · söve · dekoratifSıva · boya · doğalTaş · se
 
 ## 10. Metraj Motoru
 
+### 10.0 SAHİPLİK KURALI *(1.5)*
+
+> **Her fiziksel yüzeyin TEK sahibi vardır.**
+
+| Sahip | Kapsam |
+|---|---|
+| **`Wall`** | YALNIZCA gövde: duvar bloğu, harç. Her duvar bir kez sayılır. **Hiçbir bitiş kalemi tetiklemez** |
+| **`Space`** | İÇ yüzey bitişleri: iç sıva, saten, boya, duvar seramiği, süpürgelik, tavan, kartonpiyer, zemin kaplaması, şap, su yalıtımı |
+| **`Facade`** | DIŞ yüzey: mantolama, dış sıva, dış kaplama, dış boya, denizlik, iskele |
+
+**Neden bu kural var.** Banyo ile yatak odası arasındaki duvarın banyo yüzü seramik, yatak odası yüzü boyadır — **bitiş MEKANA göre değişir**. Duvar gövdesi ise tektir ve iki mekana paylaştırılamaz. Dış yüzün hiçbir mekanı yoktur.
+
+**Neden gerekliydi.** 1.4'e kadar bölüm 10.1 `Wall`'a *"sıva ×2 + boya"* yükleyip bölüm 4 aynı kalemleri `Space`'e de yüklüyordu. Aynı sıva **iki kez** metraja giriyordu ve hiçbir öz-denetim bunu yakalamıyordu, çünkü nesne tipleri farklıydı. Sahiplik kuralı çift sayımı bir kontrol meselesi olmaktan çıkarıp **yapısal olarak imkânsız** kılar — şaft düşey sürekliliğinde (bölüm 6) yapılan hamlenin aynısıdır.
+
+**Sonuç:** bir kalemin hangi nesneden tetikleneceği bir tercih değil, bu tablodan çıkan bir **zorunluluktur**. `ObjectCostMapping` satırları buna uymak zorundadır.
+
 ### 10.1 Nesne → Kalem eşleme
 
 `ObjectCostMapping` tablosu: `objectType` · `objectVariant` · `costItemCode` · `quantityFormula` · `conditions`
@@ -770,12 +819,18 @@ Malzeme tipleri: kompozit · söve · dekoratifSıva · boya · doğalTaş · se
 | Space | zemin kaplama = seramik | Seramik yer döşemesi | `area` |
 | Space | zemin kaplama = seramik | Seramik yapıştırıcı | `area × 0,2 torba` |
 | Space | isWetArea = true | Su yalıtımı | `area + perimeter × 0,2` |
-| Space | wallCladdingHeight > 0 | Duvar seramiği | `perimeter × wallCladdingHeight − açıklık` |
+| Space | wallCladdingHeight > 0 | Duvar seramiği | `perimeter × wallCladdingHeight` |
 | Space | ceilingType = kartonpiyer | Kartonpiyer | `perimeter` |
+| Space | — | İç sıva · boya | `perimeter × clearHeight` |
 | Opening | frameMaterial = pvc | PVC doğrama | `(2×(w+h)) × count` |
 | Opening | glazingType = isicam | Isıcam | `w × h × count` |
-| Wall | dış, yalıtımlı | Duvar bloğu + harç + sıva ×2 + yalıtım + boya | çoklu |
+| Wall | wallType = dis | Duvar bloğu + harç | çoklu — **YALNIZCA GÖVDE** |
+| Facade | — | Mantolama + dış sıva + dış boya + iskele | çoklu |
 | Elevator | — | Asansör ünitesi + kuyu perdesi + yalıtım | çoklu |
+
+> **Düzeltme (sürüm 1.5).** Önceki sürümde `Wall` satırı *"Duvar bloğu + harç + sıva ×2 + yalıtım + boya"* diyordu. Bu, bölüm 4'ün `Space`'e verdiği sıva ve boyayla **çakışıyordu** ve aynı yüzey iki kez metraja giriyordu. Bölüm 10.0'ın sahiplik kuralı bunu kesti: gövde `Wall`'ın, iç yüzey `Space`'in, dış yüzey `Facade`'ındır.
+>
+> **Formüllerden açıklık düşümü çıkarıldı.** "Duvar seramiği" satırı 1.4'e kadar `− açıklık` taşıyordu. Düşüm artık formülde değil, MOTORDA uygulanır (bölüm 10.2): formül BRÜT üretir, motor kalemin kuralına göre düşer. Formülde bırakmak, merkezî kuralı formül yazarının insafına bırakırdı — unutulabilir ya da iki kez uygulanabilirdi.
 
 ### 10.2 Açıklık düşümü — merkezî kural
 
@@ -792,6 +847,24 @@ Her kalem için `openingDeductionRule` tanımlanır:
 
 Kural bir kez tanımlanır, her yerde aynı uygulanır, raporda gösterilir.
 
+#### TEK UYGULAMA NOKTASI *(1.5)*
+
+> **Formül BRÜT üretir. Düşümü MOTOR uygular.**
+
+Düşüm formülün içinde yazılmaz ve formülün gördüğü değişkenler arasında açıklık alanı **yoktur**. Böylece formül yazarının düşümü unutması ya da iki kez uygulaması **imkânsız** olur.
+
+```
+brüt    = formül(nesne bağlamı)
+açıklık = o yüzeydeki açıklıkların alanı
+eşik    = sözleşme eşiği (proje) ?? kalemin eşiği (paket)
+düşülen = kalemin openingDeductionRule'una göre
+net     = brüt − düşülen        (yalnızca ALAN birimli kalemlerde)
+```
+
+**Alan dışı birimde düşüm anlamsızdır.** Zemin kaplaması, şap, cam, kapı, tavan gibi kalemlerde kural `none` olmalıdır; birimi `adet` veya `metre` olan bir kalemde `full` düşüm tanımlıysa bu bir **katalog hatasıdır** ve yayım anında reddedilir.
+
+**Sözleşme eşiği proje parametresidir.** "Eşik üstü düşülür" değerinin bir kısmı resmî tarif değil **sözleşme pratiğidir**. Varsayılan paketten gelir (`CostItemCatalog.openingDeductionThreshold`); proje düzeyinde ezilebilir (`QuantityTakeoff.contractOpeningThreshold`). Her metraj satırı **hangi eşiğin uygulandığını** taşır.
+
 ### 10.3 Yapısal imalatlar — ampirik katsayı
 
 `StructuralCoefficientSet`: `concreteVolumePerArea` (m³/m²) · `rebarWeightPerVolume` (kg/m³) · `formworkAreaPerVolume` (m²/m³) · `formworkLaborRate` · katsayılar kat adedine ve temel tipine göre ayrışır.
@@ -800,9 +873,43 @@ Kural bir kez tanımlanır, her yerde aynı uygulanır, raporda gösterilir.
 
 ### 10.4 QuantityLine
 
-Her metraj satırı taşır: `costItemCode` · `description` · `quantity` · `unit` · `sourceObjectType` · `sourceObjectId` · `formula` · `isOverridden` · `overrideReason`
+| Alan | Not |
+|---|---|
+| `costItemCode` · `description` · `unit` | kalem kimliği |
+| **`quantity`** | **hesaplanan alan dörtlüsü** *(1.5)* — aşağıdaki karara bakınız |
+| `sourceObjectType` · `sourceObjectId` | hangi nesneden |
+| **`sourceObjectKey`** | *(1.5)* nesnenin KARARLI anahtarı (`Wall.wallKey`, `Space.layoutKey`) |
+| **`surface`** | *(1.5)* hangi fiziksel yüzey — çakışma denetiminin girdisi (10.5) |
+| `formula` | uygulanan formül |
+| **`appliedDeductionRule` · `appliedDeductionThreshold`** | *(1.5)* hangi düşüm kuralı, hangi eşik |
+| **`appliedConversionFactor`** | *(1.5)* birim çevrimi uygulandıysa hangi katsayı |
+| **`itemVerificationStatus`** | *(1.5)* kalemin doğrulama durumu (12.7) |
+| **`quantitySource`** | *(1.5)* `geometri · katsayi · parametrik · elle` |
+| **`geometryLevel`** | *(1.5)* `G1 · G2 · G3` — hangi geometri seviyesinden ölçüldü |
 
 > **Şeffaflık ilkesi:** Her miktar hangi nesneden, hangi formülle çıktığını gösterir. Rapor bunu görünür kılar.
+
+**Ezme şekli karara bağlandı** *(1.5)*: `quantity` **hesaplanan alan dörtlüsüdür** (bölüm 1.3). 1.4'e kadar bu varlık `isOverridden` + `overrideReason` kullanıyordu ve dokümanda **iki farklı ezme şekli** vardı; İP-1 çelişkiyi birebir koruyup uzlaştırmayı İP-5'e bırakmıştı.
+
+Dörtlü seçildi çünkü: (a) ezme veritabanı seviyesinde garanti olur — `quantity` GENERATED'dır ve yazılamaz, yani "ezmeyi işaretlemeyi unutmak" imkânsızlaşır; (b) `OverrideLedger` metraj ezmelerini de **otomatik** görür, böylece *"bu projedeki tüm ezmeler tek sorgudur"* iddiası metrajı da kapsar ve rapor (ilke 10) eksik kalmaz. `isOverridden` kaldırıldı.
+
+**Nesne kimliği neden `sourceObjectKey` ister** *(1.5)*: plan motoru duvarları her koşuda **silip yeniden üretir**, dolayısıyla `Wall.id` kalıcı değildir. `sourceObjectId`'ye bağlanan bir izlenebilirlik ilk yeniden hesapta çürür. Kararlı olan `wallKey`'dir (bölüm 4) ve rapor izi ona bağlanır.
+
+**Miktar hesaplanamazsa `null` olur, sıfır DEĞİL** *(1.5)* — ve satır yine oluşur. Satırı hiç üretmemek sessizlik, sıfır yazmak yalan olurdu; `null` "ölçülemedi" demektir ve rapor boşluğu gösterir.
+
+### 10.5 Çakışma denetimi *(1.5)*
+
+Öz-denetim yetmez. Doğru soru *"bir kalem birden fazla nesne tipince tetikleniyor mu"* değil:
+
+> **AYNI FİZİKSEL YÜZEYE aynı işlev sınıfından iki kalem birden düşüyor mu?**
+
+Örnek tuzak: **iç sıva pozu ile saten pozu aynı duvara aynı anda tetiklenirse çift sıva olur** — ve ikisi de `Space`'ten geldiği için nesne tipi denetimi bunu yakalamaz.
+
+**İşlev sınıfları:** `govde` · `siva` · `kaplama` · `boya` · `yalitim`.
+
+Denetim, üretilen satırları `(nesne, yüzey)` ile gruplar ve her grupta aynı işlev sınıfından birden fazla kalem varsa **uyarır** (engellemez — ilke 7).
+
+Bu beş sınıfın hiçbirine girmeyen kalemler (kapı, cam, armatür, asansör, tesisat, kazı) `functionClass` taşımaz ve **denetime girmez**: bir kapıya *"aynı yüzeyde iki kapı olamaz"* demenin anlamı yoktur. Denetim yalnızca **yüzey kalemlerine** uygulanır.
 
 ---
 
@@ -979,6 +1086,55 @@ Plan motorunun okuduğu yedi değerin hiçbirinin 22 kural tablosunda evi yoktu.
 **Adı neden `SpaceDimension` değil:** duvar kalınlığı ve aks aralığı bir **mekan** ölçüsü değil, bir **yapı elemanı** ölçüsüdür; "mekan boyutu" başlığı altında durmaları yanıltıcı olurdu.
 
 Her ikisi de sürüme bağlanır ve yayımdan sonra değişmezlik trigger'ı kapsamındadır. **Kural tablosu sayısı 22 → 24.**
+
+### 12.7 Sürüm 1.5'te eklenenler — metraj motorunun kuralları
+
+#### `ZoningRuleSet` — kat plakası ötelemeleri
+
+| Alan | Birim | Not |
+|---|---|---|
+| `basementSetback` | m | bodrum çekme mesafesi. **`0` geçerli**, `null` bilinmiyor |
+| `setbackFloorSetback` | m | çekme kat ötelemesi |
+
+İkisi de yerel mevzuattır ve koda gömülemez (ilke 1). Yoksa o katın plakası hesaplanmaz.
+
+#### `CostItemCatalog` — katalog güven seviyesi
+
+Poz kataloğu bir süre daha güvenilir olmayacak. Bu **sessiz hata değil, YÖNETİLEN RİSK** olmalıdır.
+
+| Alan | Değerler | Davranış |
+|---|---|---|
+| `verificationStatus` | `verified` · `unverified` · `deprecated` | `deprecated` metrajda **KULLANILMAZ**, hata verir ve `supersededBy` önerilir. `unverified` kullanılır ama satırda görünür ve raporda gösterilir |
+| `verificationSource` | metin | kodun nereden doğrulandığı |
+| `supersededBy` | kalem kodu | kaldırılmış kodun yerine geçen |
+| `functionClass` | `govde` · `siva` · `kaplama` · `boya` · `yalitim` · **yok** | çakışma denetiminin girdisi (10.5). Yüzey kalemi değilse taşınmaz |
+
+**Maskeli kod reddedilir.** `XX`, `XXXX` gibi yer tutucu içeren kodlar yayım anında reddedilir: *kod doğrulanmamışsa alan BOŞ bırakılır, uydurma kod girilmez.* Tekrarlanan kalem kodu zaten sürüm içinde tekildir.
+
+`unit` tiplenmiştir: kod her birimi **ayrı ayrı uygular** — çevrim geçerliliği ve düşüm geçerliliği birimin alan mı, uzunluk mu, adet mi olduğuna bağlıdır (bkz. bölüm 15.1).
+
+#### `ObjectCostMapping` — birim çevirimi ve yüzey
+
+| Alan | Not |
+|---|---|
+| `producedUnit` | formülün ÜRETTİĞİ birim |
+| `conversionFactor` | çevrim katsayısı |
+| `conversionMode` | `carp` · `tavanaBol` |
+| `surface` | `mekanDuvari` · `mekanTavani` · `mekanZemini` · `cepheYuzeyi` · `duvarGovdesi` |
+| `conditions` | **şekli tanımlandı**: `{ "formula": "<mantıksal ifade>" }` |
+
+**Neden çevirici gerekli.** Bazı pozların birimi nesnenin ürettiğinden farklıdır:
+
+| Kalem | Nesne üretir | Poz birimi | Çevrim |
+|---|---|---|---|
+| Doğrama | m² | **kg** (profil ağırlığıyla ödenir) | kg/m² profil ağırlığı |
+| Su deposu | m³ | **adet** (m³ yalnızca kapasite etiketi) | `tavanaBol` — `ceil(hacim ÷ kapasite)` |
+| Süpürgelik · radyatör | m | m | — |
+| Donatı | kg | **ton** | ×0,001 |
+
+**Çevirici yoksa ve birimler farklıysa sistem HESAPLAMAZ ve uyarır.** Sessizce 1 katsayısı varsayılmaz — **bin kat hatanın kaynağı tam olarak budur.** Uygulanan katsayı metraj satırına yazılır. Katsayı paket sürümüne bağlıdır, yani dondurma kapsamındadır (ilke 2).
+
+**Koşullar aynı dilbilgisiyle yazılır** (bölüm 12.5): karşılaştırma ve üçlü zaten var, sonuç mantıksaldır ve **yayım anında doğrulanır**. Ayrı bir JSON yüklem dili ikinci bir ayrıştırıcı ve ikinci bir güvenlik yüzeyi olurdu.
 
 ---
 
